@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { Tab } from '../App'
 
 interface EditorProps {
@@ -8,6 +8,8 @@ interface EditorProps {
   activeTabId: string
   onTabSwitch: (tabId: string) => void
   onTabClose: (e: React.MouseEvent, tabId: string) => void
+  onCloseOthers: (tabId: string) => void
+  onCloseAll: () => void
 }
 
 const Editor: React.FC<EditorProps> = ({
@@ -16,14 +18,72 @@ const Editor: React.FC<EditorProps> = ({
   tabs,
   activeTabId,
   onTabSwitch,
-  onTabClose
+  onTabClose,
+  onCloseOthers,
+  onCloseAll
 }) => {
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const activeTabRef = useRef<HTMLDivElement>(null)
   const activeTab = tabs.find((t) => t.id === activeTabId)
+
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    tabId: string
+  } | null>(null)
+
+  // 确保激活的标签页在视口内
+  useEffect(() => {
+    if (activeTabRef.current && tabsRef.current) {
+      const container = tabsRef.current
+      const tab = activeTabRef.current
+
+      const tabLeft = tab.offsetLeft
+      const tabRight = tabLeft + tab.offsetWidth
+      const containerLeft = container.scrollLeft
+      const containerRight = containerLeft + container.offsetWidth
+
+      if (tabLeft < containerLeft) {
+        container.scrollTo({ left: tabLeft, behavior: 'smooth' })
+      } else if (tabRight > containerRight) {
+        container.scrollTo({ left: tabRight - container.offsetWidth, behavior: 'smooth' })
+      }
+    }
+  }, [activeTabId])
+
+  // 全局点击关闭菜单
+  useEffect(() => {
+    const handleClick = (): void => setContextMenu(null)
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [])
+
+  // 处理横向滚动 (鼠标滚轮)
+  const handleWheel = (e: React.WheelEvent): void => {
+    if (tabsRef.current) {
+      tabsRef.current.scrollLeft += e.deltaY
+    }
+  }
+
+  // 处理中键点击关闭
+  const handleMouseDown = (e: React.MouseEvent, tabId: string): void => {
+    if (e.button === 1) {
+      // 鼠标中键
+      onTabClose(e, tabId)
+    }
+  }
+
+  // 处理右键菜单
+  const handleContextMenu = (e: React.MouseEvent, tabId: string): void => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY, tabId })
+  }
 
   const renderContent = (): React.ReactNode => {
     if (!activeTab) {
       return (
-        <div className="editor-content">
+        <div className="editor-content" style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
           <div className="project-title">无打开的标签页</div>
           <div className="project-subtitle">从左侧资源管理器中打开一个文件以开始。</div>
         </div>
@@ -95,20 +155,47 @@ const Editor: React.FC<EditorProps> = ({
 
   return (
     <div className="editor-area">
-      <div className="editor-tabs">
+      <div className="editor-tabs" ref={tabsRef} onWheel={handleWheel}>
         {tabs.map((tab) => (
           <div
             key={tab.id}
+            ref={tab.id === activeTabId ? activeTabRef : null}
             className={`editor-tab ${tab.id === activeTabId ? 'active' : ''}`}
             onClick={() => onTabSwitch(tab.id)}
+            onMouseDown={(e) => handleMouseDown(e, tab.id)}
+            onContextMenu={(e) => handleContextMenu(e, tab.id)}
           >
-            {tab.title}
+            <span className="tab-title">{tab.title}</span>
             <span className="tab-close" onClick={(e) => onTabClose(e, tab.id)}>
               ✕
             </span>
           </div>
         ))}
       </div>
+
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="menu-item" onClick={() => onTabClose({} as React.MouseEvent, contextMenu.tabId)}>
+            关闭
+          </div>
+          <div className="menu-item" onClick={() => onCloseOthers(contextMenu.tabId)}>
+            关闭其他
+          </div>
+          <div className="menu-item" onClick={() => onCloseAll()}>
+            关闭所有
+          </div>
+        </div>
+      )}
+
       {renderContent()}
     </div>
   )

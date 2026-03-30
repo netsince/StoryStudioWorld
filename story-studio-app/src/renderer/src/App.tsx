@@ -90,6 +90,17 @@ function App(): React.JSX.Element {
     }
   }
 
+  const closeOtherTabs = (tabId: string): void => {
+    const newTabs = tabs.filter((t) => t.id === tabId)
+    setTabs(newTabs)
+    setActiveTabId(tabId)
+  }
+
+  const closeAllTabs = (): void => {
+    setTabs([])
+    setActiveTabId('')
+  }
+
   const switchTab = (tabId: string): void => {
     setActiveTabId(tabId)
   }
@@ -142,6 +153,8 @@ function App(): React.JSX.Element {
             activeTabId={activeTabId}
             onTabSwitch={switchTab}
             onTabClose={closeTab}
+            onCloseOthers={closeOtherTabs}
+            onCloseAll={closeAllTabs}
           />
 
           <div style={{ position: 'relative', display: 'flex', height: '100%' }}>

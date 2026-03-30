@@ -53,6 +53,30 @@ body, html {
   background-clip: content-box;
 }
 
+/* Context Menu */
+.context-menu {
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 150px;
+  user-select: none;
+}
+
+.menu-item {
+  padding: 6px 15px;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.menu-item:hover {
+  background-color: var(--accent-color);
+  color: white;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -344,15 +368,16 @@ body, html {
   overflow-x: auto;
   overflow-y: hidden;
   flex-shrink: 0;
+  scrollbar-width: none; /* Firefox */
 }
 
 .editor-tabs::-webkit-scrollbar {
-  height: 2px;
+  display: none; /* Hide scrollbar for cleaner look */
 }
 
 .editor-tab {
   background-color: var(--bg-sidebar);
-  padding: 0 15px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -365,6 +390,13 @@ body, html {
   position: relative;
   white-space: nowrap;
   transition: background-color 0.1s, color 0.1s;
+  user-select: none;
+}
+
+.tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .editor-tab:hover {
@@ -375,7 +407,16 @@ body, html {
 .editor-tab.active {
   background-color: var(--bg-base);
   color: var(--text-active);
-  border-top: 1px solid var(--accent-color);
+}
+
+.editor-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: var(--accent-color);
 }
 
 .tab-close {
