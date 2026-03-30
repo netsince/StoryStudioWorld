@@ -32,7 +32,7 @@ const Editor: React.FC<EditorProps> = ({
 
     if (activeTab.type === 'welcome') {
       return (
-        <div className="editor-content">
+        <div className="editor-content" style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
           <svg className="brand-logo brand-logo-xl" viewBox="0 0 1920 1920">
             <rect fill="url(#brandGradient)" x="38.97" y="53.96" width="1842.06" height="1812.08" />
             <path
@@ -41,11 +41,11 @@ const Editor: React.FC<EditorProps> = ({
             />
           </svg>
           <div className="project-title">Story Studio World</div>
-          <div className="project-subtitle">
+          <div className="project-subtitle" style={{ marginBottom: '40px' }}>
             {openedFolderPath ? `当前项目：${openedFolderPath}` : '选择项目以开始您的创作之旅。'}
           </div>
 
-          <div className="start-group">
+          <div className="start-group" style={{ maxWidth: '300px' }}>
             <div className="start-item">
               <span className="start-item-icon">
                 <svg className="icon" viewBox="0 0 24 24">
@@ -69,13 +69,25 @@ const Editor: React.FC<EditorProps> = ({
     }
 
     return (
-      <div className="editor-content" style={{ alignItems: 'flex-start', textAlign: 'left' }}>
-        <h2 className="project-title">{activeTab.title}</h2>
-        <p className="project-subtitle">文件路径: {activeTab.path}</p>
-        <div style={{ color: 'var(--text-main)', lineHeight: '1.6' }}>
-          这是文件 {activeTab.title} 的内容区域。
-          <br />
-          初步逻辑已实现，您现在可以在左侧资源管理器中点击“项目列表...”来模拟打开一个文件。
+      <div className="editor-content" key={activeTab.id}>
+        <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
+          <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
+            {activeTab.title}
+          </h2>
+          <p className="project-subtitle" style={{ fontSize: '12px', marginBottom: '20px' }}>
+            {activeTab.path}
+          </p>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', marginBottom: '20px' }} />
+          <div style={{ color: 'var(--text-main)', lineHeight: '1.8', fontSize: '15px' }}>
+            <p>这是 <strong>{activeTab.title}</strong> 的内容编辑区域。</p>
+            <p>UI 体验已优化：</p>
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>侧边栏现在支持平滑的过渡动画。</li>
+              <li>侧边栏宽度可自由拖拽，且拖拽时保持极速响应。</li>
+              <li>全局加入了自定义滚动条，风格更加统一。</li>
+              <li>增加了标签页切换的淡入动效。</li>
+            </ul>
+          </div>
         </div>
       </div>
     )

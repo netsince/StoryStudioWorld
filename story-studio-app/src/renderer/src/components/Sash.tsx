@@ -3,14 +3,16 @@ import React, { useState, useEffect } from 'react'
 interface SashProps {
   onResize: (deltaX: number) => void
   side: 'left' | 'right'
+  setIsDraggingGlobal: (isDragging: boolean) => void
 }
 
-const Sash: React.FC<SashProps> = ({ onResize, side }) => {
+const Sash: React.FC<SashProps> = ({ onResize, side, setIsDraggingGlobal }) => {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleMouseDown = (e: React.MouseEvent): void => {
     e.preventDefault()
     setIsDragging(true)
+    setIsDraggingGlobal(true)
   }
 
   useEffect(() => {
@@ -23,6 +25,7 @@ const Sash: React.FC<SashProps> = ({ onResize, side }) => {
 
     const handleMouseUp = (): void => {
       setIsDragging(false)
+      setIsDraggingGlobal(false)
     }
 
     if (isDragging) {

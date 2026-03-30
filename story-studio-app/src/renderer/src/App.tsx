@@ -28,6 +28,7 @@ function App(): React.JSX.Element {
   // 宽度状态
   const [explorerWidth, setExplorerWidth] = useState(250)
   const [rightPanelWidth, setRightPanelWidth] = useState(300)
+  const [isDragging, setIsDragging] = useState(false)
 
   // 标签页状态
   const [tabs, setTabs] = useState<Tab[]>([{ id: 'welcome', title: '欢迎使用', type: 'welcome' }])
@@ -112,7 +113,7 @@ function App(): React.JSX.Element {
         </defs>
       </svg>
 
-      <div className="app-container">
+      <div className={`app-container ${isDragging ? 'dragging' : ''}`}>
         <TitleBar />
         <div className="main-area">
           <ActivityBar activeActivity={activeActivity} onActivityChange={handleActivityChange} />
@@ -123,9 +124,15 @@ function App(): React.JSX.Element {
               onOpenFolder={handleOpenFolder}
               onOpenFile={(title, path) => openTab({ id: path, title, type: 'file', path })}
               isOpen={isExplorerOpen}
-              width={explorerWidth}
+              width={isExplorerOpen ? explorerWidth : 0}
             />
-            {isExplorerOpen && <Sash side="left" onResize={handleExplorerResize} />}
+            {isExplorerOpen && (
+              <Sash
+                side="left"
+                onResize={handleExplorerResize}
+                setIsDraggingGlobal={setIsDragging}
+              />
+            )}
           </div>
 
           <Editor
@@ -138,11 +145,17 @@ function App(): React.JSX.Element {
           />
 
           <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-            {isRightSidebarOpen && <Sash side="right" onResize={handleRightPanelResize} />}
+            {isRightSidebarOpen && (
+              <Sash
+                side="right"
+                onResize={handleRightPanelResize}
+                setIsDraggingGlobal={setIsDragging}
+              />
+            )}
             <RightPanel
               activeActivity={activeRightActivity}
               isOpen={isRightSidebarOpen}
-              width={rightPanelWidth}
+              width={isRightSidebarOpen ? rightPanelWidth : 0}
             />
             <RightActivityBar
               activeActivity={activeRightActivity}
