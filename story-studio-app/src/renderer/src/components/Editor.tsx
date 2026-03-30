@@ -69,7 +69,7 @@ const Editor: React.FC<EditorProps> = ({
     }
 
     return (
-      <div className="editor-content" key={activeTab.id}>
+      <div className="editor-content">
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
           <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
             {activeTab.title}
