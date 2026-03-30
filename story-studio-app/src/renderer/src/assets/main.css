@@ -226,21 +226,45 @@ body, html {
   flex-direction: column;
   gap: 2px;
   font-size: 11px;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .activity-item.active {
   color: var(--text-active);
 }
 
-.activity-item.active::before {
+/* 左侧边栏指示器 */
+.activity-bar .activity-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
+  top: 10%;
+  bottom: 10%;
   width: 2px;
   background-color: var(--accent-color);
+  animation: activityIndicatorEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 右侧边栏指示器 */
+.right-activity-bar .activity-item.active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 2px;
+  background-color: var(--accent-color);
+  animation: rightActivityIndicatorEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes activityIndicatorEnter {
+  from { height: 0; opacity: 0; transform: translateY(50%); }
+  to { height: 80%; opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rightActivityIndicatorEnter {
+  from { height: 0; opacity: 0; transform: translateY(50%); }
+  to { height: 80%; opacity: 1; transform: translateY(0); }
 }
 
 .activity-item:hover {
@@ -248,11 +272,16 @@ body, html {
   background-color: var(--hover-bg);
 }
 
+.activity-item:hover .activity-icon {
+  transform: scale(1.1);
+}
+
 .activity-icon {
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
 }
 
 /* Left Explorer Panel */
@@ -339,15 +368,22 @@ body, html {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.15s, color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   border-radius: 4px;
   margin: 0 4px;
+  animation: explorerItemEnter 0.3s ease forwards;
+}
+
+@keyframes explorerItemEnter {
+  from { opacity: 0; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .explorer-list-item:hover {
   background-color: var(--hover-bg);
   color: var(--text-active);
+  transform: translateX(4px);
 }
 
 /* Editor Area */
@@ -369,6 +405,7 @@ body, html {
   overflow-y: hidden;
   flex-shrink: 0;
   scrollbar-width: none; /* Firefox */
+  gap: 0px; /* 控制标签间隙 */
 }
 
 .editor-tabs::-webkit-scrollbar {
@@ -389,14 +426,34 @@ body, html {
   max-width: 200px;
   position: relative;
   white-space: nowrap;
-  transition: background-color 0.1s, color 0.1s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  overflow: hidden; /* 保证动画时内容不溢出 */
+  animation: tabEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tabEnter {
+  from { 
+    opacity: 0; 
+    transform: translateX(-10px);
+    max-width: 0;
+    min-width: 0;
+    padding: 0;
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0);
+    max-width: 200px;
+    min-width: 120px;
+    padding: 0 12px;
+  }
 }
 
 .tab-title {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: transform 0.2s ease;
 }
 
 .editor-tab:hover {
@@ -409,14 +466,25 @@ body, html {
   color: var(--text-active);
 }
 
+/* 激活标签页的下划线动画 */
 .editor-tab.active::after {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: 0; /* 改到下面，VS Code 风格 */
   left: 0;
   right: 0;
-  height: 1px;
+  height: 2px;
   background-color: var(--accent-color);
+  animation: slideInBottom 0.3s ease;
+}
+
+@keyframes slideInBottom {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+.editor-tab:active {
+  transform: scale(0.98);
 }
 
 .editor-tab.dragging {
@@ -429,6 +497,7 @@ body, html {
   color: var(--accent-color);
   display: flex;
   align-items: center;
+  animation: fadeIn 0.3s ease;
 }
 
 .tab-dirty-dot {
@@ -439,10 +508,12 @@ body, html {
   margin-left: auto;
   margin-right: 4px;
   flex-shrink: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-.editor-tab:hover .tab-dirty-dot {
-  display: none;
+.editor-tab.dirty:hover .tab-dirty-dot {
+  transform: scale(0);
+  opacity: 0;
 }
 
 .tab-close {
@@ -451,23 +522,26 @@ body, html {
   padding: 2px 4px;
   border-radius: 4px;
   opacity: 0;
-  transition: all 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: scale(0.8);
 }
 
 .editor-tab.dirty:not(:hover) .tab-close {
-  display: none; /* 如果有脏点且没悬停，完全隐藏关闭按钮 */
+  display: none;
 }
 
 .editor-tab:hover .tab-close {
   opacity: 0.6;
+  transform: scale(1);
 }
 
 .tab-close:hover {
-  background-color: var(--hover-bg);
+  background-color: rgba(255, 255, 255, 0.1);
   opacity: 1 !important;
+  color: #f44336; /* 红色关闭按钮 */
 }
 
 .editor-tab.pinned {
@@ -479,12 +553,23 @@ body, html {
   max-width: 80px;
 }
 
+/* 内容淡入淡出动画 */
 .editor-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 20px;
   overflow-y: auto;
+}
+
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .app-icon-large {
@@ -596,6 +681,7 @@ body, html {
   z-index: 10;
 }
 
+
 .right-panel {
   background-color: var(--bg-sidebar);
   display: flex;
@@ -679,9 +765,14 @@ body, html {
   gap: 5px;
   padding: 0 5px;
   height: 100%;
-  transition: background-color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .status-item:hover {
   background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.status-item span {
+  animation: fadeIn 0.3s ease;
 }

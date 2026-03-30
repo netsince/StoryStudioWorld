@@ -112,6 +112,7 @@ const Editor: React.FC<EditorProps> = ({
     if (!activeTab) {
       return (
         <div
+          key="no-tab"
           className="editor-content"
           style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
         >
@@ -124,6 +125,7 @@ const Editor: React.FC<EditorProps> = ({
     if (activeTab.type === 'welcome') {
       return (
         <div
+          key="welcome"
           className="editor-content"
           style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
         >
@@ -163,7 +165,7 @@ const Editor: React.FC<EditorProps> = ({
     }
 
     return (
-      <div className="editor-content">
+      <div key={activeTab.id} className="editor-content">
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
           <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
             {activeTab.title} {activeTab.isPinned && <span style={{ fontSize: '12px' }}>📌</span>}
