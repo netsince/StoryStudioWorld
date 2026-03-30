@@ -159,7 +159,11 @@ function App(): React.JSX.Element {
       <div className={`app-container ${isDragging ? 'dragging' : ''}`}>
         <TitleBar />
         <div className="main-area">
-          <ActivityBar activeActivity={activeActivity} onActivityChange={handleActivityChange} />
+          <ActivityBar
+            activeActivity={activeActivity}
+            onActivityChange={handleActivityChange}
+            isOpen={isExplorerOpen}
+          />
           <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
             <Explorer
               activeActivity={activeActivity}
@@ -192,22 +196,25 @@ function App(): React.JSX.Element {
             onReorderTabs={reorderTabs}
           />
 
-          <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-            {isRightSidebarOpen && (
-              <Sash
-                side="right"
-                onResize={handleRightPanelResize}
-                setIsDraggingGlobal={setIsDragging}
+          <div style={{ display: 'flex', height: '100%' }}>
+            <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
+              {isRightSidebarOpen && (
+                <Sash
+                  side="right"
+                  onResize={handleRightPanelResize}
+                  setIsDraggingGlobal={setIsDragging}
+                />
+              )}
+              <RightPanel
+                activeActivity={activeRightActivity}
+                isOpen={isRightSidebarOpen}
+                width={isRightSidebarOpen ? rightPanelWidth : 0}
               />
-            )}
-            <RightPanel
-              activeActivity={activeRightActivity}
-              isOpen={isRightSidebarOpen}
-              width={isRightSidebarOpen ? rightPanelWidth : 0}
-            />
+            </div>
             <RightActivityBar
               activeActivity={activeRightActivity}
               onActivityChange={handleRightActivityChange}
+              isOpen={isRightSidebarOpen}
             />
           </div>
         </div>

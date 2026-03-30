@@ -603,6 +603,9 @@ body, html {
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
+}
+
+.right-panel.open {
   border-left: 1px solid var(--border-color);
 }
 

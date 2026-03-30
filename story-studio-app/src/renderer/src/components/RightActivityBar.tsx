@@ -4,13 +4,14 @@ import { RightActivityType } from '../App'
 interface RightActivityBarProps {
   activeActivity: RightActivityType
   onActivityChange: (activity: RightActivityType) => void
+  isOpen: boolean
 }
 
-const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onActivityChange }) => {
+const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onActivityChange, isOpen }) => {
   return (
     <div className="right-activity-bar">
       <div
-        className={`activity-item ${activeActivity === 'proofread' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'proofread' ? 'active' : ''}`}
         title="校对"
         onClick={() => onActivityChange('proofread')}
       >
@@ -22,7 +23,7 @@ const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onA
         <span>校对</span>
       </div>
       <div
-        className={`activity-item ${activeActivity === 'memo' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'memo' ? 'active' : ''}`}
         title="便签"
         onClick={() => onActivityChange('memo')}
       >
@@ -34,7 +35,7 @@ const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onA
         <span>便签</span>
       </div>
       <div
-        className={`activity-item ${activeActivity === 'archive' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'archive' ? 'active' : ''}`}
         title="分支与存档"
         onClick={() => onActivityChange('archive')}
       >

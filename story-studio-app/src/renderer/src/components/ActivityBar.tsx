@@ -4,13 +4,14 @@ import { ActivityType } from '../App'
 interface ActivityBarProps {
   activeActivity: ActivityType
   onActivityChange: (activity: ActivityType) => void
+  isOpen: boolean
 }
 
-const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityChange }) => {
+const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityChange, isOpen }) => {
   return (
     <div className="activity-bar">
       <div
-        className={`activity-item ${activeActivity === 'chapter' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'chapter' ? 'active' : ''}`}
         title="章"
         onClick={() => onActivityChange('chapter')}
       >
@@ -26,7 +27,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
         <span>章</span>
       </div>
       <div
-        className={`activity-item ${activeActivity === 'character' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'character' ? 'active' : ''}`}
         title="角色"
         onClick={() => onActivityChange('character')}
       >
@@ -39,7 +40,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
         <span>角色</span>
       </div>
       <div
-        className={`activity-item ${activeActivity === 'setting' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'setting' ? 'active' : ''}`}
         title="设定"
         onClick={() => onActivityChange('setting')}
       >
@@ -52,7 +53,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
         <span>设定</span>
       </div>
       <div
-        className={`activity-item ${activeActivity === 'plugin' ? 'active' : ''}`}
+        className={`activity-item ${isOpen && activeActivity === 'plugin' ? 'active' : ''}`}
         title="插件"
         onClick={() => onActivityChange('plugin')}
       >
