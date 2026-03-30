@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_图层_3" data-name="图层 3" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1920">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-1, .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#_未命名的渐变_34);
+      }
+    </style>
+    <linearGradient id="_未命名的渐变_34" data-name="未命名的渐变 34" x1="-344.92" y1="2136.1" x2="1972.3" y2="47.63" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#30cfd0"/>
+      <stop offset="1" stop-color="#330867"/>
+    </linearGradient>
+  </defs>
+  <g id="_图层_6" data-name="图层 6">
+    <rect class="cls-2" x="38.97" y="53.96" width="1842.06" height="1812.08"/>
+  </g>
+  <path class="cls-1" d="m1069.48,1340.14l-288.83,134.7c-14.31,6.67-30.18-5.61-27.31-21.13l57.87-313.39L1570.56,158.89H158.89v1602.22h1602.22V446.24l-691.64,893.91Zm-339.41,259.1h-414.17c-16.56,0-29.99-13.43-29.99-29.99s13.43-29.99,29.99-29.99h414.17c16.56,0,29.99,13.43,29.99,29.99s-13.43,29.99-29.99,29.99Z"/>
+</svg>
