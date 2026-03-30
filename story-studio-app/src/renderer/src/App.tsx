@@ -3,10 +3,13 @@ import TitleBar from './components/TitleBar'
 import ActivityBar from './components/ActivityBar'
 import Explorer from './components/Explorer'
 import Editor from './components/Editor'
-import RightSidebar from './components/RightSidebar'
+import RightActivityBar from './components/RightActivityBar'
+import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
+import Sash from './components/Sash'
 
 export type ActivityType = 'chapter' | 'character' | 'setting' | 'plugin'
+export type RightActivityType = 'proofread' | 'memo' | 'archive'
 
 export interface Tab {
   id: string
@@ -17,7 +20,14 @@ export interface Tab {
 
 function App(): React.JSX.Element {
   const [activeActivity, setActiveActivity] = useState<ActivityType>('chapter')
+  const [activeRightActivity, setActiveRightActivity] = useState<RightActivityType>('proofread')
+  const [isExplorerOpen, setIsExplorerOpen] = useState(true)
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   const [openedFolderPath, setOpenedFolderPath] = useState<string | null>(null)
+
+  // 宽度状态
+  const [explorerWidth, setExplorerWidth] = useState(250)
+  const [rightPanelWidth, setRightPanelWidth] = useState(300)
 
   // 标签页状态
   const [tabs, setTabs] = useState<Tab[]>([{ id: 'welcome', title: '欢迎使用', type: 'welcome' }])
@@ -28,6 +38,34 @@ function App(): React.JSX.Element {
     if (path) {
       setOpenedFolderPath(path)
     }
+  }
+
+  // 侧边栏切换逻辑
+  const handleActivityChange = (activity: ActivityType): void => {
+    if (activeActivity === activity) {
+      setIsExplorerOpen(!isExplorerOpen)
+    } else {
+      setActiveActivity(activity)
+      setIsExplorerOpen(true)
+    }
+  }
+
+  const handleRightActivityChange = (activity: RightActivityType): void => {
+    if (activeRightActivity === activity) {
+      setIsRightSidebarOpen(!isRightSidebarOpen)
+    } else {
+      setActiveRightActivity(activity)
+      setIsRightSidebarOpen(true)
+    }
+  }
+
+  // 调整宽度逻辑
+  const handleExplorerResize = (deltaX: number): void => {
+    setExplorerWidth((prev) => Math.max(150, Math.min(600, prev + deltaX)))
+  }
+
+  const handleRightPanelResize = (deltaX: number): void => {
+    setRightPanelWidth((prev) => Math.max(150, Math.min(600, prev + deltaX)))
   }
 
   // 标签页操作逻辑
@@ -77,13 +115,19 @@ function App(): React.JSX.Element {
       <div className="app-container">
         <TitleBar />
         <div className="main-area">
-          <ActivityBar activeActivity={activeActivity} onActivityChange={setActiveActivity} />
-          <Explorer
-            activeActivity={activeActivity}
-            openedFolderPath={openedFolderPath}
-            onOpenFolder={handleOpenFolder}
-            onOpenFile={(title, path) => openTab({ id: path, title, type: 'file', path })}
-          />
+          <ActivityBar activeActivity={activeActivity} onActivityChange={handleActivityChange} />
+          <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
+            <Explorer
+              activeActivity={activeActivity}
+              openedFolderPath={openedFolderPath}
+              onOpenFolder={handleOpenFolder}
+              onOpenFile={(title, path) => openTab({ id: path, title, type: 'file', path })}
+              isOpen={isExplorerOpen}
+              width={explorerWidth}
+            />
+            {isExplorerOpen && <Sash side="left" onResize={handleExplorerResize} />}
+          </div>
+
           <Editor
             openedFolderPath={openedFolderPath}
             onOpenFolder={handleOpenFolder}
@@ -92,7 +136,19 @@ function App(): React.JSX.Element {
             onTabSwitch={switchTab}
             onTabClose={closeTab}
           />
-          <RightSidebar />
+
+          <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
+            {isRightSidebarOpen && <Sash side="right" onResize={handleRightPanelResize} />}
+            <RightPanel
+              activeActivity={activeRightActivity}
+              isOpen={isRightSidebarOpen}
+              width={rightPanelWidth}
+            />
+            <RightActivityBar
+              activeActivity={activeRightActivity}
+              onActivityChange={handleRightActivityChange}
+            />
+          </div>
         </div>
         <StatusBar />
       </div>

@@ -143,6 +143,7 @@ body, html {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 /* Left Activity Bar */
@@ -196,10 +197,15 @@ body, html {
 
 /* Left Explorer Panel */
 .explorer-panel {
-  width: 250px;
   background-color: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.explorer-panel.open {
   border-right: 1px solid var(--border-color);
 }
 
@@ -272,9 +278,11 @@ body, html {
 /* Editor Area */
 .editor-area {
   flex: 1;
+  min-width: 200px;
   background-color: var(--bg-base);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .editor-tabs {
@@ -431,8 +439,8 @@ body, html {
   font-size: 12px;
 }
 
-/* Right Sidebar */
-.right-sidebar {
+/* Right Sidebar Refactor */
+.right-activity-bar {
   width: 48px;
   background-color: var(--bg-activitybar);
   display: flex;
@@ -441,6 +449,45 @@ body, html {
   padding-top: 10px;
   box-sizing: border-box;
   border-left: 1px solid var(--border-color);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.right-panel {
+  background-color: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-color);
+}
+
+/* Sash (Resizer) */
+.sash {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 100;
+  cursor: col-resize;
+  transition: background-color 0.2s;
+}
+
+.sash:hover, .sash.active {
+  background-color: var(--accent-color);
+}
+
+.sash-left {
+  right: -2px;
+}
+
+.sash-right {
+  left: -2px;
+}
+
+.activity-bar, .right-activity-bar {
+  user-select: none;
 }
 
 /* Bottom Status Bar */
