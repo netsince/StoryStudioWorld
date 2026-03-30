@@ -16,6 +16,8 @@ export interface Tab {
   title: string
   type: 'welcome' | 'file'
   path?: string
+  isDirty?: boolean
+  isPinned?: boolean
 }
 
 function App(): React.JSX.Element {
@@ -79,6 +81,12 @@ function App(): React.JSX.Element {
 
   const closeTab = (e: React.MouseEvent, tabId: string): void => {
     e.stopPropagation()
+    const tab = tabs.find((t) => t.id === tabId)
+    // 如果是脏数据，模拟确认关闭 (此处简化)
+    if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
+      return
+    }
+
     const newTabs = tabs.filter((t) => t.id !== tabId)
     setTabs(newTabs)
 
@@ -91,14 +99,38 @@ function App(): React.JSX.Element {
   }
 
   const closeOtherTabs = (tabId: string): void => {
-    const newTabs = tabs.filter((t) => t.id === tabId)
+    const newTabs = tabs.filter((t) => t.id === tabId || t.isPinned)
     setTabs(newTabs)
     setActiveTabId(tabId)
   }
 
   const closeAllTabs = (): void => {
-    setTabs([])
-    setActiveTabId('')
+    const newTabs = tabs.filter((t) => t.isPinned)
+    setTabs(newTabs)
+    if (newTabs.length > 0) {
+      setActiveTabId(newTabs[0].id)
+    } else {
+      setActiveTabId('')
+    }
+  }
+
+  const togglePinTab = (tabId: string): void => {
+    setTabs(tabs.map(t => t.id === tabId ? { ...t, isPinned: !t.isPinned } : t))
+  }
+
+  const toggleDirtyTab = (tabId: string): void => {
+    setTabs(tabs.map(t => t.id === tabId ? { ...t, isDirty: !t.isDirty } : t))
+  }
+
+  const reorderTabs = (draggedId: string, targetId: string): void => {
+    const draggedIndex = tabs.findIndex(t => t.id === draggedId)
+    const targetIndex = tabs.findIndex(t => t.id === targetId)
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    const newTabs = [...tabs]
+    const [draggedTab] = newTabs.splice(draggedIndex, 1)
+    newTabs.splice(targetIndex, 0, draggedTab)
+    setTabs(newTabs)
   }
 
   const switchTab = (tabId: string): void => {
@@ -155,6 +187,9 @@ function App(): React.JSX.Element {
             onTabClose={closeTab}
             onCloseOthers={closeOtherTabs}
             onCloseAll={closeAllTabs}
+            onPinTab={togglePinTab}
+            onDirtyTab={toggleDirtyTab}
+            onReorderTabs={reorderTabs}
           />
 
           <div style={{ position: 'relative', display: 'flex', height: '100%' }}>

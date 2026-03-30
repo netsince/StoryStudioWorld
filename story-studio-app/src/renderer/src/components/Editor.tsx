@@ -10,6 +10,9 @@ interface EditorProps {
   onTabClose: (e: React.MouseEvent, tabId: string) => void
   onCloseOthers: (tabId: string) => void
   onCloseAll: () => void
+  onPinTab: (tabId: string) => void
+  onDirtyTab: (tabId: string) => void
+  onReorderTabs: (draggedId: string, targetId: string) => void
 }
 
 const Editor: React.FC<EditorProps> = ({
@@ -20,10 +23,14 @@ const Editor: React.FC<EditorProps> = ({
   onTabSwitch,
   onTabClose,
   onCloseOthers,
-  onCloseAll
+  onCloseAll,
+  onPinTab,
+  onDirtyTab,
+  onReorderTabs
 }) => {
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLDivElement>(null)
+  const [draggedTabId, setDraggedTabId] = useState<string | null>(null)
   const activeTab = tabs.find((t) => t.id === activeTabId)
 
   // 右键菜单状态
@@ -80,10 +87,34 @@ const Editor: React.FC<EditorProps> = ({
     setContextMenu({ x: e.clientX, y: e.clientY, tabId })
   }
 
+  // 拖拽排序逻辑
+  const handleDragStart = (e: React.DragEvent, tabId: string): void => {
+    setDraggedTabId(tabId)
+    e.dataTransfer.effectAllowed = 'move'
+    // 设置一个透明的预览图（可选）
+    const img = new Image()
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+    e.dataTransfer.setDragImage(img, 0, 0)
+  }
+
+  const handleDragOver = (e: React.DragEvent, targetId: string): void => {
+    e.preventDefault()
+    if (draggedTabId && draggedTabId !== targetId) {
+      onReorderTabs(draggedTabId, targetId)
+    }
+  }
+
+  const handleDragEnd = (): void => {
+    setDraggedTabId(null)
+  }
+
   const renderContent = (): React.ReactNode => {
     if (!activeTab) {
       return (
-        <div className="editor-content" style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div
+          className="editor-content"
+          style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+        >
           <div className="project-title">无打开的标签页</div>
           <div className="project-subtitle">从左侧资源管理器中打开一个文件以开始。</div>
         </div>
@@ -92,7 +123,10 @@ const Editor: React.FC<EditorProps> = ({
 
     if (activeTab.type === 'welcome') {
       return (
-        <div className="editor-content" style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div
+          className="editor-content"
+          style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+        >
           <svg className="brand-logo brand-logo-xl" viewBox="0 0 1920 1920">
             <rect fill="url(#brandGradient)" x="38.97" y="53.96" width="1842.06" height="1812.08" />
             <path
@@ -132,21 +166,34 @@ const Editor: React.FC<EditorProps> = ({
       <div className="editor-content">
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
           <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
-            {activeTab.title}
+            {activeTab.title} {activeTab.isPinned && <span style={{ fontSize: '12px' }}>📌</span>}
           </h2>
           <p className="project-subtitle" style={{ fontSize: '12px', marginBottom: '20px' }}>
             {activeTab.path}
           </p>
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', marginBottom: '20px' }} />
+          <hr
+            style={{
+              border: 'none',
+              borderTop: '1px solid var(--border-color)',
+              marginBottom: '20px'
+            }}
+          />
           <div style={{ color: 'var(--text-main)', lineHeight: '1.8', fontSize: '15px' }}>
-            <p>这是 <strong>{activeTab.title}</strong> 的内容编辑区域。</p>
-            <p>UI 体验已优化：</p>
+            <p>
+              这是 <strong>{activeTab.title}</strong> 的内容编辑区域。
+            </p>
+            <p>标签页高级功能已实现：</p>
             <ul style={{ paddingLeft: '20px' }}>
-              <li>侧边栏现在支持平滑的过渡动画。</li>
-              <li>侧边栏宽度可自由拖拽，且拖拽时保持极速响应。</li>
-              <li>全局加入了自定义滚动条，风格更加统一。</li>
-              <li>增加了标签页切换的淡入动效。</li>
+              <li><strong>拖拽排序</strong>：按住标签页即可左右拖动调整位置。</li>
+              <li><strong>固定标签</strong>：右键菜单选择“固定”，固定后不可被“关闭所有”清理。</li>
+              <li><strong>未保存状态</strong>：模拟修改后显示圆点，关闭时会提示。</li>
+              <li><strong>快捷操作</strong>：双击标签页可切换固定状态。</li>
             </ul>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <button className="action-button" style={{ width: 'auto' }} onClick={() => onDirtyTab(activeTab.id)}>
+                {activeTab.isDirty ? '取消模拟修改' : '模拟修改内容'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -160,15 +207,31 @@ const Editor: React.FC<EditorProps> = ({
           <div
             key={tab.id}
             ref={tab.id === activeTabId ? activeTabRef : null}
-            className={`editor-tab ${tab.id === activeTabId ? 'active' : ''}`}
+            className={`editor-tab ${tab.id === activeTabId ? 'active' : ''} ${tab.isPinned ? 'pinned' : ''} ${tab.isDirty ? 'dirty' : ''} ${draggedTabId === tab.id ? 'dragging' : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, tab.id)}
+            onDragOver={(e) => handleDragOver(e, tab.id)}
+            onDragEnd={handleDragEnd}
             onClick={() => onTabSwitch(tab.id)}
+            onDoubleClick={() => onPinTab(tab.id)}
             onMouseDown={(e) => handleMouseDown(e, tab.id)}
             onContextMenu={(e) => handleContextMenu(e, tab.id)}
           >
+            {tab.isPinned && (
+              <span className="tab-pin-icon">
+                <svg className="icon icon-sm" viewBox="0 0 24 24" style={{ transform: 'rotate(45deg)' }}>
+                  <path d="M21 10V8h-6.7c-1.1 0-2-.9-2-2V2h-2v4c0 1.1-.9 2-2 2H2v2h5.1c.9 0 1.7.6 1.9 1.5l1 5c.2.9 1 1.5 1.9 1.5h.2c1.1 0 2-.9 2-2v-3.1c0-1.1.9-2 2-2H21z" fill="currentColor"></path>
+                </svg>
+              </span>
+            )}
             <span className="tab-title">{tab.title}</span>
-            <span className="tab-close" onClick={(e) => onTabClose(e, tab.id)}>
-              ✕
-            </span>
+            {tab.isDirty ? (
+              <span className="tab-dirty-dot" />
+            ) : (
+              <span className="tab-close" onClick={(e) => onTabClose(e, tab.id)}>
+                ✕
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -184,8 +247,14 @@ const Editor: React.FC<EditorProps> = ({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="menu-item" onClick={() => onTabClose({} as React.MouseEvent, contextMenu.tabId)}>
+          <div
+            className="menu-item"
+            onClick={() => onTabClose({} as React.MouseEvent, contextMenu.tabId)}
+          >
             关闭
+          </div>
+          <div className="menu-item" onClick={() => onPinTab(contextMenu.tabId)}>
+            {tabs.find((t) => t.id === contextMenu.tabId)?.isPinned ? '取消固定' : '固定'}
           </div>
           <div className="menu-item" onClick={() => onCloseOthers(contextMenu.tabId)}>
             关闭其他

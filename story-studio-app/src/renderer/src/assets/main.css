@@ -419,6 +419,32 @@ body, html {
   background-color: var(--accent-color);
 }
 
+.editor-tab.dragging {
+  opacity: 0.5;
+  background-color: var(--hover-bg);
+}
+
+.tab-pin-icon {
+  margin-right: 4px;
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+}
+
+.tab-dirty-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+  margin-left: auto;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.editor-tab:hover .tab-dirty-dot {
+  display: none;
+}
+
 .tab-close {
   font-size: 10px;
   margin-left: auto;
@@ -426,6 +452,13 @@ body, html {
   border-radius: 4px;
   opacity: 0;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-tab.dirty:not(:hover) .tab-close {
+  display: none; /* 如果有脏点且没悬停，完全隐藏关闭按钮 */
 }
 
 .editor-tab:hover .tab-close {
@@ -435,6 +468,15 @@ body, html {
 .tab-close:hover {
   background-color: var(--hover-bg);
   opacity: 1 !important;
+}
+
+.editor-tab.pinned {
+  min-width: auto;
+  padding: 0 10px;
+}
+
+.editor-tab.pinned .tab-title {
+  max-width: 80px;
 }
 
 .editor-content {
