@@ -284,15 +284,43 @@ body, html {
 }
 
 .editor-tab {
-  background-color: var(--bg-base);
+  background-color: var(--bg-sidebar);
   padding: 0 15px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-right: 1px solid var(--border-color);
+  min-width: 100px;
+  position: relative;
+  transition: all 0.1s;
+}
+
+.editor-tab:hover {
+  background-color: var(--bg-base);
+  color: var(--text-active);
+}
+
+.editor-tab.active {
+  background-color: var(--bg-base);
   color: var(--text-active);
   border-top: 1px solid var(--accent-color);
-  cursor: pointer;
+}
+
+.tab-close {
+  font-size: 10px;
+  margin-left: auto;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: all 0.15s;
+}
+
+.tab-close:hover {
+  background-color: var(--hover-bg);
+  opacity: 1;
 }
 
 .editor-content {
