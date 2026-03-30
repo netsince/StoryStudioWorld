@@ -1,6 +1,10 @@
 import React from 'react'
 
 const TitleBar: React.FC = () => {
+  const handleMinimize = (): void => window.api.minimize()
+  const handleMaximize = (): void => window.api.maximize()
+  const handleClose = (): void => window.api.close()
+
   return (
     <div className="title-bar">
       <div className="title-bar-left">
@@ -24,9 +28,11 @@ const TitleBar: React.FC = () => {
         </div>
       </div>
       <div className="title-bar-controls">
-        <span>—</span>
-        <span>□</span>
-        <span className="close">✕</span>
+        <span onClick={handleMinimize}>—</span>
+        <span onClick={handleMaximize}>□</span>
+        <span className="close" onClick={handleClose}>
+          ✕
+        </span>
       </div>
     </div>
   )

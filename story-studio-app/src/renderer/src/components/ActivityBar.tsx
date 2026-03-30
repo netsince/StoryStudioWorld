@@ -1,9 +1,19 @@
 import React from 'react'
+import { ActivityType } from '../App'
 
-const ActivityBar: React.FC = () => {
+interface ActivityBarProps {
+  activeActivity: ActivityType
+  onActivityChange: (activity: ActivityType) => void
+}
+
+const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityChange }) => {
   return (
     <div className="activity-bar">
-      <div className="activity-item active" title="章">
+      <div
+        className={`activity-item ${activeActivity === 'chapter' ? 'active' : ''}`}
+        title="章"
+        onClick={() => onActivityChange('chapter')}
+      >
         <div className="activity-icon">
           <svg className="icon icon-lg" viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -15,7 +25,11 @@ const ActivityBar: React.FC = () => {
         </div>
         <span>章</span>
       </div>
-      <div className="activity-item" title="角色">
+      <div
+        className={`activity-item ${activeActivity === 'character' ? 'active' : ''}`}
+        title="角色"
+        onClick={() => onActivityChange('character')}
+      >
         <div className="activity-icon">
           <svg className="icon icon-lg" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -24,7 +38,11 @@ const ActivityBar: React.FC = () => {
         </div>
         <span>角色</span>
       </div>
-      <div className="activity-item" title="设定">
+      <div
+        className={`activity-item ${activeActivity === 'setting' ? 'active' : ''}`}
+        title="设定"
+        onClick={() => onActivityChange('setting')}
+      >
         <div className="activity-icon">
           <svg className="icon icon-lg" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
@@ -33,7 +51,11 @@ const ActivityBar: React.FC = () => {
         </div>
         <span>设定</span>
       </div>
-      <div className="activity-item" title="插件">
+      <div
+        className={`activity-item ${activeActivity === 'plugin' ? 'active' : ''}`}
+        title="插件"
+        onClick={() => onActivityChange('plugin')}
+      >
         <div className="activity-icon">
           <svg className="icon icon-lg" viewBox="0 0 24 24">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>

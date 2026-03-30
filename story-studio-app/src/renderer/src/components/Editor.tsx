@@ -1,6 +1,11 @@
 import React from 'react'
 
-const Editor: React.FC = () => {
+interface EditorProps {
+  openedFolderPath: string | null
+  onOpenFolder: () => void
+}
+
+const Editor: React.FC<EditorProps> = ({ openedFolderPath, onOpenFolder }) => {
   return (
     <div className="editor-area">
       <div className="editor-tabs">
@@ -18,7 +23,9 @@ const Editor: React.FC = () => {
           />
         </svg>
         <div className="project-title">Story Studio World</div>
-        <div className="project-subtitle">选择项目以开始您的创作之旅。</div>
+        <div className="project-subtitle">
+          {openedFolderPath ? `当前项目：${openedFolderPath}` : '选择项目以开始您的创作之旅。'}
+        </div>
 
         <div className="start-group">
           <div className="start-item">
@@ -30,7 +37,7 @@ const Editor: React.FC = () => {
             </span>
             <span>新建项目</span>
           </div>
-          <div className="start-item">
+          <div className="start-item" onClick={onOpenFolder}>
             <span className="start-item-icon">
               <svg className="icon" viewBox="0 0 24 24">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
