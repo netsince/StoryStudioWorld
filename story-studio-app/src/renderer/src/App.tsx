@@ -1,33 +1,41 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import React from 'react'
+import TitleBar from './components/TitleBar'
+import ActivityBar from './components/ActivityBar'
+import Explorer from './components/Explorer'
+import Editor from './components/Editor'
+import RightSidebar from './components/RightSidebar'
+import StatusBar from './components/StatusBar'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-
   return (
     <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
+      {/* 全局 SVG 资源定义 */}
+      <svg style={{ display: 'none' }}>
+        <defs>
+          <linearGradient
+            id="brandGradient"
+            x1="-344.92"
+            y1="2136.1"
+            x2="1972.3"
+            y2="47.63"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor="#30cfd0" />
+            <stop offset="1" stopColor="#330867" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div className="app-container">
+        <TitleBar />
+        <div className="main-area">
+          <ActivityBar />
+          <Explorer />
+          <Editor />
+          <RightSidebar />
         </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
+        <StatusBar />
       </div>
-      <Versions></Versions>
     </>
   )
 }
