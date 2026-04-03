@@ -215,7 +215,6 @@ const Editor: React.FC<EditorProps> = ({
             onDragOver={(e) => handleDragOver(e, tab.id)}
             onDragEnd={handleDragEnd}
             onClick={() => onTabSwitch(tab.id)}
-            onDoubleClick={() => onPinTab(tab.id)}
             onMouseDown={(e) => handleMouseDown(e, tab.id)}
             onContextMenu={(e) => handleContextMenu(e, tab.id)}
           >
@@ -227,13 +226,12 @@ const Editor: React.FC<EditorProps> = ({
               </span>
             )}
             <span className="tab-title">{tab.title}</span>
-            {tab.isDirty ? (
-              <span className="tab-dirty-dot" />
-            ) : (
+            <div className="tab-actions">
+              {tab.isDirty && <span className="tab-dirty-dot" />}
               <span className="tab-close" onClick={(e) => onTabClose(e, tab.id)}>
                 ✕
               </span>
-            )}
+            </div>
           </div>
         ))}
       </div>
