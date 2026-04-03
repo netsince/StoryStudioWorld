@@ -319,7 +319,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .explorer-text-group {
@@ -338,6 +338,8 @@ body, html {
   text-align: center;
   transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .action-button:hover {
@@ -775,4 +777,65 @@ body, html {
 
 .status-item span {
   animation: fadeIn 0.3s ease;
+}
+
+/* Responsive Layout */
+@media (max-width: 1200px) {
+  .app-container.layout-compact .explorer-panel {
+    max-width: 280px;
+  }
+
+  .app-container.layout-compact .right-panel {
+    max-width: 280px;
+  }
+
+  .app-container.layout-compact .editor-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-container.layout-narrow .activity-bar,
+  .app-container.layout-narrow .right-activity-bar {
+    width: 42px;
+  }
+
+  .app-container.layout-narrow .explorer-panel,
+  .app-container.layout-narrow .right-panel {
+    flex-shrink: 1;
+    width: min(220px, 32vw) !important;
+  }
+
+  .app-container.layout-narrow .editor-tabs {
+    height: 32px;
+  }
+
+  .app-container.layout-narrow .editor-content {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-container.layout-tiny .right-activity-bar,
+  .app-container.layout-tiny .right-panel,
+  .app-container.layout-tiny .sash-right {
+    display: none !important;
+  }
+
+  .app-container.layout-tiny .activity-bar {
+    width: 44px;
+  }
+
+  .app-container.layout-tiny .explorer-panel {
+    flex-shrink: 1;
+    width: min(200px, 60vw) !important;
+  }
+
+  .app-container.layout-tiny .title-bar {
+    padding: 0 6px;
+  }
+
+  .app-container.layout-tiny .editor-tab {
+    min-width: 96px;
+  }
 }

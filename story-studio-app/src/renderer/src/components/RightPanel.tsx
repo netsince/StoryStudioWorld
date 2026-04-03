@@ -10,7 +10,7 @@ interface RightPanelProps {
 const RightPanel: React.FC<RightPanelProps> = ({ activeActivity, isOpen, width }) => {
   return (
     <div className={`right-panel ${isOpen ? 'open' : ''}`} style={{ width: `${width}px` }}>
-      <div style={{ minWidth: '200px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ minWidth: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="explorer-header" style={{ padding: '10px 15px' }}>
           {activeActivity === 'proofread' && '文本校对'}
           {activeActivity === 'memo' && '便签/备忘'}

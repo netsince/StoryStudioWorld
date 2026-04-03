@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import TitleBar from './components/TitleBar'
 import ActivityBar from './components/ActivityBar'
 import Explorer from './components/Explorer'
@@ -21,6 +21,9 @@ export interface Tab {
 }
 
 function App(): React.JSX.Element {
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  )
   const [activeActivity, setActiveActivity] = useState<ActivityType>('chapter')
   const [activeRightActivity, setActiveRightActivity] = useState<RightActivityType>('proofread')
   const [isExplorerOpen, setIsExplorerOpen] = useState(true)
@@ -35,6 +38,24 @@ function App(): React.JSX.Element {
   // 标签页状态
   const [tabs, setTabs] = useState<Tab[]>([{ id: 'welcome', title: '欢迎使用', type: 'welcome' }])
   const [activeTabId, setActiveTabId] = useState<string>('welcome')
+
+  useEffect(() => {
+    const handleResize = (): void => {
+      setViewportWidth(window.innerWidth)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  const layoutSize = useMemo(() => {
+    if (viewportWidth <= 720) return 'tiny'
+    if (viewportWidth <= 900) return 'narrow'
+    if (viewportWidth <= 1200) return 'compact'
+    return 'default'
+  }, [viewportWidth])
 
   const handleOpenFolder = async (): Promise<void> => {
     const path = await window.api.openFolder()
@@ -156,7 +177,9 @@ function App(): React.JSX.Element {
         </defs>
       </svg>
 
-      <div className={`app-container ${isDragging ? 'dragging' : ''}`}>
+      <div
+        className={`app-container ${isDragging ? 'dragging' : ''} layout-${layoutSize}`}
+      >
         <TitleBar />
         <div className="main-area">
           <ActivityBar

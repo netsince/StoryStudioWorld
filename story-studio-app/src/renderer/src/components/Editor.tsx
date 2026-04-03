@@ -138,7 +138,7 @@ const Editor: React.FC<EditorProps> = ({
           </svg>
           <div className="project-title">Story Studio World</div>
           <div className="project-subtitle" style={{ marginBottom: '40px' }}>
-            {openedFolderPath ? `当前项目：${openedFolderPath}` : '选择项目以开始您的创作之旅。'}
+            {openedFolderPath ? `当前项目：${openedFolderPath}` : '选择项目以开始或继续。'}
           </div>
 
           <div className="start-group" style={{ maxWidth: '300px' }}>

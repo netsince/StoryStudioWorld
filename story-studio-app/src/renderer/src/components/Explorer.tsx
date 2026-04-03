@@ -35,7 +35,7 @@ const Explorer: React.FC<ExplorerProps> = ({
 
   return (
     <div className={`explorer-panel ${isOpen ? 'open' : ''}`} style={{ width: `${width}px` }}>
-      <div style={{ minWidth: '200px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ minWidth: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="explorer-header">{getActivityTitle()}</div>
 
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
