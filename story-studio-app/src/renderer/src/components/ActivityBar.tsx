@@ -66,7 +66,11 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
         </div>
         <span>插件</span>
       </div>
-      <div className="activity-item" title="更多" style={{ marginTop: 'auto', marginBottom: '10px' }}>
+      <div
+        className="activity-item"
+        title="更多"
+        style={{ marginTop: 'auto', marginBottom: '10px' }}
+      >
         <span className="activity-icon">⋯</span>
       </div>
     </div>

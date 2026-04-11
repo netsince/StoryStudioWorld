@@ -7,7 +7,11 @@ interface RightActivityBarProps {
   isOpen: boolean
 }
 
-const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onActivityChange, isOpen }) => {
+const RightActivityBar: React.FC<RightActivityBarProps> = ({
+  activeActivity,
+  onActivityChange,
+  isOpen
+}) => {
   return (
     <div className="right-activity-bar">
       <div

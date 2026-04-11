@@ -42,7 +42,7 @@ const Sash: React.FC<SashProps> = ({ onResize, side, setIsDraggingGlobal }) => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging, onResize, side])
+  }, [isDragging, onResize, setIsDraggingGlobal, side])
 
   return (
     <div

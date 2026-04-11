@@ -2,6 +2,15 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import {
+  createProject,
+  createStoryNode,
+  loadProject,
+  moveChapterToVolume,
+  renameStoryNode,
+  reorderVolumes,
+  toggleVolumeCollapsed
+} from './project'
 
 function createWindow(): void {
   // Create the browser window.
@@ -46,16 +55,97 @@ function createWindow(): void {
     mainWindow.close()
   })
 
-  // IPC 打开文件夹对话框
-  ipcMain.handle('open-folder-dialog', async () => {
+  ipcMain.handle('open-project-dialog', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory']
+      properties: ['openFile'],
+      filters: [{ name: 'Story Studio World Project', extensions: ['sswprojectsetting'] }]
     })
     if (!canceled) {
       return filePaths[0]
     }
     return null
   })
+
+  ipcMain.handle('pick-project-path-dialog', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (!canceled) {
+      return filePaths[0]
+    }
+    return null
+  })
+
+  ipcMain.handle('load-project', async (_, projectSettingsPath: string) => {
+    return loadProject(projectSettingsPath)
+  })
+
+  ipcMain.handle(
+    'create-project',
+    async (_, input: { projectName: string; description: string; projectPath: string }) => {
+      return createProject(input)
+    }
+  )
+
+  ipcMain.handle(
+    'create-story-node',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        nodeType: 'volume' | 'chapter'
+        parentVolumeId?: string
+      }
+    ) => {
+      return createStoryNode(input)
+    }
+  )
+
+  ipcMain.handle(
+    'rename-story-node',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        nodeType: 'volume' | 'chapter'
+        nodeId: string
+        nextName: string
+      }
+    ) => {
+      return renameStoryNode(input)
+    }
+  )
+
+  ipcMain.handle(
+    'toggle-volume-collapsed',
+    async (_, input: { projectSettingsPath: string; volumeId: string }) => {
+      return toggleVolumeCollapsed(input)
+    }
+  )
+
+  ipcMain.handle(
+    'reorder-volumes',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        draggedVolumeId: string
+        targetVolumeId: string
+      }
+    ) => {
+      return reorderVolumes(input)
+    }
+  )
+
+  ipcMain.handle(
+    'move-chapter-to-volume',
+    async (
+      _,
+      input: { projectSettingsPath: string; chapterId: string; targetVolumeId: string }
+    ) => {
+      return moveChapterToVolume(input)
+    }
+  )
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

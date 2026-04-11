@@ -1,12 +1,20 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { Tab } from '../App'
+import React, { useEffect, useRef, useState } from 'react'
+import { ProjectData, Tab } from '../App'
+import ContextMenu from './ContextMenu'
 
-const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 const ssworldNobgSvg = new URL('../assets/ssw-nobg.svg', import.meta.url).href
 
 interface EditorProps {
-  openedFolderPath: string | null
+  currentProject: ProjectData | null
   onOpenFolder: () => void
+  onOpenWelcome: () => void
+  onOpenCreateProject: () => void
+  onCreateProject: (input: {
+    projectName: string
+    description: string
+    projectPath: string
+  }) => Promise<void>
+  onPickProjectPath: () => Promise<string | null>
   tabs: Tab[]
   activeTabId: string
   onTabSwitch: (tabId: string) => void
@@ -19,8 +27,12 @@ interface EditorProps {
 }
 
 const Editor: React.FC<EditorProps> = ({
-  openedFolderPath,
+  currentProject,
   onOpenFolder,
+  onOpenWelcome,
+  onOpenCreateProject,
+  onCreateProject,
+  onPickProjectPath,
   tabs,
   activeTabId,
   onTabSwitch,
@@ -34,21 +46,25 @@ const Editor: React.FC<EditorProps> = ({
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLDivElement>(null)
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null)
-  const activeTab = tabs.find((t) => t.id === activeTabId)
+  const [isSubmittingProject, setIsSubmittingProject] = useState(false)
+  const [createProjectForm, setCreateProjectForm] = useState({
+    projectName: '',
+    description: '',
+    projectPath: ''
+  })
 
-  // 右键菜单状态
+  const activeTab = tabs.find((tab) => tab.id === activeTabId)
+
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
     tabId: string
   } | null>(null)
 
-  // 确保激活的标签页在视口内
   useEffect(() => {
     if (activeTabRef.current && tabsRef.current) {
       const container = tabsRef.current
       const tab = activeTabRef.current
-
       const tabLeft = tab.offsetLeft
       const tabRight = tabLeft + tab.offsetWidth
       const containerLeft = container.scrollLeft
@@ -62,204 +78,288 @@ const Editor: React.FC<EditorProps> = ({
     }
   }, [activeTabId])
 
-  // 全局点击关闭菜单
   useEffect(() => {
     const handleClick = (): void => setContextMenu(null)
     window.addEventListener('click', handleClick)
     return () => window.removeEventListener('click', handleClick)
   }, [])
 
-  // 处理横向滚动 (鼠标滚轮)
-  const handleWheel = (e: React.WheelEvent): void => {
+  const handleWheel = (event: React.WheelEvent): void => {
     if (tabsRef.current) {
-      tabsRef.current.scrollLeft += e.deltaY
+      tabsRef.current.scrollLeft += event.deltaY
     }
   }
 
-  // 处理中键点击关闭
-  const handleMouseDown = (e: React.MouseEvent, tabId: string): void => {
-    if (e.button === 1) {
-      // 鼠标中键
-      onTabClose(e, tabId)
+  const handleMouseDown = (event: React.MouseEvent, tabId: string): void => {
+    if (event.button === 1) {
+      onTabClose(event, tabId)
     }
   }
 
-  // 处理右键菜单
-  const handleContextMenu = (e: React.MouseEvent, tabId: string): void => {
-    e.preventDefault()
-    setContextMenu({ x: e.clientX, y: e.clientY, tabId })
+  const handleContextMenu = (event: React.MouseEvent, tabId: string): void => {
+    event.preventDefault()
+    setContextMenu({ x: event.clientX, y: event.clientY, tabId })
   }
 
-  // 拖拽排序逻辑
-  const handleDragStart = (e: React.DragEvent, tabId: string): void => {
+  const handleDragStart = (event: React.DragEvent, tabId: string): void => {
     setDraggedTabId(tabId)
-    e.dataTransfer.effectAllowed = 'move'
-    // 设置一个透明的预览图（可选）
+    event.dataTransfer.effectAllowed = 'move'
     const img = new Image()
     img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-    e.dataTransfer.setDragImage(img, 0, 0)
+    event.dataTransfer.setDragImage(img, 0, 0)
   }
 
-  const handleDragOver = (e: React.DragEvent, targetId: string): void => {
-    e.preventDefault()
+  const handleDragOver = (event: React.DragEvent, targetId: string): void => {
+    event.preventDefault()
     if (draggedTabId && draggedTabId !== targetId) {
       onReorderTabs(draggedTabId, targetId)
     }
   }
 
-  const handleDragEnd = (): void => {
-    setDraggedTabId(null)
+  const handleCreateProjectSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault()
+    if (isSubmittingProject) return
+
+    setIsSubmittingProject(true)
+    try {
+      await onCreateProject(createProjectForm)
+      setCreateProjectForm({ projectName: '', description: '', projectPath: '' })
+    } finally {
+      setIsSubmittingProject(false)
+    }
   }
 
-  const renderContent = (): React.ReactNode => {
-    if (!activeTab) {
-      return (
-        <div
-          key="no-tab"
-          className="editor-content"
-          style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
-        >
-          <div className="project-title">无打开的标签页</div>
-          <div className="project-subtitle">从左侧资源管理器中打开一个文件以开始。</div>
+  const renderWelcome = (): React.ReactNode => (
+    <div
+      key="welcome"
+      className="editor-content"
+      style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+    >
+      <img className="brand-logo brand-logo-xl" src={ssworldNobgSvg} alt="Story Studio World" />
+      <div className="project-title">Story Studio World</div>
+      <div className="project-subtitle" style={{ marginBottom: '40px' }}>
+        {currentProject ? `当前项目：${currentProject.projectPath}` : '选择项目以开始或继续。'}
+      </div>
+
+      <div className="start-group" style={{ maxWidth: '320px' }}>
+        <div className="start-item" onClick={onOpenCreateProject}>
+          <span className="start-item-icon">
+            <svg className="icon" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </span>
+          <span>新建项目</span>
         </div>
-      )
-    }
-
-    if (activeTab.type === 'welcome') {
-      return (
-        <div
-          key="welcome"
-          className="editor-content"
-          style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
-        >
-          <img className="brand-logo brand-logo-xl" src={ssworldNobgSvg} alt="Story Studio World" />
-          <div className="project-title">Story Studio World</div>
-          <div className="project-subtitle" style={{ marginBottom: '40px' }}>
-            {openedFolderPath ? `当前项目：${openedFolderPath}` : '选择项目以开始或继续。'}
-          </div>
-
-          <div className="start-group" style={{ maxWidth: '300px' }}>
-            <div className="start-item">
-              <span className="start-item-icon">
-                <svg className="icon" viewBox="0 0 24 24">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </span>
-              <span>新建项目</span>
-            </div>
-            <div className="start-item" onClick={onOpenFolder}>
-              <span className="start-item-icon">
-                <svg className="icon" viewBox="0 0 24 24">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </span>
-              <span>打开文件夹...</span>
-            </div>
-          </div>
+        <div className="start-item" onClick={onOpenFolder}>
+          <span className="start-item-icon">
+            <svg className="icon" viewBox="0 0 24 24">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </span>
+          <span>打开项目...</span>
         </div>
-      )
-    }
+      </div>
+    </div>
+  )
 
-    return (
-      <div key={activeTab.id} className="editor-content">
-        <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
-          <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
-            {activeTab.title} {activeTab.isPinned && <span style={{ fontSize: '12px' }}>📌</span>}
-          </h2>
-          <p className="project-subtitle" style={{ fontSize: '12px', marginBottom: '20px' }}>
-            {activeTab.path}
-          </p>
-          <hr
-            style={{
-              border: 'none',
-              borderTop: '1px solid var(--border-color)',
-              marginBottom: '20px'
-            }}
-          />
-          <div style={{ color: 'var(--text-main)', lineHeight: '1.8', fontSize: '15px' }}>
-            <p>
-              这是 <strong>{activeTab.title}</strong> 的内容编辑区域。
-            </p>
-            <p>标签页高级功能已实现：</p>
-            <ul style={{ paddingLeft: '20px' }}>
-              <li><strong>拖拽排序</strong>：按住标签页即可左右拖动调整位置。</li>
-              <li><strong>固定标签</strong>：右键菜单选择“固定”，固定后不可被“关闭所有”清理。</li>
-              <li><strong>未保存状态</strong>：模拟修改后显示圆点，关闭时会提示。</li>
-              <li><strong>快捷操作</strong>：双击标签页可切换固定状态。</li>
-            </ul>
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button className="action-button" style={{ width: 'auto' }} onClick={() => onDirtyTab(activeTab.id)}>
-                {activeTab.isDirty ? '取消模拟修改' : '模拟修改内容'}
+  const renderEmptyState = (): React.ReactNode => (
+    <div
+      key="empty"
+      className="editor-content"
+      style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+    >
+      <img
+        className="brand-logo brand-logo-xl"
+        src={ssworldNobgSvg}
+        alt="Story Studio World"
+        style={{ cursor: 'pointer' }}
+        onClick={onOpenWelcome}
+      />
+    </div>
+  )
+
+  const renderCreateProject = (): React.ReactNode => (
+    <div key="create-project" className="editor-content create-project-page">
+      <div className="create-project-shell">
+        <div className="create-project-title">新建项目</div>
+        <div className="create-project-subtitle">
+          填写项目名、简介和项目路径。创建后会自动生成{' '}
+          <code>storystudioworld.sswprojectsetting</code> 项目文件。
+        </div>
+
+        <form
+          className="create-project-form"
+          onSubmit={(event) => void handleCreateProjectSubmit(event)}
+        >
+          <label className="form-field">
+            <span>项目名</span>
+            <input
+              value={createProjectForm.projectName}
+              onChange={(event) =>
+                setCreateProjectForm((prev) => ({ ...prev, projectName: event.target.value }))
+              }
+              placeholder="例如：长夜群星"
+            />
+          </label>
+
+          <label className="form-field">
+            <span>项目简介</span>
+            <textarea
+              value={createProjectForm.description}
+              onChange={(event) =>
+                setCreateProjectForm((prev) => ({ ...prev, description: event.target.value }))
+              }
+              placeholder="简单描述这个故事项目。"
+              rows={5}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>路径</span>
+            <div className="path-picker-row">
+              <input
+                value={createProjectForm.projectPath}
+                onChange={(event) =>
+                  setCreateProjectForm((prev) => ({ ...prev, projectPath: event.target.value }))
+                }
+                placeholder="选择一个空文件夹路径"
+              />
+              <button
+                type="button"
+                className="action-button secondary inline-button"
+                onClick={async () => {
+                  const path = await onPickProjectPath()
+                  if (path) {
+                    setCreateProjectForm((prev) => ({ ...prev, projectPath: path }))
+                  }
+                }}
+              >
+                选择
               </button>
             </div>
+          </label>
+
+          <div className="create-project-actions">
+            <button type="submit" className="action-button" disabled={isSubmittingProject}>
+              {isSubmittingProject ? '创建中...' : '创建项目'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+
+  const renderFile = (): React.ReactNode => (
+    <div key={activeTab?.id} className="editor-content">
+      <div style={{ maxWidth: '840px', width: '100%', margin: '0 auto' }}>
+        <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
+          {activeTab?.title} {activeTab?.isPinned && <span style={{ fontSize: '12px' }}>📌</span>}
+        </h2>
+        <p className="project-subtitle" style={{ fontSize: '12px', marginBottom: '20px' }}>
+          {activeTab?.path}
+        </p>
+        <hr
+          style={{
+            border: 'none',
+            borderTop: '1px solid var(--border-color)',
+            marginBottom: '20px'
+          }}
+        />
+        <div style={{ color: 'var(--text-main)', lineHeight: '1.8', fontSize: '15px' }}>
+          <p>
+            当前已经打开 <strong>{activeTab?.title}</strong>。
+          </p>
+          <p>卷章树、项目创建和文件结构已经接入，正文编辑逻辑后续再继续扩展。</p>
+          <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+            <button
+              className="action-button"
+              style={{ width: 'auto' }}
+              onClick={() => activeTab && onDirtyTab(activeTab.id)}
+            >
+              {activeTab?.isDirty ? '取消模拟修改' : '模拟修改内容'}
+            </button>
           </div>
         </div>
       </div>
-    )
+    </div>
+  )
+
+  const renderContent = (): React.ReactNode => {
+    if (!activeTab) {
+      return renderEmptyState()
+    }
+
+    if (activeTab.type === 'welcome') {
+      return renderWelcome()
+    }
+
+    if (activeTab.type === 'create-project') {
+      return renderCreateProject()
+    }
+
+    return renderFile()
   }
 
   return (
     <div className="editor-area">
-      <div className="editor-tabs" ref={tabsRef} onWheel={handleWheel}>
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            ref={tab.id === activeTabId ? activeTabRef : null}
-            className={`editor-tab ${tab.id === activeTabId ? 'active' : ''} ${tab.isPinned ? 'pinned' : ''} ${tab.isDirty ? 'dirty' : ''} ${draggedTabId === tab.id ? 'dragging' : ''}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, tab.id)}
-            onDragOver={(e) => handleDragOver(e, tab.id)}
-            onDragEnd={handleDragEnd}
-            onClick={() => onTabSwitch(tab.id)}
-            onMouseDown={(e) => handleMouseDown(e, tab.id)}
-            onContextMenu={(e) => handleContextMenu(e, tab.id)}
-          >
-            {tab.isPinned && (
-              <span className="tab-pin-icon">
-                <svg className="icon icon-sm" viewBox="0 0 24 24" style={{ transform: 'rotate(45deg)' }}>
-                  <path d="M21 10V8h-6.7c-1.1 0-2-.9-2-2V2h-2v4c0 1.1-.9 2-2 2H2v2h5.1c.9 0 1.7.6 1.9 1.5l1 5c.2.9 1 1.5 1.9 1.5h.2c1.1 0 2-.9 2-2v-3.1c0-1.1.9-2 2-2H21z" fill="currentColor"></path>
-                </svg>
-              </span>
-            )}
-            <span className="tab-title">{tab.title}</span>
-            <div className="tab-actions">
-              {tab.isDirty && <span className="tab-dirty-dot" />}
-              <span className="tab-close" onClick={(e) => onTabClose(e, tab.id)}>
-                ✕
-              </span>
+      {tabs.length > 0 && (
+        <div className="editor-tabs" ref={tabsRef} onWheel={handleWheel}>
+          {tabs.map((tab) => (
+            <div
+              key={tab.id}
+              ref={tab.id === activeTabId ? activeTabRef : null}
+              className={`editor-tab ${tab.id === activeTabId ? 'active' : ''} ${tab.isPinned ? 'pinned' : ''} ${tab.isDirty ? 'dirty' : ''} ${draggedTabId === tab.id ? 'dragging' : ''}`}
+              draggable
+              onDragStart={(event) => handleDragStart(event, tab.id)}
+              onDragOver={(event) => handleDragOver(event, tab.id)}
+              onDragEnd={() => setDraggedTabId(null)}
+              onClick={() => onTabSwitch(tab.id)}
+              onMouseDown={(event) => handleMouseDown(event, tab.id)}
+              onContextMenu={(event) => handleContextMenu(event, tab.id)}
+            >
+              <span className="tab-title">{tab.title}</span>
+              <div className="tab-actions">
+                {tab.isDirty && <span className="tab-dirty-dot" />}
+                <span className="tab-close" onClick={(event) => onTabClose(event, tab.id)}>
+                  ✕
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {contextMenu && (
-        <div
-          className="context-menu"
-          style={{
-            position: 'fixed',
-            top: contextMenu.y,
-            left: contextMenu.x,
-            zIndex: 1000
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="menu-item"
-            onClick={() => onTabClose({} as React.MouseEvent, contextMenu.tabId)}
-          >
-            关闭
-          </div>
-          <div className="menu-item" onClick={() => onPinTab(contextMenu.tabId)}>
-            {tabs.find((t) => t.id === contextMenu.tabId)?.isPinned ? '取消固定' : '固定'}
-          </div>
-          <div className="menu-item" onClick={() => onCloseOthers(contextMenu.tabId)}>
-            关闭其他
-          </div>
-          <div className="menu-item" onClick={() => onCloseAll()}>
-            关闭所有
-          </div>
-        </div>
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              key: 'close',
+              label: '关闭',
+              onSelect: () => onTabClose({} as React.MouseEvent, contextMenu.tabId)
+            },
+            {
+              key: 'pin',
+              label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned
+                ? '取消固定'
+                : '固定',
+              onSelect: () => onPinTab(contextMenu.tabId)
+            },
+            {
+              key: 'close-others',
+              label: '关闭其他',
+              onSelect: () => onCloseOthers(contextMenu.tabId)
+            },
+            {
+              key: 'close-all',
+              label: '关闭所有',
+              onSelect: () => onCloseAll()
+            }
+          ]}
+        />
       )}
 
       {renderContent()}

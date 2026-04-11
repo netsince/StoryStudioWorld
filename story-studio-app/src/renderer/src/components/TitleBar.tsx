@@ -2,7 +2,11 @@ import React from 'react'
 
 const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 
-const TitleBar: React.FC = () => {
+interface TitleBarProps {
+  onOpenWelcome: () => void
+}
+
+const TitleBar: React.FC<TitleBarProps> = ({ onOpenWelcome }) => {
   const handleMinimize = (): void => window.api.minimize()
   const handleMaximize = (): void => window.api.maximize()
   const handleClose = (): void => window.api.close()
@@ -10,7 +14,7 @@ const TitleBar: React.FC = () => {
   return (
     <div className="title-bar">
       <div className="title-bar-left">
-        <div className="app-logo">
+        <div className="app-logo" onClick={onOpenWelcome} style={{ cursor: 'pointer' }}>
           <img className="brand-logo" src={ssworldSvg} alt="Story Studio World" />
           Story Studio World
         </div>
