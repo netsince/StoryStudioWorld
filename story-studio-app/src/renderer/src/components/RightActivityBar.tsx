@@ -36,7 +36,7 @@ const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onA
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'archive' ? 'active' : ''}`}
-        title="分支与存档"
+        title="存档"
         onClick={() => onActivityChange('archive')}
       >
         <div className="activity-icon">
@@ -46,7 +46,7 @@ const RightActivityBar: React.FC<RightActivityBarProps> = ({ activeActivity, onA
             <path d="M3 11V9h18v2"></path>
           </svg>
         </div>
-        <span>分支存档</span>
+        <span>存档</span>
       </div>
 
       <div

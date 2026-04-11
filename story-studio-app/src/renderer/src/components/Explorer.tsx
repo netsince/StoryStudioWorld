@@ -21,7 +21,7 @@ const Explorer: React.FC<ExplorerProps> = ({
   const getActivityTitle = (): string => {
     switch (activeActivity) {
       case 'chapter':
-        return '资源管理器'
+        return '编写'
       case 'character':
         return '角色管理'
       case 'setting':
@@ -29,13 +29,19 @@ const Explorer: React.FC<ExplorerProps> = ({
       case 'plugin':
         return '插件中心'
       default:
-        return '资源管理器'
+        return '编写'
     }
   }
 
   return (
-    <div className={`explorer-panel ${isOpen ? 'open' : ''}`} style={{ width: `${width}px` }}>
-      <div style={{ minWidth: '0', display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div
+      className={`explorer-panel ${isOpen ? 'open' : ''}`}
+      style={{ width: `${isOpen ? width : 0}px` }}
+    >
+      <div
+        className="panel-inner"
+        style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
+      >
         <div className="explorer-header">{getActivityTitle()}</div>
 
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>

@@ -12,7 +12,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
     <div className="activity-bar">
       <div
         className={`activity-item ${isOpen && activeActivity === 'chapter' ? 'active' : ''}`}
-        title="章"
+        title="编写"
         onClick={() => onActivityChange('chapter')}
       >
         <div className="activity-icon">
@@ -24,7 +24,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({ activeActivity, onActivityCha
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         </div>
-        <span>章</span>
+        <span>编写</span>
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'character' ? 'active' : ''}`}
