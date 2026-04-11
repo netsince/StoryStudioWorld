@@ -193,7 +193,8 @@ function App(): React.JSX.Element {
               openedFolderPath={openedFolderPath}
               onOpenFolder={handleOpenFolder}
               onOpenFile={(title, path) => openTab({ id: path, title, type: 'file', path })}
-              width={isExplorerOpen ? explorerWidth : 0}
+              isOpen={isExplorerOpen}
+              width={explorerWidth}
             />
             {isExplorerOpen && (
               <Sash
@@ -229,7 +230,8 @@ function App(): React.JSX.Element {
               )}
               <RightPanel
                 activeActivity={activeRightActivity}
-                width={isRightSidebarOpen ? rightPanelWidth : 0}
+                isOpen={isRightSidebarOpen}
+                width={rightPanelWidth}
               />
             </div>
             <RightActivityBar
