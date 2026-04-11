@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { ActivityType, ProjectData, RecentProject, StoryChapter, StoryVolume } from '../App'
 import ContextMenu from './ContextMenu'
+import RenameDialog from './RenameDialog'
 
 interface ExplorerProps {
   activeActivity: ActivityType
@@ -58,6 +59,12 @@ const Explorer: React.FC<ExplorerProps> = ({
     nodeType: 'volume' | 'chapter'
     nodeId: string
   } | null>(null)
+  const [renameDialog, setRenameDialog] = useState<{
+    nodeType: 'volume' | 'chapter'
+    nodeId: string
+    title: string
+    initialValue: string
+  } | null>(null)
 
   useEffect(() => {
     const closeMenus = (): void => {
@@ -65,8 +72,24 @@ const Explorer: React.FC<ExplorerProps> = ({
       setContextMenu(null)
     }
 
-    window.addEventListener('click', closeMenus)
-    return () => window.removeEventListener('click', closeMenus)
+    const handleMouseDown = (event: MouseEvent): void => {
+      // Only close on primary-button clicks; right click is used to open the menu.
+      if (event.button !== 0) return
+      closeMenus()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        closeMenus()
+      }
+    }
+
+    window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   const activityTitle = useMemo(() => {
@@ -105,13 +128,15 @@ const Explorer: React.FC<ExplorerProps> = ({
       .find((item) => item.id === contextMenu.nodeId)
     const currentName =
       contextMenu.nodeType === 'volume' ? (volume?.name ?? '') : (chapter?.name ?? '')
-    const promptText = contextMenu.nodeType === 'volume' ? '输入卷名：' : '输入章名：'
-    const nextName = window.prompt(promptText, currentName)
+    const title = contextMenu.nodeType === 'volume' ? '重命名卷' : '重命名章'
 
     setContextMenu(null)
-
-    if (nextName === null) return
-    await onRenameStoryNode(contextMenu.nodeType, contextMenu.nodeId, nextName)
+    setRenameDialog({
+      nodeType: contextMenu.nodeType,
+      nodeId: contextMenu.nodeId,
+      title,
+      initialValue: currentName
+    })
   }
 
   const renderStoryTree = (): React.ReactNode => {
@@ -353,6 +378,18 @@ const Explorer: React.FC<ExplorerProps> = ({
                 onSelect: () => void handleRename()
               }
             ]}
+          />
+        )}
+
+        {renameDialog && (
+          <RenameDialog
+            title={renameDialog.title}
+            initialValue={renameDialog.initialValue}
+            onCancel={() => setRenameDialog(null)}
+            onConfirm={(nextValue) => {
+              void onRenameStoryNode(renameDialog.nodeType, renameDialog.nodeId, nextValue)
+              setRenameDialog(null)
+            }}
           />
         )}
       </div>

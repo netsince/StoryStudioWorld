@@ -18,14 +18,23 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }) => {
   const menu = (
     <div
       className="context-menu"
-      style={{ position: 'fixed', top: y, left: x, zIndex: 1000 }}
+      style={{ position: 'fixed', top: y, left: x, zIndex: 100000, pointerEvents: 'auto' }}
       onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+      }}
     >
       {items.map((item) => (
         <div
           key={item.key}
           className="menu-item"
-          onClick={() => {
+          onMouseDown={(event) => {
+            // Use mousedown instead of click to avoid losing the user gesture when the menu closes.
+            if (event.button !== 0) return
+            event.preventDefault()
+            event.stopPropagation()
             item.onSelect()
             onClose?.()
           }}

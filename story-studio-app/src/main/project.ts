@@ -317,10 +317,6 @@ export async function renameStoryNode(input: RenameStoryNodeInput): Promise<Proj
   const project = await loadProject(input.projectSettingsPath)
   const nextName = input.nextName.trim()
 
-  if (!nextName) {
-    throw new Error('名称不能为空。')
-  }
-
   if (input.nodeType === 'volume') {
     const volume = project.storyVolumes.find((item) => item.id === input.nodeId)
     if (!volume) {
