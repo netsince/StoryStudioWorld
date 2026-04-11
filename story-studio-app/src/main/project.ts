@@ -160,21 +160,25 @@ function withProjectPath(projectPath: string, data: PersistedProjectData): Proje
   }
 }
 
-async function findUniqueVolumeFolderName(
-  projectPath: string,
-  preferredName: string
-): Promise<string> {
+async function findUniqueIdFolderName(projectPath: string, baseName: string): Promise<string> {
   const storyRoot = getStoryRoot(projectPath)
-  const baseName = cleanSegmentName(preferredName, '新卷')
   let candidate = baseName
   let index = 1
 
   while (await pathExists(join(storyRoot, candidate))) {
-    candidate = `${baseName} (${index})`
+    candidate = `${baseName}_${index}`
     index += 1
   }
 
   return candidate
+}
+
+async function createVolumeFolder(projectPath: string, volumeId: string): Promise<string> {
+  // Stable, order-independent folder name; never include display index.
+  const baseName = `volume_${volumeId.replace(/-/g, '').slice(0, 8)}`
+  const folderName = await findUniqueIdFolderName(projectPath, baseName)
+  await mkdir(join(getStoryRoot(projectPath), folderName), { recursive: true })
+  return folderName
 }
 
 async function findUniqueChapterFileName(
@@ -196,6 +200,10 @@ async function findUniqueChapterFileName(
 }
 
 function getVolumeDisplayName(volume: StoryVolume, index: number): string {
+  if (index === 0) {
+    return volume.name.trim() ? `作品相关 ${volume.name.trim()}` : '作品相关'
+  }
+
   return volume.name.trim() ? `第${index}卷 ${volume.name.trim()}` : `第${index}卷`
 }
 
@@ -216,8 +224,10 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   await mkdir(join(projectPath, 'worldviewsetting'), { recursive: true })
   await mkdir(join(projectPath, 'story'), { recursive: true })
 
-  const defaultVolumeFolderName = await findUniqueVolumeFolderName(projectPath, '第0卷')
-  await mkdir(join(getStoryRoot(projectPath), defaultVolumeFolderName), { recursive: true })
+  const volume0Id = randomUUID()
+  const volume1Id = randomUUID()
+  const volume0FolderName = await createVolumeFolder(projectPath, volume0Id)
+  const volume1FolderName = await createVolumeFolder(projectPath, volume1Id)
 
   const project: ProjectData = {
     version: PROJECT_VERSION,
@@ -227,9 +237,16 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
     projectSettingsPath: getSettingsPath(projectPath),
     storyVolumes: [
       {
-        id: randomUUID(),
+        id: volume0Id,
         name: '',
-        folderName: defaultVolumeFolderName,
+        folderName: volume0FolderName,
+        collapsed: false,
+        chapters: []
+      },
+      {
+        id: volume1Id,
+        name: '',
+        folderName: volume1FolderName,
         collapsed: false,
         chapters: []
       }
@@ -254,11 +271,10 @@ export async function createStoryNode(input: CreateStoryNodeInput): Promise<Proj
   const project = await loadProject(input.projectSettingsPath)
 
   if (input.nodeType === 'volume') {
-    const nextIndex = project.storyVolumes.length
-    const folderName = await findUniqueVolumeFolderName(project.projectPath, `第${nextIndex}卷`)
-    await mkdir(join(getStoryRoot(project.projectPath), folderName), { recursive: true })
+    const volumeId = randomUUID()
+    const folderName = await createVolumeFolder(project.projectPath, volumeId)
     project.storyVolumes.push({
-      id: randomUUID(),
+      id: volumeId,
       name: '',
       folderName,
       collapsed: false,
@@ -282,6 +298,7 @@ export async function createStoryNode(input: CreateStoryNodeInput): Promise<Proj
     nextChapterName
   )
 
+  await mkdir(join(getStoryRoot(project.projectPath), targetVolume.folderName), { recursive: true })
   await writeFile(
     join(getStoryRoot(project.projectPath), targetVolume.folderName, fileName),
     '',
@@ -310,13 +327,6 @@ export async function renameStoryNode(input: RenameStoryNodeInput): Promise<Proj
       throw new Error('未找到要重命名的卷。')
     }
 
-    const nextFolderName = await findUniqueVolumeFolderName(project.projectPath, nextName)
-    await rename(
-      join(getStoryRoot(project.projectPath), volume.folderName),
-      join(getStoryRoot(project.projectPath), nextFolderName)
-    )
-
-    volume.folderName = nextFolderName
     volume.name = nextName
     return writeProject(project)
   }
@@ -335,10 +345,18 @@ export async function renameStoryNode(input: RenameStoryNodeInput): Promise<Proj
     volume.folderName,
     nextName
   )
-  await rename(
-    join(getStoryRoot(project.projectPath), volume.folderName, chapter.fileName),
-    join(getStoryRoot(project.projectPath), volume.folderName, nextFileName)
-  )
+  const fromPath = join(getStoryRoot(project.projectPath), volume.folderName, chapter.fileName)
+  const toPath = join(getStoryRoot(project.projectPath), volume.folderName, nextFileName)
+  await mkdir(join(getStoryRoot(project.projectPath), volume.folderName), { recursive: true })
+  try {
+    await rename(fromPath, toPath)
+  } catch (error) {
+    // User may have manually deleted the file; keep settings consistent by recreating.
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error
+    }
+    await writeFile(toPath, '', 'utf-8')
+  }
 
   chapter.name = stripMd(nextFileName)
   chapter.fileName = nextFileName
@@ -393,10 +411,21 @@ export async function moveChapterToVolume(input: MoveChapterInput): Promise<Proj
     stripMd(chapter.fileName)
   )
 
-  await rename(
-    join(getStoryRoot(project.projectPath), sourceVolume.folderName, chapter.fileName),
-    join(getStoryRoot(project.projectPath), targetVolume.folderName, nextFileName)
+  const fromPath = join(
+    getStoryRoot(project.projectPath),
+    sourceVolume.folderName,
+    chapter.fileName
   )
+  const toPath = join(getStoryRoot(project.projectPath), targetVolume.folderName, nextFileName)
+  await mkdir(join(getStoryRoot(project.projectPath), targetVolume.folderName), { recursive: true })
+  try {
+    await rename(fromPath, toPath)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error
+    }
+    await writeFile(toPath, '', 'utf-8')
+  }
 
   chapter.fileName = nextFileName
   chapter.name = stripMd(nextFileName)

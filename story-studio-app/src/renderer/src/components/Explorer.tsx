@@ -168,9 +168,14 @@ const Explorer: React.FC<ExplorerProps> = ({
         <div className="story-list-panel">
           <div className="story-tree">
             {currentProject.storyVolumes.map((volume, index) => {
-              const volumeLabel = volume.name.trim()
-                ? `第${index}卷 {${volume.name.trim()}}`
-                : `第${index}卷`
+              const volumeLabel =
+                index === 0
+                  ? volume.name.trim()
+                    ? `作品相关 {${volume.name.trim()}}`
+                    : '作品相关'
+                  : volume.name.trim()
+                    ? `第${index}卷 {${volume.name.trim()}}`
+                    : `第${index}卷`
               const isVolumeSelected =
                 selectedNode?.type === 'volume' && selectedNode.volumeId === volume.id
 
