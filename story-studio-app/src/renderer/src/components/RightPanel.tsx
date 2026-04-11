@@ -3,15 +3,14 @@ import { RightActivityType } from '../App'
 
 interface RightPanelProps {
   activeActivity: RightActivityType
-  isOpen: boolean
   width: number
 }
 
-const RightPanel: React.FC<RightPanelProps> = ({ activeActivity, isOpen, width }) => {
+const RightPanel: React.FC<RightPanelProps> = ({ activeActivity, width }) => {
   return (
     <div
-      className={`right-panel ${isOpen ? 'open' : ''}`}
-      style={{ width: `${isOpen ? width : 0}px` }}
+      className={`right-panel ${width > 0 ? 'open' : ''}`}
+      style={{ width: `${width}px` }}
     >
       <div
         className="panel-inner"

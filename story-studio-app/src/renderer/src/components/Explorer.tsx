@@ -6,7 +6,6 @@ interface ExplorerProps {
   openedFolderPath: string | null
   onOpenFolder: () => void
   onOpenFile: (title: string, path: string) => void
-  isOpen: boolean
   width: number
 }
 
@@ -15,7 +14,6 @@ const Explorer: React.FC<ExplorerProps> = ({
   openedFolderPath,
   onOpenFolder,
   onOpenFile,
-  isOpen,
   width
 }) => {
   const getActivityTitle = (): string => {
@@ -35,8 +33,8 @@ const Explorer: React.FC<ExplorerProps> = ({
 
   return (
     <div
-      className={`explorer-panel ${isOpen ? 'open' : ''}`}
-      style={{ width: `${isOpen ? width : 0}px` }}
+      className={`explorer-panel ${width > 0 ? 'open' : ''}`}
+      style={{ width: `${width}px` }}
     >
       <div
         className="panel-inner"
