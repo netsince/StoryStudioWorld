@@ -177,11 +177,34 @@ const Explorer: React.FC<ExplorerProps> = ({
                 <div
                   className="context-menu story-create-menu"
                   onClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onContextMenu={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                  }}
                 >
-                  <div className="menu-item" onClick={() => void onCreateStoryNode('volume')}>
+                  <div
+                    className="menu-item"
+                    onMouseDown={(event) => {
+                      if (event.button !== 0) return
+                      event.preventDefault()
+                      event.stopPropagation()
+                      void onCreateStoryNode('volume')
+                      setIsCreateMenuOpen(false)
+                    }}
+                  >
                     卷
                   </div>
-                  <div className="menu-item" onClick={() => void handleCreateChapter()}>
+                  <div
+                    className="menu-item"
+                    onMouseDown={(event) => {
+                      if (event.button !== 0) return
+                      event.preventDefault()
+                      event.stopPropagation()
+                      void handleCreateChapter()
+                      setIsCreateMenuOpen(false)
+                    }}
+                  >
                     章
                   </div>
                 </div>
