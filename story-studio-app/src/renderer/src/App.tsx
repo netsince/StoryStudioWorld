@@ -587,8 +587,6 @@ function App(): React.JSX.Element {
     side: 'left' | 'right' | 'top' | 'bottom'
   ): void => {
     setEditorTree((prev) => {
-      if (fromGroupId === targetGroupId) return prev
-
       let movedTab: Tab | undefined
       const withoutSource = updateGroup(prev, fromGroupId, (group) => {
         const tab = group.tabs.find((t) => t.id === tabId)

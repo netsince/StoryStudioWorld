@@ -217,6 +217,7 @@ const EditorGroupView: React.FC<{
   onSplitGroup,
   onCloseGroup
 }) => {
+  const groupRootRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLDivElement>(null)
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null)
@@ -230,6 +231,8 @@ const EditorGroupView: React.FC<{
     visible: false,
     side: 'center'
   })
+  const dragDepthRef = useRef(0)
+  const lastOverlaySideRef = useRef<DropSide>('center')
 
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
@@ -479,12 +482,16 @@ const EditorGroupView: React.FC<{
 
   return (
     <div
+      ref={groupRootRef}
       className={`editor-group ${isFocused ? 'focused' : ''}`}
       onMouseDown={() => onFocusGroup(groupId)}
       onDragEnter={(event) => {
         const payload = getTabDragPayload(event)
         if (!payload) return
-        setDropOverlay((prev) => ({ ...prev, visible: true }))
+        dragDepthRef.current += 1
+        if (!dropOverlay.visible) {
+          setDropOverlay((prev) => ({ ...prev, visible: true }))
+        }
       }}
       onDragOver={(event) => {
         const payload = getTabDragPayload(event)
@@ -492,18 +499,35 @@ const EditorGroupView: React.FC<{
         event.preventDefault()
         const rect = event.currentTarget.getBoundingClientRect()
         const side = computeDropSide(event.clientX, event.clientY, rect)
-        setDropOverlay({ visible: true, side })
+        if (lastOverlaySideRef.current !== side || !dropOverlay.visible) {
+          lastOverlaySideRef.current = side
+          setDropOverlay({ visible: true, side })
+        }
       }}
-      onDragLeave={() => setDropOverlay({ visible: false, side: 'center' })}
+      onDragLeave={(event) => {
+        // Prevent flicker when moving between children inside the group
+        const nextTarget = event.relatedTarget as Node | null
+        if (nextTarget && event.currentTarget.contains(nextTarget)) return
+
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+        if (dragDepthRef.current === 0) {
+          lastOverlaySideRef.current = 'center'
+          setDropOverlay({ visible: false, side: 'center' })
+        }
+      }}
       onDrop={(event) => {
         event.preventDefault()
         const payload = getTabDragPayload(event)
+        const intendedSide = lastOverlaySideRef.current
+        dragDepthRef.current = 0
+        lastOverlaySideRef.current = 'center'
         setDropOverlay({ visible: false, side: 'center' })
         if (!payload) return
 
         const rect = event.currentTarget.getBoundingClientRect()
-        const side = computeDropSide(event.clientX, event.clientY, rect)
-        if (payload.groupId === groupId) return
+        const computedSide = computeDropSide(event.clientX, event.clientY, rect)
+        const side = computedSide === 'center' ? intendedSide : computedSide
+        if (payload.groupId === groupId && side === 'center') return
 
         if (side === 'center') {
           onMoveTab(payload.groupId, groupId, payload.tabId)
@@ -529,10 +553,20 @@ const EditorGroupView: React.FC<{
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault()
+            event.stopPropagation()
             const payload = getTabDragPayload(event)
             if (!payload) return
-            if (payload.groupId === groupId) return
-            onMoveTab(payload.groupId, groupId, payload.tabId)
+            const rect = groupRootRef.current?.getBoundingClientRect()
+            const computedSide = rect
+              ? computeDropSide(event.clientX, event.clientY, rect)
+              : 'center'
+            const side = computedSide === 'center' ? lastOverlaySideRef.current : computedSide
+            if (payload.groupId === groupId && side === 'center') return
+            if (side === 'center') {
+              onMoveTab(payload.groupId, groupId, payload.tabId)
+            } else {
+              onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
+            }
           }}
         >
           {tabs.map((tab) => (
@@ -548,12 +582,23 @@ const EditorGroupView: React.FC<{
                 event.stopPropagation()
                 const payload = getTabDragPayload(event)
                 if (!payload) return
-                if (payload.groupId === groupId) return
-                onMoveTab(payload.groupId, groupId, payload.tabId, tab.id)
+                const rect = groupRootRef.current?.getBoundingClientRect()
+                const computedSide = rect
+                  ? computeDropSide(event.clientX, event.clientY, rect)
+                  : 'center'
+                const side = computedSide === 'center' ? lastOverlaySideRef.current : computedSide
+                if (payload.groupId === groupId && side === 'center') return
+                if (side === 'center') {
+                  onMoveTab(payload.groupId, groupId, payload.tabId, tab.id)
+                } else {
+                  onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
+                }
               }}
               onDragEnd={() => {
                 setDraggedTabId(null)
                 activeTabDrag = null
+                dragDepthRef.current = 0
+                lastOverlaySideRef.current = 'center'
                 setDropOverlay({ visible: false, side: 'center' })
               }}
               onClick={() => {
