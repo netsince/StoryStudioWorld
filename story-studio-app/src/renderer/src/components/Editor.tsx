@@ -47,11 +47,16 @@ interface EditorProps {
 
 const TAB_DND_MIME = 'application/x-ssw-tab'
 const TAB_DRAG_CLEANUP_EVENT = 'ssw:tab-drag-cleanup'
+const TAB_DRAG_HOVER_EVENT = 'ssw:tab-drag-hover'
 let activeTabDrag: { groupId: string; tabId: string } | null = null
 
 const dispatchTabDragCleanup = (): void => {
   activeTabDrag = null
   window.dispatchEvent(new CustomEvent(TAB_DRAG_CLEANUP_EVENT))
+}
+
+const dispatchTabDragHover = (groupId: string): void => {
+  window.dispatchEvent(new CustomEvent(TAB_DRAG_HOVER_EVENT, { detail: { groupId } }))
 }
 
 const readTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: string } | null => {
@@ -80,6 +85,12 @@ const getTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: st
 
 const getOverlayOffsetHeight = (tabsVisible: boolean, tabsCount: number): number =>
   tabsVisible && tabsCount > 0 ? 35 : 0
+
+const isPointInTabStrip = (
+  clientY: number,
+  rect: DOMRect,
+  overlayOffsetHeight: number
+): boolean => overlayOffsetHeight > 0 && clientY - rect.top <= overlayOffsetHeight
 
 const computeDropOperation = (
   clientX: number,
@@ -325,6 +336,19 @@ const EditorGroupView: React.FC<{
     })
   }
 
+  const hideDropOverlay = (): void => {
+    lastOverlaySideRef.current = 'center'
+    setDropOverlay((prev) =>
+      prev.visible
+        ? {
+            visible: false,
+            side: 'center',
+            overlay: { top: '0', left: '0', width: '100%', height: '100%' }
+          }
+        : prev
+    )
+  }
+
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
   const [contextMenu, setContextMenu] = useState<{
@@ -363,7 +387,15 @@ const EditorGroupView: React.FC<{
       resetDropOverlay()
     }
 
+    const handleGlobalDragHover = (event: Event): void => {
+      const customEvent = event as CustomEvent<{ groupId?: string }>
+      if (customEvent.detail?.groupId !== groupId && dropOverlay.visible) {
+        resetDropOverlay()
+      }
+    }
+
     window.addEventListener(TAB_DRAG_CLEANUP_EVENT, handleGlobalDragCleanup as EventListener)
+    window.addEventListener(TAB_DRAG_HOVER_EVENT, handleGlobalDragHover as EventListener)
     window.addEventListener('dragend', handleGlobalDragCleanup)
     window.addEventListener('drop', handleGlobalDragCleanup)
 
@@ -372,10 +404,11 @@ const EditorGroupView: React.FC<{
         TAB_DRAG_CLEANUP_EVENT,
         handleGlobalDragCleanup as EventListener
       )
+      window.removeEventListener(TAB_DRAG_HOVER_EVENT, handleGlobalDragHover as EventListener)
       window.removeEventListener('dragend', handleGlobalDragCleanup)
       window.removeEventListener('drop', handleGlobalDragCleanup)
     }
-  }, [])
+  }, [dropOverlay.visible, groupId])
 
   const handleWheel = (event: React.WheelEvent): void => {
     if (tabsRef.current) {
@@ -601,15 +634,17 @@ const EditorGroupView: React.FC<{
         const payload = getTabDragPayload(event)
         if (!payload) return
         dragDepthRef.current += 1
-        if (!dropOverlay.visible) {
-          setDropOverlay((prev) => ({ ...prev, visible: true }))
-        }
       }}
       onDragOver={(event) => {
         const payload = getTabDragPayload(event)
         if (!payload) return
         event.preventDefault()
+        dispatchTabDragHover(groupId)
         const rect = event.currentTarget.getBoundingClientRect()
+        if (isPointInTabStrip(event.clientY, rect, overlayOffsetHeight)) {
+          hideDropOverlay()
+          return
+        }
         const operation = computeDropOperation(
           event.clientX,
           event.clientY,
@@ -640,12 +675,9 @@ const EditorGroupView: React.FC<{
         if (!payload) return
 
         const rect = event.currentTarget.getBoundingClientRect()
-        const computedSide = computeDropOperation(
-          event.clientX,
-          event.clientY,
-          rect,
-          overlayOffsetHeight
-        ).side
+        const computedSide = isPointInTabStrip(event.clientY, rect, overlayOffsetHeight)
+          ? 'center'
+          : computeDropOperation(event.clientX, event.clientY, rect, overlayOffsetHeight).side
         const side = computedSide === 'center' ? intendedSide : computedSide
         if (payload.groupId === groupId && side === 'center') return
 
@@ -714,16 +746,20 @@ const EditorGroupView: React.FC<{
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           items={[
-            {
-              key: 'split-right',
-              label: '向右分屏',
-              onSelect: () => onSplitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
-            },
-            {
-              key: 'split-down',
-              label: '向下分屏',
-              onSelect: () => onSplitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
-            },
+            ...(!(groupCount > 1 && tabs.length <= 1)
+              ? [
+                  {
+                    key: 'split-right',
+                    label: '向右分屏',
+                    onSelect: () => onSplitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
+                  },
+                  {
+                    key: 'split-down',
+                    label: '向下分屏',
+                    onSelect: () => onSplitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
+                  }
+                ]
+              : []),
             ...(groupCount > 1
               ? [
                   {

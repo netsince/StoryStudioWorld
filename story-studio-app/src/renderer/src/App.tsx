@@ -132,18 +132,25 @@ const removeGroup = (
   return { node, removed: false }
 }
 
-const collapseEmptyGroup = (
-  node: EditorNode,
-  groupId: string
-): { node: EditorNode; collapsed: boolean } => {
-  if (countGroups(node) <= 1) return { node, collapsed: false }
+const collapseEmptyGroups = (node: EditorNode): EditorNode => {
+  if (countGroups(node) <= 1) return node
 
-  const group = findGroupNode(node, groupId)
-  if (!group || group.tabs.length > 0) return { node, collapsed: false }
+  const visit = (current: EditorNode): EditorNode | null => {
+    if (current.kind === 'group') {
+      return current.tabs.length === 0 ? null : current
+    }
 
-  const next = removeGroup(node, groupId).node
-  if (!next) return { node, collapsed: false }
-  return { node: next, collapsed: true }
+    const nextFirst = visit(current.first)
+    const nextSecond = visit(current.second)
+
+    if (!nextFirst && !nextSecond) return null
+    if (!nextFirst) return nextSecond
+    if (!nextSecond) return nextFirst
+    if (nextFirst === current.first && nextSecond === current.second) return current
+    return { ...current, first: nextFirst, second: nextSecond }
+  }
+
+  return visit(node) ?? node
 }
 
 function App(): React.JSX.Element {
@@ -495,8 +502,8 @@ function App(): React.JSX.Element {
             : group.activeTabId
         return { ...group, tabs: nextTabs, activeTabId: nextActive }
       })
-      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
-      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+      const collapsedTree = collapseEmptyGroups(nextTree)
+      if (!hasGroup(collapsedTree, focusedGroupId)) {
         setFocusedGroupId(findFirstGroupId(collapsedTree))
       }
       return collapsedTree
@@ -509,8 +516,8 @@ function App(): React.JSX.Element {
         const nextTabs = group.tabs.filter((tab) => tab.id === tabId || tab.isPinned)
         return { ...group, tabs: nextTabs, activeTabId: tabId }
       })
-      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
-      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+      const collapsedTree = collapseEmptyGroups(nextTree)
+      if (!hasGroup(collapsedTree, focusedGroupId)) {
         setFocusedGroupId(findFirstGroupId(collapsedTree))
       }
       return collapsedTree
@@ -523,8 +530,8 @@ function App(): React.JSX.Element {
         const nextTabs = group.tabs.filter((tab) => tab.isPinned)
         return { ...group, tabs: nextTabs, activeTabId: nextTabs[0]?.id ?? '' }
       })
-      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
-      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+      const collapsedTree = collapseEmptyGroups(nextTree)
+      if (!hasGroup(collapsedTree, focusedGroupId)) {
         setFocusedGroupId(findFirstGroupId(collapsedTree))
       }
       return collapsedTree
@@ -604,7 +611,7 @@ function App(): React.JSX.Element {
         return { ...group, tabs: nextTabs, activeTabId: movedTab!.id }
       })
 
-      const { node: collapsedTree } = collapseEmptyGroup(next, fromGroupId)
+      const collapsedTree = collapseEmptyGroups(next)
       setFocusedGroupId(toGroupId)
       return collapsedTree
     })
@@ -617,6 +624,11 @@ function App(): React.JSX.Element {
     side: 'left' | 'right' | 'top' | 'bottom'
   ): void => {
     setEditorTree((prev) => {
+      const sourceGroup = findGroupNode(prev, fromGroupId)
+      if (fromGroupId === targetGroupId && sourceGroup && sourceGroup.tabs.length <= 1) {
+        return prev
+      }
+
       let movedTab: Tab | undefined
       const withoutSource = updateGroup(prev, fromGroupId, (group) => {
         const tab = group.tabs.find((t) => t.id === tabId)
@@ -642,8 +654,7 @@ function App(): React.JSX.Element {
       const direction: 'row' | 'column' = side === 'left' || side === 'right' ? 'row' : 'column'
       const place: 'first' | 'second' = side === 'left' || side === 'top' ? 'first' : 'second'
       const next = splitAtGroup(withoutSource, targetGroupId, direction, newGroup, place)
-      const collapsedTree =
-        fromGroupId === targetGroupId ? next : collapseEmptyGroup(next, fromGroupId).node
+      const collapsedTree = collapseEmptyGroups(next)
       setFocusedGroupId(newGroup.id)
       return collapsedTree
     })
@@ -658,11 +669,13 @@ function App(): React.JSX.Element {
   const splitGroup = (groupId: string, direction: 'row' | 'column', tabId?: string): void => {
     setEditorTree((prev) => {
       const sourceGroup = tabId ? findGroupNode(prev, groupId) : null
+      if (tabId && sourceGroup && sourceGroup.tabs.length <= 1) return prev
+
       const tab = tabId ? sourceGroup?.tabs.find((t) => t.id === tabId) : undefined
       const newGroup: EditorGroupNode = tab
         ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
         : createEmptyGroup()
-      const nextTree = splitAtGroup(prev, groupId, direction, newGroup, 'second')
+      const nextTree = collapseEmptyGroups(splitAtGroup(prev, groupId, direction, newGroup, 'second'))
       setFocusedGroupId(newGroup.id)
       return nextTree
     })
@@ -673,10 +686,11 @@ function App(): React.JSX.Element {
       if (countGroups(prev) <= 1) return prev
       const next = removeGroup(prev, groupId).node
       if (!next) return prev
-      if (!hasGroup(next, focusedGroupId)) {
-        setFocusedGroupId(findFirstGroupId(next))
+      const normalizedTree = collapseEmptyGroups(next)
+      if (!hasGroup(normalizedTree, focusedGroupId)) {
+        setFocusedGroupId(findFirstGroupId(normalizedTree))
       }
-      return next
+      return normalizedTree
     })
   }
 
