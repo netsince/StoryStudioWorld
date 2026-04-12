@@ -713,6 +713,127 @@ html {
   z-index: 5;
 }
 
+.editor-split-root {
+  height: 100%;
+  width: 100%;
+}
+
+.editor-group {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-group.focused {
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 204, 0.85);
+}
+
+.editor-split {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-split-row {
+  flex-direction: row;
+}
+
+.editor-split-column {
+  flex-direction: column;
+}
+
+.editor-split-child {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-split-divider {
+  flex: 0 0 4px;
+  position: relative;
+  z-index: 10;
+}
+
+.editor-split-divider::after {
+  content: '';
+  position: absolute;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.editor-split-divider-row::after {
+  left: 1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.editor-split-divider-column::after {
+  top: 1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.editor-split-divider:hover::after,
+.editor-split-divider.active::after {
+  opacity: 1;
+  background: rgba(0, 122, 204, 0.6);
+}
+
+.editor-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.editor-drop-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.9;
+  border: 1px solid rgba(0, 122, 204, 0.5);
+}
+
+.editor-drop-overlay-center::after {
+  inset: 18%;
+  border-radius: 8px;
+  background: rgba(0, 122, 204, 0.16);
+}
+
+.editor-drop-overlay-left::after {
+  right: 55%;
+  background: rgba(0, 122, 204, 0.16);
+}
+
+.editor-drop-overlay-right::after {
+  left: 55%;
+  background: rgba(0, 122, 204, 0.16);
+}
+
+.editor-drop-overlay-top::after {
+  bottom: 55%;
+  background: rgba(0, 122, 204, 0.16);
+}
+
+.editor-drop-overlay-bottom::after {
+  top: 55%;
+  background: rgba(0, 122, 204, 0.16);
+}
+
 .editor-tabs {
   height: 35px;
   background-color: var(--bg-sidebar);

@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { ProjectData, Tab } from '../App'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { EditorNode, ProjectData, Tab } from '../models'
 import ContextMenu from './ContextMenu'
 
 const ssworldNobgSvg = new URL('../assets/ssw-nobg.svg', import.meta.url).href
+
+type DropSide = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
 interface EditorProps {
   currentProject: ProjectData | null
@@ -15,33 +17,205 @@ interface EditorProps {
     projectPath: string
   }) => Promise<void>
   onPickProjectPath: () => Promise<string | null>
-  tabs: Tab[]
-  activeTabId: string
-  onTabSwitch: (tabId: string) => void
-  onTabClose: (e: React.MouseEvent, tabId: string) => void
-  onCloseOthers: (tabId: string) => void
-  onCloseAll: () => void
-  onPinTab: (tabId: string) => void
-  onDirtyTab: (tabId: string) => void
-  onReorderTabs: (draggedId: string, targetId: string) => void
+
+  editorTree: EditorNode
+  focusedGroupId: string
+  groupCount: number
+  onFocusGroup: (groupId: string) => void
+
+  onTabSwitch: (groupId: string, tabId: string) => void
+  onTabClose: (groupId: string, tabId: string) => void
+  onCloseOthers: (groupId: string, tabId: string) => void
+  onCloseAll: (groupId: string) => void
+  onPinTab: (groupId: string, tabId: string) => void
+  onDirtyTab: (groupId: string, tabId: string) => void
+  onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
+
+  onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
+  onDockTabToSplit: (
+    fromGroupId: string,
+    targetGroupId: string,
+    tabId: string,
+    side: 'left' | 'right' | 'top' | 'bottom'
+  ) => void
+
+  onSplitGroup: (groupId: string, direction: 'row' | 'column', tabId?: string) => void
+  onCloseGroup: (groupId: string) => void
+  onResizeSplit: (splitId: string, ratio: number) => void
 }
 
-const Editor: React.FC<EditorProps> = ({
+const TAB_DND_MIME = 'application/x-ssw-tab'
+let activeTabDrag: { groupId: string; tabId: string } | null = null
+
+const readTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: string } | null => {
+  const raw = event.dataTransfer.getData(TAB_DND_MIME)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'groupId' in parsed &&
+      'tabId' in parsed &&
+      typeof (parsed as { groupId: unknown }).groupId === 'string' &&
+      typeof (parsed as { tabId: unknown }).tabId === 'string'
+    ) {
+      return parsed as { groupId: string; tabId: string }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+const getTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: string } | null =>
+  readTabDragPayload(event) ?? activeTabDrag
+
+const computeDropSide = (clientX: number, clientY: number, rect: DOMRect): DropSide => {
+  if (!rect.width || !rect.height) return 'center'
+  const x = (clientX - rect.left) / rect.width
+  const y = (clientY - rect.top) / rect.height
+
+  const distLeft = x
+  const distRight = 1 - x
+  const distTop = y
+  const distBottom = 1 - y
+
+  const min = Math.min(distLeft, distRight, distTop, distBottom)
+  const edgeThreshold = 0.22
+  if (min > edgeThreshold) return 'center'
+
+  switch (min) {
+    case distLeft:
+      return 'left'
+    case distRight:
+      return 'right'
+    case distTop:
+      return 'top'
+    default:
+      return 'bottom'
+  }
+}
+
+const SplitDivider: React.FC<{
+  direction: 'row' | 'column'
+  splitId: string
+  ratio: number
+  onResize: (splitId: string, ratio: number) => void
+}> = ({ direction, splitId, ratio, onResize }) => {
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef<{ startClient: number; startRatio: number; size: number } | null>(null)
+  const cursor = direction === 'row' ? 'col-resize' : 'row-resize'
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent): void => {
+      if (!isDragging || !dragRef.current) return
+      const client = direction === 'row' ? event.clientX : event.clientY
+      const delta = client - dragRef.current.startClient
+      const next = dragRef.current.startRatio + delta / dragRef.current.size
+      onResize(splitId, next)
+    }
+
+    const handleMouseUp = (): void => {
+      setIsDragging(false)
+      dragRef.current = null
+      document.body.style.cursor = ''
+    }
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = cursor
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [cursor, direction, isDragging, onResize, splitId])
+
+  return (
+    <div
+      className={`editor-split-divider editor-split-divider-${direction} ${isDragging ? 'active' : ''}`}
+      onMouseDown={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const parent = (event.currentTarget.parentElement as HTMLElement | null) ?? undefined
+        const rect = parent?.getBoundingClientRect()
+        const size = rect ? (direction === 'row' ? rect.width : rect.height) : 0
+        if (!size) return
+        dragRef.current = {
+          startClient: direction === 'row' ? event.clientX : event.clientY,
+          startRatio: ratio,
+          size
+        }
+        setIsDragging(true)
+      }}
+      style={{ cursor }}
+    />
+  )
+}
+
+const EditorGroupView: React.FC<{
+  currentProject: ProjectData | null
+  groupId: string
+  tabs: Tab[]
+  activeTabId: string
+  isFocused: boolean
+  groupCount: number
+  onFocusGroup: (groupId: string) => void
+  onOpenFolder: () => void
+  onOpenWelcome: () => void
+  onOpenCreateProject: () => void
+  onCreateProject: (input: {
+    projectName: string
+    description: string
+    projectPath: string
+  }) => Promise<void>
+  onPickProjectPath: () => Promise<string | null>
+
+  onTabSwitch: (groupId: string, tabId: string) => void
+  onTabClose: (groupId: string, tabId: string) => void
+  onCloseOthers: (groupId: string, tabId: string) => void
+  onCloseAll: (groupId: string) => void
+  onPinTab: (groupId: string, tabId: string) => void
+  onDirtyTab: (groupId: string, tabId: string) => void
+  onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
+
+  onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
+  onDockTabToSplit: (
+    fromGroupId: string,
+    targetGroupId: string,
+    tabId: string,
+    side: 'left' | 'right' | 'top' | 'bottom'
+  ) => void
+
+  onSplitGroup: (groupId: string, direction: 'row' | 'column', tabId?: string) => void
+  onCloseGroup: (groupId: string) => void
+}> = ({
   currentProject,
+  groupId,
+  tabs,
+  activeTabId,
+  isFocused,
+  groupCount,
+  onFocusGroup,
   onOpenFolder,
   onOpenWelcome,
   onOpenCreateProject,
   onCreateProject,
   onPickProjectPath,
-  tabs,
-  activeTabId,
   onTabSwitch,
   onTabClose,
   onCloseOthers,
   onCloseAll,
   onPinTab,
   onDirtyTab,
-  onReorderTabs
+  onReorderTabs,
+  onMoveTab,
+  onDockTabToSplit,
+  onSplitGroup,
+  onCloseGroup
 }) => {
   const tabsRef = useRef<HTMLDivElement>(null)
   const activeTabRef = useRef<HTMLDivElement>(null)
@@ -52,12 +226,17 @@ const Editor: React.FC<EditorProps> = ({
     description: '',
     projectPath: ''
   })
+  const [dropOverlay, setDropOverlay] = useState<{ visible: boolean; side: DropSide }>({
+    visible: false,
+    side: 'center'
+  })
 
-  const activeTab = tabs.find((tab) => tab.id === activeTabId)
+  const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
+    groupId: string
     tabId: string
   } | null>(null)
 
@@ -90,20 +269,17 @@ const Editor: React.FC<EditorProps> = ({
     }
   }
 
-  const handleMouseDown = (event: React.MouseEvent, tabId: string): void => {
-    if (event.button === 1) {
-      onTabClose(event, tabId)
-    }
-  }
-
   const handleContextMenu = (event: React.MouseEvent, tabId: string): void => {
     event.preventDefault()
-    setContextMenu({ x: event.clientX, y: event.clientY, tabId })
+    setContextMenu({ x: event.clientX, y: event.clientY, groupId, tabId })
   }
 
   const handleDragStart = (event: React.DragEvent, tabId: string): void => {
     setDraggedTabId(tabId)
     event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData(TAB_DND_MIME, JSON.stringify({ groupId, tabId }))
+    event.dataTransfer.setData('text/plain', tabId)
+    activeTabDrag = { groupId, tabId }
     const img = new Image()
     img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     event.dataTransfer.setDragImage(img, 0, 0)
@@ -112,7 +288,7 @@ const Editor: React.FC<EditorProps> = ({
   const handleDragOver = (event: React.DragEvent, targetId: string): void => {
     event.preventDefault()
     if (draggedTabId && draggedTabId !== targetId) {
-      onReorderTabs(draggedTabId, targetId)
+      onReorderTabs(groupId, draggedTabId, targetId)
     }
   }
 
@@ -275,7 +451,7 @@ const Editor: React.FC<EditorProps> = ({
             <button
               className="action-button"
               style={{ width: 'auto' }}
-              onClick={() => activeTab && onDirtyTab(activeTab.id)}
+              onClick={() => activeTab && onDirtyTab(groupId, activeTab.id)}
             >
               {activeTab?.isDirty ? '取消模拟修改' : '模拟修改内容'}
             </button>
@@ -302,9 +478,63 @@ const Editor: React.FC<EditorProps> = ({
   }
 
   return (
-    <div className="editor-area">
+    <div
+      className={`editor-group ${isFocused ? 'focused' : ''}`}
+      onMouseDown={() => onFocusGroup(groupId)}
+      onDragEnter={(event) => {
+        const payload = getTabDragPayload(event)
+        if (!payload) return
+        setDropOverlay((prev) => ({ ...prev, visible: true }))
+      }}
+      onDragOver={(event) => {
+        const payload = getTabDragPayload(event)
+        if (!payload) return
+        event.preventDefault()
+        const rect = event.currentTarget.getBoundingClientRect()
+        const side = computeDropSide(event.clientX, event.clientY, rect)
+        setDropOverlay({ visible: true, side })
+      }}
+      onDragLeave={() => setDropOverlay({ visible: false, side: 'center' })}
+      onDrop={(event) => {
+        event.preventDefault()
+        const payload = getTabDragPayload(event)
+        setDropOverlay({ visible: false, side: 'center' })
+        if (!payload) return
+
+        const rect = event.currentTarget.getBoundingClientRect()
+        const side = computeDropSide(event.clientX, event.clientY, rect)
+        if (payload.groupId === groupId) return
+
+        if (side === 'center') {
+          onMoveTab(payload.groupId, groupId, payload.tabId)
+        } else {
+          onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
+        }
+
+        activeTabDrag = null
+      }}
+    >
+      {dropOverlay.visible && (
+        <div
+          className={`editor-drop-overlay editor-drop-overlay-${dropOverlay.side}`}
+          aria-hidden="true"
+        />
+      )}
+
       {tabs.length > 0 && (
-        <div className="editor-tabs" ref={tabsRef} onWheel={handleWheel}>
+        <div
+          className="editor-tabs"
+          ref={tabsRef}
+          onWheel={handleWheel}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault()
+            const payload = getTabDragPayload(event)
+            if (!payload) return
+            if (payload.groupId === groupId) return
+            onMoveTab(payload.groupId, groupId, payload.tabId)
+          }}
+        >
           {tabs.map((tab) => (
             <div
               key={tab.id}
@@ -313,15 +543,35 @@ const Editor: React.FC<EditorProps> = ({
               draggable
               onDragStart={(event) => handleDragStart(event, tab.id)}
               onDragOver={(event) => handleDragOver(event, tab.id)}
-              onDragEnd={() => setDraggedTabId(null)}
-              onClick={() => onTabSwitch(tab.id)}
-              onMouseDown={(event) => handleMouseDown(event, tab.id)}
+              onDrop={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                const payload = getTabDragPayload(event)
+                if (!payload) return
+                if (payload.groupId === groupId) return
+                onMoveTab(payload.groupId, groupId, payload.tabId, tab.id)
+              }}
+              onDragEnd={() => {
+                setDraggedTabId(null)
+                activeTabDrag = null
+                setDropOverlay({ visible: false, side: 'center' })
+              }}
+              onClick={() => {
+                onFocusGroup(groupId)
+                onTabSwitch(groupId, tab.id)
+              }}
               onContextMenu={(event) => handleContextMenu(event, tab.id)}
             >
               <span className="tab-title">{tab.title}</span>
               <div className="tab-actions">
                 {tab.isDirty && <span className="tab-dirty-dot" />}
-                <span className="tab-close" onClick={(event) => onTabClose(event, tab.id)}>
+                <span
+                  className="tab-close"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onTabClose(groupId, tab.id)
+                  }}
+                >
                   ✕
                 </span>
               </div>
@@ -337,26 +587,45 @@ const Editor: React.FC<EditorProps> = ({
           onClose={() => setContextMenu(null)}
           items={[
             {
+              key: 'split-right',
+              label: '向右分屏',
+              onSelect: () => onSplitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
+            },
+            {
+              key: 'split-down',
+              label: '向下分屏',
+              onSelect: () => onSplitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
+            },
+            ...(groupCount > 1
+              ? [
+                  {
+                    key: 'close-group',
+                    label: '关闭分屏',
+                    onSelect: () => onCloseGroup(contextMenu.groupId)
+                  }
+                ]
+              : []),
+            {
               key: 'close',
               label: '关闭',
-              onSelect: () => onTabClose({} as React.MouseEvent, contextMenu.tabId)
+              onSelect: () => onTabClose(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'pin',
               label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned
                 ? '取消固定'
                 : '固定',
-              onSelect: () => onPinTab(contextMenu.tabId)
+              onSelect: () => onPinTab(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-others',
               label: '关闭其他',
-              onSelect: () => onCloseOthers(contextMenu.tabId)
+              onSelect: () => onCloseOthers(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-all',
               label: '关闭所有',
-              onSelect: () => onCloseAll()
+              onSelect: () => onCloseAll(contextMenu.groupId)
             }
           ]}
         />
@@ -365,6 +634,82 @@ const Editor: React.FC<EditorProps> = ({
       {renderContent()}
     </div>
   )
+}
+
+const Editor: React.FC<EditorProps> = ({
+  currentProject,
+  onOpenFolder,
+  onOpenWelcome,
+  onOpenCreateProject,
+  onCreateProject,
+  onPickProjectPath,
+  editorTree,
+  focusedGroupId,
+  groupCount,
+  onFocusGroup,
+  onTabSwitch,
+  onTabClose,
+  onCloseOthers,
+  onCloseAll,
+  onPinTab,
+  onDirtyTab,
+  onReorderTabs,
+  onMoveTab,
+  onDockTabToSplit,
+  onSplitGroup,
+  onCloseGroup,
+  onResizeSplit
+}) => {
+  const renderNode = (node: EditorNode): React.ReactNode => {
+    if (node.kind === 'group') {
+      return (
+        <EditorGroupView
+          currentProject={currentProject}
+          groupId={node.id}
+          tabs={node.tabs}
+          activeTabId={node.activeTabId}
+          isFocused={node.id === focusedGroupId}
+          groupCount={groupCount}
+          onFocusGroup={onFocusGroup}
+          onOpenFolder={onOpenFolder}
+          onOpenWelcome={onOpenWelcome}
+          onOpenCreateProject={onOpenCreateProject}
+          onCreateProject={onCreateProject}
+          onPickProjectPath={onPickProjectPath}
+          onTabSwitch={onTabSwitch}
+          onTabClose={onTabClose}
+          onCloseOthers={onCloseOthers}
+          onCloseAll={onCloseAll}
+          onPinTab={onPinTab}
+          onDirtyTab={onDirtyTab}
+          onReorderTabs={onReorderTabs}
+          onMoveTab={onMoveTab}
+          onDockTabToSplit={onDockTabToSplit}
+          onSplitGroup={onSplitGroup}
+          onCloseGroup={onCloseGroup}
+        />
+      )
+    }
+
+    return (
+      <div className={`editor-split editor-split-${node.direction}`}>
+        <div className="editor-split-child" style={{ flex: `${node.ratio} 1 0%` }}>
+          {renderNode(node.first)}
+        </div>
+        <SplitDivider
+          direction={node.direction}
+          splitId={node.id}
+          ratio={node.ratio}
+          onResize={onResizeSplit}
+        />
+        <div className="editor-split-child" style={{ flex: `${1 - node.ratio} 1 0%` }}>
+          {renderNode(node.second)}
+        </div>
+      </div>
+    )
+  }
+
+  return <div className="editor-area editor-split-root">{renderNode(editorTree)}</div>
 }
 
 export default Editor

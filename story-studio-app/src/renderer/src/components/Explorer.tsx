@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityType, ProjectData, RecentProject, StoryChapter, StoryVolume } from '../App'
+import { ActivityType, ProjectData, RecentProject, StoryChapter, StoryVolume } from '../models'
 import ContextMenu from './ContextMenu'
 import RenameDialog from './RenameDialog'
 

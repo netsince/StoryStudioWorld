@@ -1,5 +1,5 @@
 import React from 'react'
-import { RightActivityType } from '../App'
+import { RightActivityType } from '../models'
 
 interface RightActivityBarProps {
   activeActivity: RightActivityType

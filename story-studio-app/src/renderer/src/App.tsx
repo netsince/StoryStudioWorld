@@ -7,48 +7,130 @@ import RightActivityBar from './components/RightActivityBar'
 import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
-
-export type ActivityType = 'chapter' | 'character' | 'setting' | 'plugin'
-export type RightActivityType = 'proofread' | 'memo' | 'archive'
-
-export interface StoryChapter {
-  id: string
-  name: string
-  fileName: string
-}
-
-export interface StoryVolume {
-  id: string
-  name: string
-  folderName: string
-  collapsed: boolean
-  chapters: StoryChapter[]
-}
-
-export interface ProjectData {
-  version: number
-  projectName: string
-  description: string
-  projectPath: string
-  projectSettingsPath: string
-  storyVolumes: StoryVolume[]
-}
-
-export interface RecentProject {
-  projectSettingsPath: string
-  name: string
-}
-
-export interface Tab {
-  id: string
-  title: string
-  type: 'welcome' | 'file' | 'create-project'
-  path?: string
-  isDirty?: boolean
-  isPinned?: boolean
-}
+import {
+  ActivityType,
+  EditorGroupNode,
+  EditorNode,
+  ProjectData,
+  RecentProject,
+  RightActivityType,
+  StoryChapter,
+  StoryVolume,
+  Tab
+} from './models'
 
 const LAST_PROJECT_SETTINGS_PATH_KEY = 'ssw:last-project-settings-path'
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value))
+
+const createId = (prefix: string): string => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `${prefix}:${crypto.randomUUID()}`
+  }
+  return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`
+}
+
+const createEmptyGroup = (): EditorGroupNode => ({
+  kind: 'group',
+  id: createId('group'),
+  tabs: [],
+  activeTabId: ''
+})
+
+const countGroups = (node: EditorNode): number =>
+  node.kind === 'group' ? 1 : countGroups(node.first) + countGroups(node.second)
+
+const hasGroup = (node: EditorNode, groupId: string): boolean => {
+  if (node.kind === 'group') return node.id === groupId
+  return hasGroup(node.first, groupId) || hasGroup(node.second, groupId)
+}
+
+const findFirstGroupId = (node: EditorNode): string =>
+  node.kind === 'group' ? node.id : findFirstGroupId(node.first)
+
+const findGroupNode = (node: EditorNode, groupId: string): EditorGroupNode | null => {
+  if (node.kind === 'group') return node.id === groupId ? node : null
+  return findGroupNode(node.first, groupId) ?? findGroupNode(node.second, groupId)
+}
+
+const updateGroup = (
+  node: EditorNode,
+  groupId: string,
+  updater: (group: EditorGroupNode) => EditorGroupNode
+): EditorNode => {
+  if (node.kind === 'group') {
+    return node.id === groupId ? updater(node) : node
+  }
+  const nextFirst = updateGroup(node.first, groupId, updater)
+  const nextSecond = updateGroup(node.second, groupId, updater)
+  if (nextFirst === node.first && nextSecond === node.second) return node
+  return { ...node, first: nextFirst, second: nextSecond }
+}
+
+const mapGroups = (
+  node: EditorNode,
+  mapper: (group: EditorGroupNode) => EditorGroupNode
+): EditorNode => {
+  if (node.kind === 'group') return mapper(node)
+  return { ...node, first: mapGroups(node.first, mapper), second: mapGroups(node.second, mapper) }
+}
+
+const updateSplitRatio = (node: EditorNode, splitId: string, ratio: number): EditorNode => {
+  if (node.kind === 'group') return node
+  if (node.id === splitId) return { ...node, ratio }
+  const nextFirst = updateSplitRatio(node.first, splitId, ratio)
+  const nextSecond = updateSplitRatio(node.second, splitId, ratio)
+  if (nextFirst === node.first && nextSecond === node.second) return node
+  return { ...node, first: nextFirst, second: nextSecond }
+}
+
+const splitAtGroup = (
+  node: EditorNode,
+  groupId: string,
+  direction: 'row' | 'column',
+  newGroup: EditorGroupNode,
+  place: 'first' | 'second' = 'second'
+): EditorNode => {
+  if (node.kind === 'group') {
+    if (node.id !== groupId) return node
+    return {
+      kind: 'split',
+      id: createId('split'),
+      direction,
+      ratio: 0.5,
+      first: place === 'first' ? newGroup : node,
+      second: place === 'first' ? node : newGroup
+    }
+  }
+  const nextFirst = splitAtGroup(node.first, groupId, direction, newGroup, place)
+  const nextSecond = splitAtGroup(node.second, groupId, direction, newGroup, place)
+  if (nextFirst === node.first && nextSecond === node.second) return node
+  return { ...node, first: nextFirst, second: nextSecond }
+}
+
+const removeGroup = (
+  node: EditorNode,
+  groupId: string
+): { node: EditorNode | null; removed: boolean } => {
+  if (node.kind === 'group') {
+    return node.id === groupId ? { node: null, removed: true } : { node, removed: false }
+  }
+
+  const left = removeGroup(node.first, groupId)
+  if (left.removed) {
+    if (left.node === null) return { node: node.second, removed: true }
+    return { node: { ...node, first: left.node }, removed: true }
+  }
+
+  const right = removeGroup(node.second, groupId)
+  if (right.removed) {
+    if (right.node === null) return { node: node.first, removed: true }
+    return { node: { ...node, second: right.node }, removed: true }
+  }
+
+  return { node, removed: false }
+}
 
 function App(): React.JSX.Element {
   const [viewportWidth, setViewportWidth] = useState(() =>
@@ -66,9 +148,12 @@ function App(): React.JSX.Element {
   const [explorerWidth, setExplorerWidth] = useState(280)
   const [rightPanelWidth, setRightPanelWidth] = useState(300)
   const [isDragging, setIsDragging] = useState(false)
-
-  const [tabs, setTabs] = useState<Tab[]>([])
-  const [activeTabId, setActiveTabId] = useState<string>('')
+  const [initialEditor] = useState(() => {
+    const root = createEmptyGroup()
+    return { root, focusedGroupId: root.id }
+  })
+  const [editorTree, setEditorTree] = useState<EditorNode>(initialEditor.root)
+  const [focusedGroupId, setFocusedGroupId] = useState<string>(initialEditor.focusedGroupId)
 
   useEffect(() => {
     const handleResize = (): void => {
@@ -88,7 +173,7 @@ function App(): React.JSX.Element {
     return 'default'
   }, [viewportWidth])
 
-  const updateRecentProjects = (project: ProjectData): void => {
+  const updateRecentProjects = useCallback((project: ProjectData): void => {
     setRecentProjects((prev) => {
       const next = [
         { projectSettingsPath: project.projectSettingsPath, name: project.projectName },
@@ -102,29 +187,38 @@ function App(): React.JSX.Element {
       )
       return deduped.slice(0, 8)
     })
-  }
-
-  const handleProjectLoaded = useCallback((project: ProjectData): void => {
-    setCurrentProject(project)
-    setErrorMessage(null)
-    window.localStorage.setItem(LAST_PROJECT_SETTINGS_PATH_KEY, project.projectSettingsPath)
-    updateRecentProjects(project)
-    setTabs((prev) => {
-      const withoutCreateTab = prev.filter((tab) => tab.type !== 'create-project')
-      return withoutCreateTab
-    })
-    setActiveTabId((prev) => (prev === 'create-project' ? '' : prev))
   }, [])
+
+  const handleProjectLoaded = useCallback(
+    (project: ProjectData): void => {
+      setCurrentProject(project)
+      setErrorMessage(null)
+      window.localStorage.setItem(LAST_PROJECT_SETTINGS_PATH_KEY, project.projectSettingsPath)
+      updateRecentProjects(project)
+      setEditorTree((prev) =>
+        mapGroups(prev, (group) => {
+          const nextTabs = group.tabs.filter((tab) => tab.type !== 'create-project')
+          const nextActiveTabId = group.activeTabId === 'create-project' ? '' : group.activeTabId
+          return group.tabs === nextTabs && group.activeTabId === nextActiveTabId
+            ? group
+            : { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
+        })
+      )
+    },
+    [updateRecentProjects]
+  )
 
   const openWelcomeTab = useCallback((): void => {
-    setTabs((prev) => {
-      if (prev.some((tab) => tab.id === 'welcome')) {
-        return prev
-      }
-      return [...prev, { id: 'welcome', title: '欢迎使用', type: 'welcome' }]
+    const tab: Tab = { id: 'welcome', title: '欢迎使用', type: 'welcome' }
+    setEditorTree((prev) => {
+      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
+      return updateGroup(prev, targetGroupId, (group) => {
+        const exists = group.tabs.some((t) => t.id === tab.id)
+        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+        return { ...group, tabs: nextTabs, activeTabId: tab.id }
+      })
     })
-    setActiveTabId('welcome')
-  }, [])
+  }, [focusedGroupId])
 
   const loadProject = useCallback(
     async (projectSettingsPath: string, showAlert = true): Promise<boolean> => {
@@ -172,13 +266,16 @@ function App(): React.JSX.Element {
   }
 
   const openCreateProjectTab = (): void => {
-    setTabs((prev) => {
-      if (prev.some((tab) => tab.id === 'create-project')) {
-        return prev
-      }
-      return [...prev, { id: 'create-project', title: '新建项目', type: 'create-project' }]
+    const tab: Tab = { id: 'create-project', title: '新建项目', type: 'create-project' }
+    setEditorTree((prev) => {
+      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
+      setFocusedGroupId(targetGroupId)
+      return updateGroup(prev, targetGroupId, (group) => {
+        const exists = group.tabs.some((t) => t.id === tab.id)
+        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+        return { ...group, tabs: nextTabs, activeTabId: tab.id }
+      })
     })
-    setActiveTabId('create-project')
   }
 
   const handleOpenRecentProject = async (projectSettingsPath: string): Promise<void> => {
@@ -359,68 +456,202 @@ function App(): React.JSX.Element {
   }
 
   const openTab = (tab: Tab): void => {
-    setTabs((prev) => {
-      if (prev.some((item) => item.id === tab.id)) {
-        return prev
-      }
-      return [...prev, tab]
+    setEditorTree((prev) => {
+      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
+      return updateGroup(prev, targetGroupId, (group) => {
+        const exists = group.tabs.some((item) => item.id === tab.id)
+        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+        return { ...group, tabs: nextTabs, activeTabId: tab.id }
+      })
     })
-    setActiveTabId(tab.id)
   }
 
-  const closeTab = (e: React.MouseEvent, tabId: string): void => {
-    e.stopPropagation()
-    const tab = tabs.find((item) => item.id === tabId)
-    if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
-      return
-    }
+  const closeTab = (groupId: string, tabId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => {
+        const tab = group.tabs.find((item) => item.id === tabId)
+        if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
+          return group
+        }
 
-    const newTabs = tabs.filter((item) => item.id !== tabId)
-    setTabs(newTabs)
-
-    if (activeTabId === tabId) {
-      const fallback = newTabs[newTabs.length - 1]
-      setActiveTabId(fallback?.id ?? '')
-    }
-  }
-
-  const closeOtherTabs = (tabId: string): void => {
-    const newTabs = tabs.filter((tab) => tab.id === tabId || tab.isPinned)
-    setTabs(newTabs)
-    setActiveTabId(tabId)
-  }
-
-  const closeAllTabs = (): void => {
-    const newTabs = tabs.filter((tab) => tab.isPinned)
-    setTabs(newTabs)
-    setActiveTabId(newTabs[0]?.id ?? '')
-  }
-
-  const togglePinTab = (tabId: string): void => {
-    setTabs((prev) =>
-      prev.map((tab) => (tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab))
+        const nextTabs = group.tabs.filter((item) => item.id !== tabId)
+        const nextActive =
+          group.activeTabId === tabId
+            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+            : group.activeTabId
+        return { ...group, tabs: nextTabs, activeTabId: nextActive }
+      })
     )
   }
 
-  const toggleDirtyTab = (tabId: string): void => {
-    setTabs((prev) =>
-      prev.map((tab) => (tab.id === tabId ? { ...tab, isDirty: !tab.isDirty } : tab))
+  const closeOtherTabs = (groupId: string, tabId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => {
+        const nextTabs = group.tabs.filter((tab) => tab.id === tabId || tab.isPinned)
+        return { ...group, tabs: nextTabs, activeTabId: tabId }
+      })
     )
   }
 
-  const reorderTabs = (draggedId: string, targetId: string): void => {
-    const draggedIndex = tabs.findIndex((tab) => tab.id === draggedId)
-    const targetIndex = tabs.findIndex((tab) => tab.id === targetId)
-    if (draggedIndex === -1 || targetIndex === -1) return
-
-    const newTabs = [...tabs]
-    const [draggedTab] = newTabs.splice(draggedIndex, 1)
-    newTabs.splice(targetIndex, 0, draggedTab)
-    setTabs(newTabs)
+  const closeAllTabs = (groupId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => {
+        const nextTabs = group.tabs.filter((tab) => tab.isPinned)
+        return { ...group, tabs: nextTabs, activeTabId: nextTabs[0]?.id ?? '' }
+      })
+    )
   }
 
-  const switchTab = (tabId: string): void => {
-    setActiveTabId(tabId)
+  const togglePinTab = (groupId: string, tabId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => ({
+        ...group,
+        tabs: group.tabs.map((tab) =>
+          tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab
+        )
+      }))
+    )
+  }
+
+  const toggleDirtyTab = (groupId: string, tabId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => ({
+        ...group,
+        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isDirty: !tab.isDirty } : tab))
+      }))
+    )
+  }
+
+  const reorderTabs = (groupId: string, draggedId: string, targetId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => {
+        const draggedIndex = group.tabs.findIndex((tab) => tab.id === draggedId)
+        const targetIndex = group.tabs.findIndex((tab) => tab.id === targetId)
+        if (draggedIndex === -1 || targetIndex === -1) return group
+
+        const nextTabs = [...group.tabs]
+        const [draggedTab] = nextTabs.splice(draggedIndex, 1)
+        nextTabs.splice(targetIndex, 0, draggedTab)
+        return { ...group, tabs: nextTabs }
+      })
+    )
+  }
+
+  const moveTab = (
+    fromGroupId: string,
+    toGroupId: string,
+    tabId: string,
+    beforeTabId?: string
+  ): void => {
+    setEditorTree((prev) => {
+      if (fromGroupId === toGroupId) return prev
+
+      let movedTab: Tab | undefined
+      const withoutSource = updateGroup(prev, fromGroupId, (group) => {
+        const tab = group.tabs.find((t) => t.id === tabId)
+        if (!tab) return group
+        movedTab = tab
+        const nextTabs = group.tabs.filter((t) => t.id !== tabId)
+        const nextActiveTabId =
+          group.activeTabId === tabId
+            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+            : group.activeTabId
+        return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
+      })
+
+      if (!movedTab) return prev
+
+      const next = updateGroup(withoutSource, toGroupId, (group) => {
+        if (group.tabs.some((t) => t.id === movedTab!.id)) {
+          return { ...group, activeTabId: movedTab!.id }
+        }
+        const nextTabs = [...group.tabs]
+        const insertIndex = beforeTabId ? nextTabs.findIndex((t) => t.id === beforeTabId) : -1
+        if (insertIndex === -1) {
+          nextTabs.push(movedTab!)
+        } else {
+          nextTabs.splice(Math.max(0, insertIndex), 0, movedTab!)
+        }
+        return { ...group, tabs: nextTabs, activeTabId: movedTab!.id }
+      })
+
+      setFocusedGroupId(toGroupId)
+      return next
+    })
+  }
+
+  const dockTabToSplit = (
+    fromGroupId: string,
+    targetGroupId: string,
+    tabId: string,
+    side: 'left' | 'right' | 'top' | 'bottom'
+  ): void => {
+    setEditorTree((prev) => {
+      if (fromGroupId === targetGroupId) return prev
+
+      let movedTab: Tab | undefined
+      const withoutSource = updateGroup(prev, fromGroupId, (group) => {
+        const tab = group.tabs.find((t) => t.id === tabId)
+        if (!tab) return group
+        movedTab = tab
+        const nextTabs = group.tabs.filter((t) => t.id !== tabId)
+        const nextActiveTabId =
+          group.activeTabId === tabId
+            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+            : group.activeTabId
+        return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
+      })
+
+      if (!movedTab) return prev
+
+      const newGroup: EditorGroupNode = {
+        kind: 'group',
+        id: createId('group'),
+        tabs: [movedTab],
+        activeTabId: movedTab.id
+      }
+
+      const direction: 'row' | 'column' = side === 'left' || side === 'right' ? 'row' : 'column'
+      const place: 'first' | 'second' = side === 'left' || side === 'top' ? 'first' : 'second'
+      const next = splitAtGroup(withoutSource, targetGroupId, direction, newGroup, place)
+      setFocusedGroupId(newGroup.id)
+      return next
+    })
+  }
+
+  const switchTab = (groupId: string, tabId: string): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => ({ ...group, activeTabId: tabId }))
+    )
+  }
+
+  const splitGroup = (groupId: string, direction: 'row' | 'column', tabId?: string): void => {
+    setEditorTree((prev) => {
+      const sourceGroup = tabId ? findGroupNode(prev, groupId) : null
+      const tab = tabId ? sourceGroup?.tabs.find((t) => t.id === tabId) : undefined
+      const newGroup: EditorGroupNode = tab
+        ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
+        : createEmptyGroup()
+      const nextTree = splitAtGroup(prev, groupId, direction, newGroup, 'second')
+      setFocusedGroupId(newGroup.id)
+      return nextTree
+    })
+  }
+
+  const closeGroup = (groupId: string): void => {
+    setEditorTree((prev) => {
+      if (countGroups(prev) <= 1) return prev
+      const next = removeGroup(prev, groupId).node
+      if (!next) return prev
+      if (!hasGroup(next, focusedGroupId)) {
+        setFocusedGroupId(findFirstGroupId(next))
+      }
+      return next
+    })
+  }
+
+  const resizeSplit = (splitId: string, ratio: number): void => {
+    setEditorTree((prev) => updateSplitRatio(prev, splitId, clamp(ratio, 0.1, 0.9)))
   }
 
   return (
@@ -484,8 +715,10 @@ function App(): React.JSX.Element {
             onOpenCreateProject={openCreateProjectTab}
             onCreateProject={handleCreateProject}
             onPickProjectPath={() => window.api.pickProjectPath()}
-            tabs={tabs}
-            activeTabId={activeTabId}
+            editorTree={editorTree}
+            focusedGroupId={focusedGroupId}
+            groupCount={countGroups(editorTree)}
+            onFocusGroup={setFocusedGroupId}
             onTabSwitch={switchTab}
             onTabClose={closeTab}
             onCloseOthers={closeOtherTabs}
@@ -493,6 +726,11 @@ function App(): React.JSX.Element {
             onPinTab={togglePinTab}
             onDirtyTab={toggleDirtyTab}
             onReorderTabs={reorderTabs}
+            onMoveTab={moveTab}
+            onDockTabToSplit={dockTabToSplit}
+            onSplitGroup={splitGroup}
+            onCloseGroup={closeGroup}
+            onResizeSplit={resizeSplit}
           />
 
           <div style={{ display: 'flex', height: '100%' }}>
