@@ -5,6 +5,7 @@ import ContextMenu from './ContextMenu'
 const ssworldNobgSvg = new URL('../assets/ssw-nobg.svg', import.meta.url).href
 
 type DropSide = 'left' | 'right' | 'top' | 'bottom' | 'center'
+type DropOverlayRect = { top: string; left: string; width: string; height: string }
 
 interface EditorProps {
   currentProject: ProjectData | null
@@ -45,7 +46,13 @@ interface EditorProps {
 }
 
 const TAB_DND_MIME = 'application/x-ssw-tab'
+const TAB_DRAG_CLEANUP_EVENT = 'ssw:tab-drag-cleanup'
 let activeTabDrag: { groupId: string; tabId: string } | null = null
+
+const dispatchTabDragCleanup = (): void => {
+  activeTabDrag = null
+  window.dispatchEvent(new CustomEvent(TAB_DRAG_CLEANUP_EVENT))
+}
 
 const readTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: string } | null => {
   const raw = event.dataTransfer.getData(TAB_DND_MIME)
@@ -71,29 +78,97 @@ const readTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: s
 const getTabDragPayload = (event: React.DragEvent): { groupId: string; tabId: string } | null =>
   readTabDragPayload(event) ?? activeTabDrag
 
-const computeDropSide = (clientX: number, clientY: number, rect: DOMRect): DropSide => {
-  if (!rect.width || !rect.height) return 'center'
-  const x = (clientX - rect.left) / rect.width
-  const y = (clientY - rect.top) / rect.height
+const getOverlayOffsetHeight = (tabsVisible: boolean, tabsCount: number): number =>
+  tabsVisible && tabsCount > 0 ? 35 : 0
 
-  const distLeft = x
-  const distRight = 1 - x
-  const distTop = y
-  const distBottom = 1 - y
+const computeDropOperation = (
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+  overlayOffsetHeight: number
+): { side: DropSide; overlay: DropOverlayRect } => {
+  const editorWidth = rect.width
+  const editorHeight = Math.max(0, rect.height - overlayOffsetHeight)
+  if (!editorWidth || !editorHeight) {
+    return {
+      side: 'center',
+      overlay: { top: '0', left: '0', width: '100%', height: '100%' }
+    }
+  }
 
-  const min = Math.min(distLeft, distRight, distTop, distBottom)
-  const edgeThreshold = 0.22
-  if (min > edgeThreshold) return 'center'
+  const offsetX = clientX - rect.left
+  const offsetY = clientY - rect.top - overlayOffsetHeight
 
-  switch (min) {
-    case distLeft:
-      return 'left'
-    case distRight:
-      return 'right'
-    case distTop:
-      return 'top'
+  const edgeWidthThreshold = editorWidth * 0.1
+  const edgeHeightThreshold = editorHeight * 0.1
+  const splitHeightThreshold = editorHeight / 3
+
+  let side: DropSide = 'center'
+  if (
+    !(
+      offsetX > edgeWidthThreshold &&
+      offsetX < editorWidth - edgeWidthThreshold &&
+      offsetY > edgeHeightThreshold &&
+      offsetY < editorHeight - edgeHeightThreshold
+    )
+  ) {
+    if (offsetY < splitHeightThreshold) {
+      side = 'top'
+    } else if (offsetY > splitHeightThreshold * 2) {
+      side = 'bottom'
+    } else if (offsetX < editorWidth / 2) {
+      side = 'left'
+    } else {
+      side = 'right'
+    }
+  }
+
+  switch (side) {
+    case 'top':
+      return {
+        side,
+        overlay: { top: `${overlayOffsetHeight}px`, left: '0', width: '100%', height: '50%' }
+      }
+    case 'bottom':
+      return {
+        side,
+        overlay: {
+          top: `calc(${overlayOffsetHeight}px + 50%)`,
+          left: '0',
+          width: '100%',
+          height: '50%'
+        }
+      }
+    case 'left':
+      return {
+        side,
+        overlay: {
+          top: `${overlayOffsetHeight}px`,
+          left: '0',
+          width: '50%',
+          height: `calc(100% - ${overlayOffsetHeight}px)`
+        }
+      }
+    case 'right':
+      return {
+        side,
+        overlay: {
+          top: `${overlayOffsetHeight}px`,
+          left: '50%',
+          width: '50%',
+          height: `calc(100% - ${overlayOffsetHeight}px)`
+        }
+      }
     default:
-      return 'bottom'
+      return {
+        side: 'center',
+        overlay: {
+          top: `${overlayOffsetHeight}px`,
+          left: '0',
+          width: '100%',
+          height: `calc(100% - ${overlayOffsetHeight}px)`
+        }
+      }
   }
 }
 
@@ -227,12 +302,28 @@ const EditorGroupView: React.FC<{
     description: '',
     projectPath: ''
   })
-  const [dropOverlay, setDropOverlay] = useState<{ visible: boolean; side: DropSide }>({
+  const [dropOverlay, setDropOverlay] = useState<{
+    visible: boolean
+    side: DropSide
+    overlay: DropOverlayRect
+  }>({
     visible: false,
-    side: 'center'
+    side: 'center',
+    overlay: { top: '0', left: '0', width: '100%', height: '100%' }
   })
   const dragDepthRef = useRef(0)
   const lastOverlaySideRef = useRef<DropSide>('center')
+  const overlayOffsetHeight = getOverlayOffsetHeight(true, tabs.length)
+
+  const resetDropOverlay = (): void => {
+    dragDepthRef.current = 0
+    lastOverlaySideRef.current = 'center'
+    setDropOverlay({
+      visible: false,
+      side: 'center',
+      overlay: { top: '0', left: '0', width: '100%', height: '100%' }
+    })
+  }
 
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
@@ -266,6 +357,26 @@ const EditorGroupView: React.FC<{
     return () => window.removeEventListener('click', handleClick)
   }, [])
 
+  useEffect(() => {
+    const handleGlobalDragCleanup = (): void => {
+      setDraggedTabId(null)
+      resetDropOverlay()
+    }
+
+    window.addEventListener(TAB_DRAG_CLEANUP_EVENT, handleGlobalDragCleanup as EventListener)
+    window.addEventListener('dragend', handleGlobalDragCleanup)
+    window.addEventListener('drop', handleGlobalDragCleanup)
+
+    return () => {
+      window.removeEventListener(
+        TAB_DRAG_CLEANUP_EVENT,
+        handleGlobalDragCleanup as EventListener
+      )
+      window.removeEventListener('dragend', handleGlobalDragCleanup)
+      window.removeEventListener('drop', handleGlobalDragCleanup)
+    }
+  }, [])
+
   const handleWheel = (event: React.WheelEvent): void => {
     if (tabsRef.current) {
       tabsRef.current.scrollLeft += event.deltaY
@@ -278,6 +389,7 @@ const EditorGroupView: React.FC<{
   }
 
   const handleDragStart = (event: React.DragEvent, tabId: string): void => {
+    dispatchTabDragCleanup()
     setDraggedTabId(tabId)
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData(TAB_DND_MIME, JSON.stringify({ groupId, tabId }))
@@ -498,10 +610,15 @@ const EditorGroupView: React.FC<{
         if (!payload) return
         event.preventDefault()
         const rect = event.currentTarget.getBoundingClientRect()
-        const side = computeDropSide(event.clientX, event.clientY, rect)
-        if (lastOverlaySideRef.current !== side || !dropOverlay.visible) {
-          lastOverlaySideRef.current = side
-          setDropOverlay({ visible: true, side })
+        const operation = computeDropOperation(
+          event.clientX,
+          event.clientY,
+          rect,
+          overlayOffsetHeight
+        )
+        if (lastOverlaySideRef.current !== operation.side || !dropOverlay.visible) {
+          lastOverlaySideRef.current = operation.side
+          setDropOverlay({ visible: true, side: operation.side, overlay: operation.overlay })
         }
       }}
       onDragLeave={(event) => {
@@ -511,21 +628,24 @@ const EditorGroupView: React.FC<{
 
         dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
         if (dragDepthRef.current === 0) {
-          lastOverlaySideRef.current = 'center'
-          setDropOverlay({ visible: false, side: 'center' })
+          resetDropOverlay()
         }
       }}
       onDrop={(event) => {
         event.preventDefault()
+        event.stopPropagation()
         const payload = getTabDragPayload(event)
         const intendedSide = lastOverlaySideRef.current
-        dragDepthRef.current = 0
-        lastOverlaySideRef.current = 'center'
-        setDropOverlay({ visible: false, side: 'center' })
+        resetDropOverlay()
         if (!payload) return
 
         const rect = event.currentTarget.getBoundingClientRect()
-        const computedSide = computeDropSide(event.clientX, event.clientY, rect)
+        const computedSide = computeDropOperation(
+          event.clientX,
+          event.clientY,
+          rect,
+          overlayOffsetHeight
+        ).side
         const side = computedSide === 'center' ? intendedSide : computedSide
         if (payload.groupId === groupId && side === 'center') return
 
@@ -535,12 +655,13 @@ const EditorGroupView: React.FC<{
           onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
         }
 
-        activeTabDrag = null
+        dispatchTabDragCleanup()
       }}
     >
       {dropOverlay.visible && (
         <div
           className={`editor-drop-overlay editor-drop-overlay-${dropOverlay.side}`}
+          style={dropOverlay.overlay}
           aria-hidden="true"
         />
       )}
@@ -551,23 +672,6 @@ const EditorGroupView: React.FC<{
           ref={tabsRef}
           onWheel={handleWheel}
           onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            const payload = getTabDragPayload(event)
-            if (!payload) return
-            const rect = groupRootRef.current?.getBoundingClientRect()
-            const computedSide = rect
-              ? computeDropSide(event.clientX, event.clientY, rect)
-              : 'center'
-            const side = computedSide === 'center' ? lastOverlaySideRef.current : computedSide
-            if (payload.groupId === groupId && side === 'center') return
-            if (side === 'center') {
-              onMoveTab(payload.groupId, groupId, payload.tabId)
-            } else {
-              onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
-            }
-          }}
         >
           {tabs.map((tab) => (
             <div
@@ -577,29 +681,8 @@ const EditorGroupView: React.FC<{
               draggable
               onDragStart={(event) => handleDragStart(event, tab.id)}
               onDragOver={(event) => handleDragOver(event, tab.id)}
-              onDrop={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                const payload = getTabDragPayload(event)
-                if (!payload) return
-                const rect = groupRootRef.current?.getBoundingClientRect()
-                const computedSide = rect
-                  ? computeDropSide(event.clientX, event.clientY, rect)
-                  : 'center'
-                const side = computedSide === 'center' ? lastOverlaySideRef.current : computedSide
-                if (payload.groupId === groupId && side === 'center') return
-                if (side === 'center') {
-                  onMoveTab(payload.groupId, groupId, payload.tabId, tab.id)
-                } else {
-                  onDockTabToSplit(payload.groupId, groupId, payload.tabId, side)
-                }
-              }}
               onDragEnd={() => {
-                setDraggedTabId(null)
-                activeTabDrag = null
-                dragDepthRef.current = 0
-                lastOverlaySideRef.current = 'center'
-                setDropOverlay({ visible: false, side: 'center' })
+                dispatchTabDragCleanup()
               }}
               onClick={() => {
                 onFocusGroup(groupId)

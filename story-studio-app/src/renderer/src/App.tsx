@@ -132,6 +132,20 @@ const removeGroup = (
   return { node, removed: false }
 }
 
+const collapseEmptyGroup = (
+  node: EditorNode,
+  groupId: string
+): { node: EditorNode; collapsed: boolean } => {
+  if (countGroups(node) <= 1) return { node, collapsed: false }
+
+  const group = findGroupNode(node, groupId)
+  if (!group || group.tabs.length > 0) return { node, collapsed: false }
+
+  const next = removeGroup(node, groupId).node
+  if (!next) return { node, collapsed: false }
+  return { node: next, collapsed: true }
+}
+
 function App(): React.JSX.Element {
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -467,8 +481,8 @@ function App(): React.JSX.Element {
   }
 
   const closeTab = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => {
+    setEditorTree((prev) => {
+      const nextTree = updateGroup(prev, groupId, (group) => {
         const tab = group.tabs.find((item) => item.id === tabId)
         if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
           return group
@@ -481,25 +495,40 @@ function App(): React.JSX.Element {
             : group.activeTabId
         return { ...group, tabs: nextTabs, activeTabId: nextActive }
       })
-    )
+      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
+      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+        setFocusedGroupId(findFirstGroupId(collapsedTree))
+      }
+      return collapsedTree
+    })
   }
 
   const closeOtherTabs = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => {
+    setEditorTree((prev) => {
+      const nextTree = updateGroup(prev, groupId, (group) => {
         const nextTabs = group.tabs.filter((tab) => tab.id === tabId || tab.isPinned)
         return { ...group, tabs: nextTabs, activeTabId: tabId }
       })
-    )
+      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
+      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+        setFocusedGroupId(findFirstGroupId(collapsedTree))
+      }
+      return collapsedTree
+    })
   }
 
   const closeAllTabs = (groupId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => {
+    setEditorTree((prev) => {
+      const nextTree = updateGroup(prev, groupId, (group) => {
         const nextTabs = group.tabs.filter((tab) => tab.isPinned)
         return { ...group, tabs: nextTabs, activeTabId: nextTabs[0]?.id ?? '' }
       })
-    )
+      const { node: collapsedTree, collapsed } = collapseEmptyGroup(nextTree, groupId)
+      if (collapsed && !hasGroup(collapsedTree, focusedGroupId)) {
+        setFocusedGroupId(findFirstGroupId(collapsedTree))
+      }
+      return collapsedTree
+    })
   }
 
   const togglePinTab = (groupId: string, tabId: string): void => {
@@ -575,8 +604,9 @@ function App(): React.JSX.Element {
         return { ...group, tabs: nextTabs, activeTabId: movedTab!.id }
       })
 
+      const { node: collapsedTree } = collapseEmptyGroup(next, fromGroupId)
       setFocusedGroupId(toGroupId)
-      return next
+      return collapsedTree
     })
   }
 
@@ -612,8 +642,10 @@ function App(): React.JSX.Element {
       const direction: 'row' | 'column' = side === 'left' || side === 'right' ? 'row' : 'column'
       const place: 'first' | 'second' = side === 'left' || side === 'top' ? 'first' : 'second'
       const next = splitAtGroup(withoutSource, targetGroupId, direction, newGroup, place)
+      const collapsedTree =
+        fromGroupId === targetGroupId ? next : collapseEmptyGroup(next, fromGroupId).node
       setFocusedGroupId(newGroup.id)
-      return next
+      return collapsedTree
     })
   }
 
