@@ -1,13 +1,4 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import {
-  CreateProjectInput,
-  CreateStoryNodeInput,
-  MoveChapterInput,
-  ProjectData,
-  RenameStoryNodeInput,
-  ReorderVolumeInput,
-  ToggleVolumeInput
-} from './index'
 
 declare global {
   interface Window {
@@ -20,11 +11,69 @@ declare global {
       pickProjectPath: () => Promise<string | null>
       loadProject: (projectSettingsPath: string) => Promise<ProjectData>
       createProject: (input: CreateProjectInput) => Promise<ProjectData>
-      createStoryNode: (input: CreateStoryNodeInput) => Promise<ProjectData>
-      renameStoryNode: (input: RenameStoryNodeInput) => Promise<ProjectData>
-      toggleVolumeCollapsed: (input: ToggleVolumeInput) => Promise<ProjectData>
-      reorderVolumes: (input: ReorderVolumeInput) => Promise<ProjectData>
-      moveChapterToVolume: (input: MoveChapterInput) => Promise<ProjectData>
+      getProjectNodes: (projectSettingsPath: string) => Promise<StoryNode[]>
+      createStoryNode: (input: CreateNodeInput) => Promise<StoryNode[]>
+      renameStoryNode: (input: RenameNodeInput) => Promise<StoryNode[]>
+      deleteStoryNode: (input: DeleteNodeInput) => Promise<StoryNode[]>
+      moveStoryNode: (input: MoveNodeInput) => Promise<StoryNode[]>
+      reorderStoryNode: (input: ReorderNodeInput) => Promise<StoryNode[]>
     }
   }
+}
+
+export interface StoryNode {
+  id: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
+  fileName: string | null
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export interface ProjectData {
+  version: number
+  projectName: string
+  description: string
+  projectPath: string
+  projectSettingsPath: string
+  storyDbPath: string
+}
+
+export interface CreateProjectInput {
+  projectName: string
+  description: string
+  projectPath: string
+}
+
+export interface CreateNodeInput {
+  projectSettingsPath: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
+}
+
+export interface RenameNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newName: string
+}
+
+export interface DeleteNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+}
+
+export interface MoveNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newParentId: string | null
+}
+
+export interface ReorderNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newSortOrder: number
 }

@@ -1,7 +1,63 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
+export interface StoryNode {
+  id: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
+  fileName: string | null
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export interface ProjectData {
+  version: number
+  projectName: string
+  description: string
+  projectPath: string
+  projectSettingsPath: string
+  storyDbPath: string
+}
+
+export interface CreateProjectInput {
+  projectName: string
+  description: string
+  projectPath: string
+}
+
+export interface CreateNodeInput {
+  projectSettingsPath: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
+}
+
+export interface RenameNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newName: string
+}
+
+export interface DeleteNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+}
+
+export interface MoveNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newParentId: string | null
+}
+
+export interface ReorderNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newSortOrder: number
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -12,80 +68,20 @@ const api = {
     ipcRenderer.invoke('load-project', projectSettingsPath),
   createProject: (input: CreateProjectInput): Promise<ProjectData> =>
     ipcRenderer.invoke('create-project', input),
-  createStoryNode: (input: CreateStoryNodeInput): Promise<ProjectData> =>
+  getProjectNodes: (projectSettingsPath: string): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('get-project-nodes', projectSettingsPath),
+  createStoryNode: (input: CreateNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('create-story-node', input),
-  renameStoryNode: (input: RenameStoryNodeInput): Promise<ProjectData> =>
+  renameStoryNode: (input: RenameNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('rename-story-node', input),
-  toggleVolumeCollapsed: (input: ToggleVolumeInput): Promise<ProjectData> =>
-    ipcRenderer.invoke('toggle-volume-collapsed', input),
-  reorderVolumes: (input: ReorderVolumeInput): Promise<ProjectData> =>
-    ipcRenderer.invoke('reorder-volumes', input),
-  moveChapterToVolume: (input: MoveChapterInput): Promise<ProjectData> =>
-    ipcRenderer.invoke('move-chapter-to-volume', input)
+  deleteStoryNode: (input: DeleteNodeInput): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('delete-story-node', input),
+  moveStoryNode: (input: MoveNodeInput): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('move-story-node', input),
+  reorderStoryNode: (input: ReorderNodeInput): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('reorder-story-node', input)
 }
 
-export interface StoryChapter {
-  id: string
-  name: string
-  fileName: string
-}
-
-export interface StoryVolume {
-  id: string
-  name: string
-  folderName: string
-  collapsed: boolean
-  chapters: StoryChapter[]
-}
-
-export interface ProjectData {
-  version: number
-  projectName: string
-  description: string
-  projectPath: string
-  projectSettingsPath: string
-  storyVolumes: StoryVolume[]
-}
-
-export interface CreateProjectInput {
-  projectName: string
-  description: string
-  projectPath: string
-}
-
-export interface CreateStoryNodeInput {
-  projectSettingsPath: string
-  nodeType: 'volume' | 'chapter'
-  parentVolumeId?: string
-}
-
-export interface RenameStoryNodeInput {
-  projectSettingsPath: string
-  nodeType: 'volume' | 'chapter'
-  nodeId: string
-  nextName: string
-}
-
-export interface ToggleVolumeInput {
-  projectSettingsPath: string
-  volumeId: string
-}
-
-export interface ReorderVolumeInput {
-  projectSettingsPath: string
-  draggedVolumeId: string
-  targetVolumeId: string
-}
-
-export interface MoveChapterInput {
-  projectSettingsPath: string
-  chapterId: string
-  targetVolumeId: string
-}
-
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)

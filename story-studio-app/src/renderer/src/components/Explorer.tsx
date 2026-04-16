@@ -1,39 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityType, ProjectData, RecentProject, StoryChapter, StoryVolume } from '../models'
+import { ActivityType, ProjectData, RecentProject, StoryNode } from '../models'
 import ContextMenu from './ContextMenu'
 import RenameDialog from './RenameDialog'
 
 interface ExplorerProps {
   activeActivity: ActivityType
   currentProject: ProjectData | null
+  storyNodes: StoryNode[]
   recentProjects: RecentProject[]
   onOpenFolder: () => void
   onOpenRecentProject: (projectSettingsPath: string) => Promise<void>
   onOpenCreateProject: () => void
-  onOpenChapter: (volume: StoryVolume, chapter: StoryChapter) => void
-  onCreateStoryNode: (nodeType: 'volume' | 'chapter', parentVolumeId?: string) => Promise<void>
-  onRenameStoryNode: (
-    nodeType: 'volume' | 'chapter',
-    nodeId: string,
-    nextName: string
-  ) => Promise<void>
-  onToggleVolumeCollapsed: (volumeId: string) => Promise<void>
-  onReorderVolumes: (draggedVolumeId: string, targetVolumeId: string) => Promise<void>
-  onMoveChapterToVolume: (chapterId: string, targetVolumeId: string) => Promise<void>
+  onOpenChapter: (node: StoryNode) => void
+  onCreateStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file') => Promise<void>
+  onRenameStoryNode: (nodeId: string, newName: string) => Promise<void>
+  onDeleteStoryNode: (nodeId: string) => Promise<void>
+  onMoveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
   isOpen: boolean
   width: number
   isBusy: boolean
   errorMessage: string | null
 }
 
-type SelectedNode =
-  | { type: 'volume'; volumeId: string }
-  | { type: 'chapter'; volumeId: string; chapterId: string }
-  | null
+type SelectedNode = { type: 'node'; nodeId: string } | null
 
 const Explorer: React.FC<ExplorerProps> = ({
   activeActivity,
   currentProject,
+  storyNodes,
   recentProjects,
   onOpenFolder,
   onOpenRecentProject,
@@ -41,26 +35,25 @@ const Explorer: React.FC<ExplorerProps> = ({
   onOpenChapter,
   onCreateStoryNode,
   onRenameStoryNode,
-  onToggleVolumeCollapsed,
-  onReorderVolumes,
-  onMoveChapterToVolume,
+  onDeleteStoryNode,
+  onMoveStoryNode,
   isOpen,
   width,
   isBusy,
   errorMessage
 }) => {
   const [selectedNode, setSelectedNode] = useState<SelectedNode>(null)
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
-  const [draggingVolumeId, setDraggingVolumeId] = useState<string | null>(null)
-  const [draggingChapterId, setDraggingChapterId] = useState<string | null>(null)
+  const [createMenuParentId, setCreateMenuParentId] = useState<string | null>(null)
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
-    nodeType: 'volume' | 'chapter'
     nodeId: string
+    nodeType: 'folder' | 'file'
   } | null>(null)
   const [renameDialog, setRenameDialog] = useState<{
-    nodeType: 'volume' | 'chapter'
     nodeId: string
     title: string
     initialValue: string
@@ -73,7 +66,6 @@ const Explorer: React.FC<ExplorerProps> = ({
     }
 
     const handleMouseDown = (event: MouseEvent): void => {
-      // Only close on primary-button clicks; right click is used to open the menu.
       if (event.button !== 0) return
       closeMenus()
     }
@@ -107,36 +99,132 @@ const Explorer: React.FC<ExplorerProps> = ({
     }
   }, [activeActivity])
 
-  const activeVolumeId =
-    selectedNode?.type === 'volume'
-      ? selectedNode.volumeId
-      : selectedNode?.type === 'chapter'
-        ? selectedNode.volumeId
-        : currentProject?.storyVolumes[0]?.id
+  const nodeTree = useMemo(() => {
+    const tree = new Map<string | null, StoryNode[]>()
+    for (const node of storyNodes) {
+      const parentId = node.parentId
+      if (!tree.has(parentId)) {
+        tree.set(parentId, [])
+      }
+      tree.get(parentId)!.push(node)
+    }
+    for (const children of tree.values()) {
+      children.sort((a, b) => a.sortOrder - b.sortOrder)
+    }
+    return tree
+  }, [storyNodes])
 
-  const handleCreateChapter = async (): Promise<void> => {
+  const getNodeById = (nodeId: string): StoryNode | undefined => {
+    return storyNodes.find((n) => n.id === nodeId)
+  }
+
+  const toggleExpanded = (nodeId: string): void => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev)
+      if (next.has(nodeId)) {
+        next.delete(nodeId)
+      } else {
+        next.add(nodeId)
+      }
+      return next
+    })
+  }
+
+  const handleCreateNode = async (type: 'folder' | 'file'): Promise<void> => {
+    const name = type === 'folder' ? '新文件夹' : '新章节'
+    await onCreateStoryNode(createMenuParentId, name, type)
     setIsCreateMenuOpen(false)
-    await onCreateStoryNode('chapter', activeVolumeId)
   }
 
   const handleRename = async (): Promise<void> => {
     if (!contextMenu || !currentProject) return
 
-    const volume = currentProject.storyVolumes.find((item) => item.id === contextMenu.nodeId)
-    const chapter = currentProject.storyVolumes
-      .flatMap((item) => item.chapters)
-      .find((item) => item.id === contextMenu.nodeId)
-    const currentName =
-      contextMenu.nodeType === 'volume' ? (volume?.name ?? '') : (chapter?.name ?? '')
-    const title = contextMenu.nodeType === 'volume' ? '重命名卷' : '重命名章'
+    const node = getNodeById(contextMenu.nodeId)
+    if (!node) return
 
     setContextMenu(null)
     setRenameDialog({
-      nodeType: contextMenu.nodeType,
       nodeId: contextMenu.nodeId,
-      title,
-      initialValue: currentName
+      title: contextMenu.nodeType === 'folder' ? '重命名文件夹' : '重命名文件',
+      initialValue: node.name
     })
+  }
+
+  const handleDelete = async (): Promise<void> => {
+    if (!contextMenu || !currentProject) return
+    await onDeleteStoryNode(contextMenu.nodeId)
+    setContextMenu(null)
+  }
+
+  const renderNode = (node: StoryNode, depth: number): React.ReactNode => {
+    const isExpanded = expandedNodes.has(node.id)
+    const isFolder = node.type === 'folder'
+    const isSelected = selectedNode?.type === 'node' && selectedNode.nodeId === node.id
+    const children = nodeTree.get(node.id) || []
+
+    return (
+      <div key={node.id}>
+        <div
+          className={`story-tree-item ${isFolder ? 'folder' : 'file'} ${isSelected ? 'selected' : ''}`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+          draggable
+          onClick={() => {
+            setSelectedNode({ type: 'node', nodeId: node.id })
+            if (isFolder) {
+              toggleExpanded(node.id)
+            }
+          }}
+          onDoubleClick={() => {
+            if (!isFolder) {
+              onOpenChapter(node)
+            }
+          }}
+          onDragStart={(event) => {
+            setDraggingNodeId(node.id)
+            event.dataTransfer.effectAllowed = 'move'
+          }}
+          onDragOver={(event) => {
+            event.preventDefault()
+            if (draggingNodeId && isFolder) {
+              event.dataTransfer.dropEffect = 'move'
+            }
+          }}
+          onDrop={(event) => {
+            event.preventDefault()
+            if (draggingNodeId && isFolder && draggingNodeId !== node.id) {
+              onMoveStoryNode(draggingNodeId, node.id)
+            }
+            setDraggingNodeId(null)
+          }}
+          onDragEnd={() => setDraggingNodeId(null)}
+          onContextMenu={(event) => {
+            event.preventDefault()
+            setContextMenu({
+              x: event.clientX,
+              y: event.clientY,
+              nodeId: node.id,
+              nodeType: node.type
+            })
+          }}
+        >
+          {isFolder && (
+            <button
+              className={`story-toggle ${isExpanded ? '' : 'collapsed'}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                toggleExpanded(node.id)
+              }}
+            >
+              {isExpanded ? '▾' : '▸'}
+            </button>
+          )}
+          <span className="story-icon">{isFolder ? '📁' : '📄'}</span>
+          <span className="story-label">{node.name}</span>
+        </div>
+
+        {isFolder && isExpanded && children.map((child) => renderNode(child, depth + 1))}
+      </div>
+    )
   }
 
   const renderStoryTree = (): React.ReactNode => {
@@ -154,6 +242,8 @@ const Explorer: React.FC<ExplorerProps> = ({
       )
     }
 
+    const rootNodes = nodeTree.get(null) || []
+
     return (
       <div className="explorer-story">
         <div className="story-toolbar-panel">
@@ -165,6 +255,7 @@ const Explorer: React.FC<ExplorerProps> = ({
                 disabled={isBusy}
                 onClick={(event) => {
                   event.stopPropagation()
+                  setCreateMenuParentId(null)
                   setIsCreateMenuOpen((prev) => !prev)
                 }}
               >
@@ -189,11 +280,10 @@ const Explorer: React.FC<ExplorerProps> = ({
                       if (event.button !== 0) return
                       event.preventDefault()
                       event.stopPropagation()
-                      void onCreateStoryNode('volume')
-                      setIsCreateMenuOpen(false)
+                      void handleCreateNode('folder')
                     }}
                   >
-                    卷
+                    📁 新建文件夹
                   </div>
                   <div
                     className="menu-item"
@@ -201,11 +291,10 @@ const Explorer: React.FC<ExplorerProps> = ({
                       if (event.button !== 0) return
                       event.preventDefault()
                       event.stopPropagation()
-                      void handleCreateChapter()
-                      setIsCreateMenuOpen(false)
+                      void handleCreateNode('file')
                     }}
                   >
-                    章
+                    📄 新建文件
                   </div>
                 </div>
               )}
@@ -215,122 +304,7 @@ const Explorer: React.FC<ExplorerProps> = ({
 
         <div className="story-list-panel">
           <div className="story-tree">
-            {currentProject.storyVolumes.map((volume, index) => {
-              const volumeLabel =
-                index === 0
-                  ? volume.name.trim()
-                    ? `作品相关 {${volume.name.trim()}}`
-                    : '作品相关'
-                  : volume.name.trim()
-                    ? `第${index}卷 {${volume.name.trim()}}`
-                    : `第${index}卷`
-              const isVolumeSelected =
-                selectedNode?.type === 'volume' && selectedNode.volumeId === volume.id
-
-              return (
-                <div
-                  key={volume.id}
-                  className="story-volume-group"
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    if (draggingChapterId) {
-                      event.dataTransfer.dropEffect = 'move'
-                    }
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    if (draggingChapterId) {
-                      void onMoveChapterToVolume(draggingChapterId, volume.id)
-                      setDraggingChapterId(null)
-                    }
-                  }}
-                >
-                  <div
-                    className={`story-tree-item volume ${isVolumeSelected ? 'selected' : ''}`}
-                    draggable
-                    onClick={() => setSelectedNode({ type: 'volume', volumeId: volume.id })}
-                    onDoubleClick={() => void onToggleVolumeCollapsed(volume.id)}
-                    onDragStart={(event) => {
-                      setDraggingVolumeId(volume.id)
-                      event.dataTransfer.effectAllowed = 'move'
-                    }}
-                    onDragOver={(event) => {
-                      event.preventDefault()
-                      if (draggingVolumeId) {
-                        event.dataTransfer.dropEffect = 'move'
-                      }
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      if (draggingVolumeId) {
-                        void onReorderVolumes(draggingVolumeId, volume.id)
-                        setDraggingVolumeId(null)
-                      }
-                    }}
-                    onDragEnd={() => setDraggingVolumeId(null)}
-                    onContextMenu={(event) => {
-                      event.preventDefault()
-                      setContextMenu({
-                        x: event.clientX,
-                        y: event.clientY,
-                        nodeType: 'volume',
-                        nodeId: volume.id
-                      })
-                    }}
-                  >
-                    <button
-                      className={`story-toggle ${volume.collapsed ? 'collapsed' : ''}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void onToggleVolumeCollapsed(volume.id)
-                      }}
-                    >
-                      {volume.collapsed ? '▸' : '▾'}
-                    </button>
-                    <span className="story-label">{volumeLabel}</span>
-                  </div>
-
-                  {!volume.collapsed &&
-                    volume.chapters.map((chapter) => {
-                      const isChapterSelected =
-                        selectedNode?.type === 'chapter' && selectedNode.chapterId === chapter.id
-
-                      return (
-                        <div
-                          key={chapter.id}
-                          className={`story-tree-item chapter ${isChapterSelected ? 'selected' : ''}`}
-                          draggable
-                          onClick={() => {
-                            setSelectedNode({
-                              type: 'chapter',
-                              volumeId: volume.id,
-                              chapterId: chapter.id
-                            })
-                            onOpenChapter(volume, chapter)
-                          }}
-                          onDragStart={(event) => {
-                            setDraggingChapterId(chapter.id)
-                            event.dataTransfer.effectAllowed = 'move'
-                          }}
-                          onDragEnd={() => setDraggingChapterId(null)}
-                          onContextMenu={(event) => {
-                            event.preventDefault()
-                            setContextMenu({
-                              x: event.clientX,
-                              y: event.clientY,
-                              nodeType: 'chapter',
-                              nodeId: chapter.id
-                            })
-                          }}
-                        >
-                          <span className="story-indent" />
-                          <span className="story-label">{chapter.name}</span>
-                        </div>
-                      )
-                    })}
-                </div>
-              )
-            })}
+            {rootNodes.map((node) => renderNode(node, 0))}
           </div>
         </div>
       </div>
@@ -399,6 +373,11 @@ const Explorer: React.FC<ExplorerProps> = ({
                 key: 'rename',
                 label: '重命名',
                 onSelect: () => void handleRename()
+              },
+              {
+                key: 'delete',
+                label: '删除',
+                onSelect: () => void handleDelete()
               }
             ]}
           />
@@ -410,7 +389,7 @@ const Explorer: React.FC<ExplorerProps> = ({
             initialValue={renameDialog.initialValue}
             onCancel={() => setRenameDialog(null)}
             onConfirm={(nextValue) => {
-              void onRenameStoryNode(renameDialog.nodeType, renameDialog.nodeId, nextValue)
+              void onRenameStoryNode(renameDialog.nodeId, nextValue)
               setRenameDialog(null)
             }}
           />

@@ -1,18 +1,16 @@
 export type ActivityType = 'chapter' | 'character' | 'setting' | 'plugin'
 export type RightActivityType = 'proofread' | 'memo' | 'archive'
 
-export interface StoryChapter {
+export interface StoryNode {
   id: string
+  parentId: string | null
   name: string
-  fileName: string
-}
-
-export interface StoryVolume {
-  id: string
-  name: string
-  folderName: string
-  collapsed: boolean
-  chapters: StoryChapter[]
+  type: 'folder' | 'file'
+  fileName: string | null
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export interface ProjectData {
@@ -21,7 +19,7 @@ export interface ProjectData {
   description: string
   projectPath: string
   projectSettingsPath: string
-  storyVolumes: StoryVolume[]
+  storyDbPath: string
 }
 
 export interface RecentProject {

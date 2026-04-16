@@ -1,23 +1,22 @@
-import { mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
-import { basename, dirname, extname, join, normalize } from 'path'
-import { randomUUID } from 'crypto'
+import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises'
+import { basename, dirname, join, normalize } from 'path'
+import {
+  STORY_DB_FILE,
+  initDatabase,
+  saveDatabase,
+  loadDatabase,
+  getNodes,
+  getChildNodes,
+  createNode,
+  renameNode,
+  deleteNode,
+  moveNode,
+  reorderNode,
+  StoryNode
+} from './db'
 
 export const PROJECT_SETTINGS_FILE = 'storystudioworld.sswprojectsetting'
-const PROJECT_VERSION = 1
-
-export interface StoryChapter {
-  id: string
-  name: string
-  fileName: string
-}
-
-export interface StoryVolume {
-  id: string
-  name: string
-  folderName: string
-  collapsed: boolean
-  chapters: StoryChapter[]
-}
+const PROJECT_VERSION = 2
 
 export interface ProjectData {
   version: number
@@ -25,14 +24,13 @@ export interface ProjectData {
   description: string
   projectPath: string
   projectSettingsPath: string
-  storyVolumes: StoryVolume[]
+  storyDbPath: string
 }
 
 interface PersistedProjectData {
   version: number
   projectName: string
   description: string
-  storyVolumes: StoryVolume[]
 }
 
 export interface CreateProjectInput {
@@ -41,34 +39,34 @@ export interface CreateProjectInput {
   projectPath: string
 }
 
-export interface ReorderVolumeInput {
+export interface CreateNodeInput {
   projectSettingsPath: string
-  draggedVolumeId: string
-  targetVolumeId: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
 }
 
-export interface MoveChapterInput {
+export interface RenameNodeInput {
   projectSettingsPath: string
-  chapterId: string
-  targetVolumeId: string
-}
-
-export interface RenameStoryNodeInput {
-  projectSettingsPath: string
-  nodeType: 'volume' | 'chapter'
   nodeId: string
-  nextName: string
+  newName: string
 }
 
-export interface CreateStoryNodeInput {
+export interface DeleteNodeInput {
   projectSettingsPath: string
-  nodeType: 'volume' | 'chapter'
-  parentVolumeId?: string
+  nodeId: string
 }
 
-export interface ToggleVolumeInput {
+export interface MoveNodeInput {
   projectSettingsPath: string
-  volumeId: string
+  nodeId: string
+  newParentId: string | null
+}
+
+export interface ReorderNodeInput {
+  projectSettingsPath: string
+  nodeId: string
+  newSortOrder: number
 }
 
 function normalizeProjectPath(projectPath: string): string {
@@ -77,15 +75,6 @@ function normalizeProjectPath(projectPath: string): string {
 
 function normalizeProjectSettingsPath(projectSettingsPath: string): string {
   return normalize(projectSettingsPath.trim())
-}
-
-function cleanSegmentName(name: string, fallback: string): string {
-  const cleaned = Array.from(name.trim().replace(/[<>:"/\\|?*]/g, ' '))
-    .map((char) => (char.charCodeAt(0) < 32 ? ' ' : char))
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return cleaned || fallback
 }
 
 function stripMd(name: string): string {
@@ -127,16 +116,18 @@ function getStoryRoot(projectPath: string): string {
   return join(projectPath, 'story')
 }
 
-async function writeProject(project: ProjectData): Promise<ProjectData> {
+function getStoryDbPath(projectPath: string): string {
+  return join(projectPath, STORY_DB_FILE)
+}
+
+async function writeProjectSettings(project: ProjectData): Promise<void> {
   const persisted: PersistedProjectData = {
     version: project.version,
     projectName: project.projectName,
-    description: project.description,
-    storyVolumes: project.storyVolumes
+    description: project.description
   }
 
   await writeFile(getSettingsPath(project.projectPath), JSON.stringify(persisted, null, 2), 'utf-8')
-  return project
 }
 
 async function readProjectSettings(projectPath: string): Promise<PersistedProjectData> {
@@ -156,59 +147,8 @@ function withProjectPath(projectPath: string, data: PersistedProjectData): Proje
     description: data.description ?? '',
     projectPath,
     projectSettingsPath: getSettingsPath(projectPath),
-    storyVolumes: Array.isArray(data.storyVolumes) ? data.storyVolumes : []
+    storyDbPath: getStoryDbPath(projectPath)
   }
-}
-
-async function findUniqueIdFolderName(projectPath: string, baseName: string): Promise<string> {
-  const storyRoot = getStoryRoot(projectPath)
-  let candidate = baseName
-  let index = 1
-
-  while (await pathExists(join(storyRoot, candidate))) {
-    candidate = `${baseName}_${index}`
-    index += 1
-  }
-
-  return candidate
-}
-
-async function createVolumeFolder(projectPath: string, volumeId: string): Promise<string> {
-  // Stable, order-independent folder name; never include display index.
-  const baseName = `volume_${volumeId.replace(/-/g, '').slice(0, 8)}`
-  const folderName = await findUniqueIdFolderName(projectPath, baseName)
-  await mkdir(join(getStoryRoot(projectPath), folderName), { recursive: true })
-  return folderName
-}
-
-async function findUniqueChapterFileName(
-  projectPath: string,
-  volumeFolderName: string,
-  preferredBaseName: string
-): Promise<string> {
-  const volumePath = join(getStoryRoot(projectPath), volumeFolderName)
-  const baseName = cleanSegmentName(stripMd(preferredBaseName), '新章')
-  let candidate = `${baseName}.md`
-  let index = 1
-
-  while (await pathExists(join(volumePath, candidate))) {
-    candidate = `${baseName} (${index}).md`
-    index += 1
-  }
-
-  return candidate
-}
-
-function getVolumeDisplayName(volume: StoryVolume, index: number): string {
-  if (index === 0) {
-    return volume.name.trim() ? `作品相关 ${volume.name.trim()}` : '作品相关'
-  }
-
-  return volume.name.trim() ? `第${index}卷 ${volume.name.trim()}` : `第${index}卷`
-}
-
-function getNextChapterDefaultName(volume: StoryVolume): string {
-  return `第${volume.chapters.length + 1}章`
 }
 
 export async function createProject(input: CreateProjectInput): Promise<ProjectData> {
@@ -224,10 +164,13 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   await mkdir(join(projectPath, 'worldviewsetting'), { recursive: true })
   await mkdir(join(projectPath, 'story'), { recursive: true })
 
-  const volume0Id = randomUUID()
-  const volume1Id = randomUUID()
-  const volume0FolderName = await createVolumeFolder(projectPath, volume0Id)
-  const volume1FolderName = await createVolumeFolder(projectPath, volume1Id)
+  const storyDbPath = getStoryDbPath(projectPath)
+  const db = await initDatabase(storyDbPath)
+
+  createNode(db, projectPath, null, '故事', 'folder')
+
+  await saveDatabase(db, storyDbPath)
+  db.close()
 
   const project: ProjectData = {
     version: PROJECT_VERSION,
@@ -235,25 +178,11 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
     description: input.description.trim(),
     projectPath,
     projectSettingsPath: getSettingsPath(projectPath),
-    storyVolumes: [
-      {
-        id: volume0Id,
-        name: '',
-        folderName: volume0FolderName,
-        collapsed: false,
-        chapters: []
-      },
-      {
-        id: volume1Id,
-        name: '',
-        folderName: volume1FolderName,
-        collapsed: false,
-        chapters: []
-      }
-    ]
+    storyDbPath
   }
 
-  return writeProject(project)
+  await writeProjectSettings(project)
+  return project
 }
 
 export async function loadProject(projectPathInput: string): Promise<ProjectData> {
@@ -267,187 +196,81 @@ export async function loadProject(projectPathInput: string): Promise<ProjectData
   return withProjectPath(projectPath, settings)
 }
 
-export async function createStoryNode(input: CreateStoryNodeInput): Promise<ProjectData> {
+export async function getProjectNodes(projectPathInput: string): Promise<StoryNode[]> {
+  const project = await loadProject(projectPathInput)
+  const db = await loadDatabase(project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
+}
+
+export async function getChildNodesByParent(projectPathInput: string, parentId: string | null): Promise<StoryNode[]> {
+  const project = await loadProject(projectPathInput)
+  const db = await loadDatabase(project.storyDbPath)
+  const nodes = getChildNodes(db, parentId)
+  db.close()
+  return nodes
+}
+
+export async function createStoryNode(input: CreateNodeInput): Promise<StoryNode[]> {
   const project = await loadProject(input.projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
 
-  if (input.nodeType === 'volume') {
-    const volumeId = randomUUID()
-    const folderName = await createVolumeFolder(project.projectPath, volumeId)
-    project.storyVolumes.push({
-      id: volumeId,
-      name: '',
-      folderName,
-      collapsed: false,
-      chapters: []
-    })
-    return writeProject(project)
-  }
+  const name = input.type === 'file' ? stripMd(input.name) : input.name
+  createNode(db, project.projectPath, input.parentId, name, input.type)
 
-  const targetVolume =
-    project.storyVolumes.find((volume) => volume.id === input.parentVolumeId) ??
-    project.storyVolumes[0]
-
-  if (!targetVolume) {
-    throw new Error('请先创建一个卷，再添加章。')
-  }
-
-  const nextChapterName = getNextChapterDefaultName(targetVolume)
-  const fileName = await findUniqueChapterFileName(
-    project.projectPath,
-    targetVolume.folderName,
-    nextChapterName
-  )
-
-  await mkdir(join(getStoryRoot(project.projectPath), targetVolume.folderName), { recursive: true })
-  await writeFile(
-    join(getStoryRoot(project.projectPath), targetVolume.folderName, fileName),
-    '',
-    'utf-8'
-  )
-  targetVolume.chapters.push({
-    id: randomUUID(),
-    name: stripMd(fileName),
-    fileName
-  })
-
-  return writeProject(project)
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
-export async function renameStoryNode(input: RenameStoryNodeInput): Promise<ProjectData> {
+export async function renameStoryNode(input: RenameNodeInput): Promise<StoryNode[]> {
   const project = await loadProject(input.projectSettingsPath)
-  const nextName = input.nextName.trim()
+  const db = await loadDatabase(project.storyDbPath)
 
-  if (input.nodeType === 'volume') {
-    const volume = project.storyVolumes.find((item) => item.id === input.nodeId)
-    if (!volume) {
-      throw new Error('未找到要重命名的卷。')
-    }
+  renameNode(db, project.projectPath, input.nodeId, input.newName)
 
-    volume.name = nextName
-    return writeProject(project)
-  }
-
-  const volume = project.storyVolumes.find((item) =>
-    item.chapters.some((chapter) => chapter.id === input.nodeId)
-  )
-  const chapter = volume?.chapters.find((item) => item.id === input.nodeId)
-
-  if (!volume || !chapter) {
-    throw new Error('未找到要重命名的章。')
-  }
-
-  const nextFileName = await findUniqueChapterFileName(
-    project.projectPath,
-    volume.folderName,
-    nextName
-  )
-  const fromPath = join(getStoryRoot(project.projectPath), volume.folderName, chapter.fileName)
-  const toPath = join(getStoryRoot(project.projectPath), volume.folderName, nextFileName)
-  await mkdir(join(getStoryRoot(project.projectPath), volume.folderName), { recursive: true })
-  try {
-    await rename(fromPath, toPath)
-  } catch (error) {
-    // User may have manually deleted the file; keep settings consistent by recreating.
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      throw error
-    }
-    await writeFile(toPath, '', 'utf-8')
-  }
-
-  chapter.name = stripMd(nextFileName)
-  chapter.fileName = nextFileName
-  return writeProject(project)
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
-export async function toggleVolumeCollapsed(input: ToggleVolumeInput): Promise<ProjectData> {
+export async function deleteStoryNode(input: DeleteNodeInput): Promise<StoryNode[]> {
   const project = await loadProject(input.projectSettingsPath)
-  const volume = project.storyVolumes.find((item) => item.id === input.volumeId)
-  if (!volume) {
-    throw new Error('未找到卷。')
-  }
+  const db = await loadDatabase(project.storyDbPath)
 
-  volume.collapsed = !volume.collapsed
-  return writeProject(project)
+  deleteNode(db, project.projectPath, input.nodeId)
+
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
-export async function reorderVolumes(input: ReorderVolumeInput): Promise<ProjectData> {
+export async function moveStoryNode(input: MoveNodeInput): Promise<StoryNode[]> {
   const project = await loadProject(input.projectSettingsPath)
-  const draggedIndex = project.storyVolumes.findIndex((item) => item.id === input.draggedVolumeId)
-  const targetIndex = project.storyVolumes.findIndex((item) => item.id === input.targetVolumeId)
+  const db = await loadDatabase(project.storyDbPath)
 
-  if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
-    return project
-  }
+  moveNode(db, project.projectPath, input.nodeId, input.newParentId)
 
-  const [dragged] = project.storyVolumes.splice(draggedIndex, 1)
-  project.storyVolumes.splice(targetIndex, 0, dragged)
-  return writeProject(project)
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
-export async function moveChapterToVolume(input: MoveChapterInput): Promise<ProjectData> {
+export async function reorderStoryNode(input: ReorderNodeInput): Promise<StoryNode[]> {
   const project = await loadProject(input.projectSettingsPath)
-  const sourceVolume = project.storyVolumes.find((volume) =>
-    volume.chapters.some((chapter) => chapter.id === input.chapterId)
-  )
-  const targetVolume = project.storyVolumes.find((volume) => volume.id === input.targetVolumeId)
+  const db = await loadDatabase(project.storyDbPath)
 
-  if (!sourceVolume || !targetVolume) {
-    throw new Error('移动章失败，未找到目标卷。')
-  }
+  reorderNode(db, input.nodeId, input.newSortOrder)
 
-  const chapterIndex = sourceVolume.chapters.findIndex((chapter) => chapter.id === input.chapterId)
-  if (chapterIndex === -1) {
-    throw new Error('未找到要移动的章。')
-  }
-
-  const [chapter] = sourceVolume.chapters.splice(chapterIndex, 1)
-  const nextFileName = await findUniqueChapterFileName(
-    project.projectPath,
-    targetVolume.folderName,
-    stripMd(chapter.fileName)
-  )
-
-  const fromPath = join(
-    getStoryRoot(project.projectPath),
-    sourceVolume.folderName,
-    chapter.fileName
-  )
-  const toPath = join(getStoryRoot(project.projectPath), targetVolume.folderName, nextFileName)
-  await mkdir(join(getStoryRoot(project.projectPath), targetVolume.folderName), { recursive: true })
-  try {
-    await rename(fromPath, toPath)
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      throw error
-    }
-    await writeFile(toPath, '', 'utf-8')
-  }
-
-  chapter.fileName = nextFileName
-  chapter.name = stripMd(nextFileName)
-  targetVolume.chapters.push(chapter)
-
-  return writeProject(project)
-}
-
-export function getChapterAbsolutePath(project: ProjectData, chapterId: string): string | null {
-  for (const volume of project.storyVolumes) {
-    const chapter = volume.chapters.find((item) => item.id === chapterId)
-    if (chapter) {
-      return join(getStoryRoot(project.projectPath), volume.folderName, chapter.fileName)
-    }
-  }
-
-  return null
-}
-
-export function getVolumeLabel(project: ProjectData, volumeId: string): string | null {
-  const index = project.storyVolumes.findIndex((item) => item.id === volumeId)
-  if (index === -1) {
-    return null
-  }
-
-  return getVolumeDisplayName(project.storyVolumes[index], index)
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
 export async function clearProjectDirectory(projectPath: string): Promise<void> {
@@ -456,6 +279,24 @@ export async function clearProjectDirectory(projectPath: string): Promise<void> 
   }
 }
 
-export function getChapterBaseName(fileName: string): string {
-  return stripMd(basename(fileName, extname(fileName)))
+export function getChapterAbsolutePath(project: ProjectData, nodeId: string): string | null {
+  return join(getStoryRoot(project.projectPath), nodeId, 'chapter.md')
+}
+
+export function buildNodeTree(nodes: StoryNode[]): Map<string | null, StoryNode[]> {
+  const tree = new Map<string | null, StoryNode[]>()
+  
+  for (const node of nodes) {
+    const parentId = node.parentId
+    if (!tree.has(parentId)) {
+      tree.set(parentId, [])
+    }
+    tree.get(parentId)!.push(node)
+  }
+
+  for (const children of tree.values()) {
+    children.sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  return tree
 }

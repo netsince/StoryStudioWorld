@@ -6,14 +6,14 @@ import {
   createProject,
   createStoryNode,
   loadProject,
-  moveChapterToVolume,
+  getProjectNodes,
   renameStoryNode,
-  reorderVolumes,
-  toggleVolumeCollapsed
+  deleteStoryNode,
+  moveStoryNode,
+  reorderStoryNode
 } from './project'
 
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -21,7 +21,7 @@ function createWindow(): void {
     minHeight: 700,
     show: false,
     autoHideMenuBar: true,
-    frame: false, // 无边框窗口，配合我们的 TitleBar
+    frame: false,
     ...(process.platform !== 'darwin' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -38,7 +38,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // IPC 窗口控制
   ipcMain.on('window-minimize', () => {
     mainWindow.minimize()
   })
@@ -87,14 +86,19 @@ function createWindow(): void {
     }
   )
 
+  ipcMain.handle('get-project-nodes', async (_, projectSettingsPath: string) => {
+    return getProjectNodes(projectSettingsPath)
+  })
+
   ipcMain.handle(
     'create-story-node',
     async (
       _,
       input: {
         projectSettingsPath: string
-        nodeType: 'volume' | 'chapter'
-        parentVolumeId?: string
+        parentId: string | null
+        name: string
+        type: 'folder' | 'file'
       }
     ) => {
       return createStoryNode(input)
@@ -107,9 +111,8 @@ function createWindow(): void {
       _,
       input: {
         projectSettingsPath: string
-        nodeType: 'volume' | 'chapter'
         nodeId: string
-        nextName: string
+        newName: string
       }
     ) => {
       return renameStoryNode(input)
@@ -117,38 +120,46 @@ function createWindow(): void {
   )
 
   ipcMain.handle(
-    'toggle-volume-collapsed',
-    async (_, input: { projectSettingsPath: string; volumeId: string }) => {
-      return toggleVolumeCollapsed(input)
-    }
-  )
-
-  ipcMain.handle(
-    'reorder-volumes',
+    'delete-story-node',
     async (
       _,
       input: {
         projectSettingsPath: string
-        draggedVolumeId: string
-        targetVolumeId: string
+        nodeId: string
       }
     ) => {
-      return reorderVolumes(input)
+      return deleteStoryNode(input)
     }
   )
 
   ipcMain.handle(
-    'move-chapter-to-volume',
+    'move-story-node',
     async (
       _,
-      input: { projectSettingsPath: string; chapterId: string; targetVolumeId: string }
+      input: {
+        projectSettingsPath: string
+        nodeId: string
+        newParentId: string | null
+      }
     ) => {
-      return moveChapterToVolume(input)
+      return moveStoryNode(input)
     }
   )
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  ipcMain.handle(
+    'reorder-story-node',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        nodeId: string
+        newSortOrder: number
+      }
+    ) => {
+      return reorderStoryNode(input)
+    }
+  )
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -156,40 +167,24 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

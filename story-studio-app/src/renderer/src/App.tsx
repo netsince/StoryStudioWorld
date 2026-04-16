@@ -14,8 +14,7 @@ import {
   ProjectData,
   RecentProject,
   RightActivityType,
-  StoryChapter,
-  StoryVolume,
+  StoryNode,
   Tab
 } from './models'
 
@@ -162,6 +161,7 @@ function App(): React.JSX.Element {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   const [currentProject, setCurrentProject] = useState<ProjectData | null>(null)
+  const [storyNodes, setStoryNodes] = useState<StoryNode[]>([])
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isProjectBusy, setIsProjectBusy] = useState(false)
@@ -184,6 +184,15 @@ function App(): React.JSX.Element {
     window.addEventListener('resize', handleResize)
     return () => {
       window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  const loadStoryNodes = useCallback(async (projectSettingsPath: string): Promise<void> => {
+    try {
+      const nodes = await window.api.getProjectNodes(projectSettingsPath)
+      setStoryNodes(nodes)
+    } catch (error) {
+      console.error('Failed to load story nodes:', error)
     }
   }, [])
 
@@ -225,8 +234,9 @@ function App(): React.JSX.Element {
             : { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
         })
       )
+      void loadStoryNodes(project.projectSettingsPath)
     },
-    [updateRecentProjects]
+    [updateRecentProjects, loadStoryNodes]
   )
 
   const openWelcomeTab = useCallback((): void => {
@@ -322,26 +332,22 @@ function App(): React.JSX.Element {
     }
   }
 
-  const updateProjectState = (project: ProjectData): void => {
-    setCurrentProject(project)
-    setErrorMessage(null)
-    updateRecentProjects(project)
-  }
-
   const handleCreateStoryNode = async (
-    nodeType: 'volume' | 'chapter',
-    parentVolumeId?: string
+    parentId: string | null,
+    name: string,
+    type: 'folder' | 'file'
   ): Promise<void> => {
     if (!currentProject) return
 
     try {
       setIsProjectBusy(true)
-      const project = await window.api.createStoryNode({
+      const nodes = await window.api.createStoryNode({
         projectSettingsPath: currentProject.projectSettingsPath,
-        nodeType,
-        parentVolumeId
+        parentId,
+        name,
+        type
       })
-      updateProjectState(project)
+      setStoryNodes(nodes)
     } catch (error) {
       const message = error instanceof Error ? error.message : '创建失败。'
       setErrorMessage(message)
@@ -352,21 +358,19 @@ function App(): React.JSX.Element {
   }
 
   const handleRenameStoryNode = async (
-    nodeType: 'volume' | 'chapter',
     nodeId: string,
-    nextName: string
+    newName: string
   ): Promise<void> => {
     if (!currentProject) return
 
     try {
       setIsProjectBusy(true)
-      const project = await window.api.renameStoryNode({
+      const nodes = await window.api.renameStoryNode({
         projectSettingsPath: currentProject.projectSettingsPath,
-        nodeType,
         nodeId,
-        nextName
+        newName
       })
-      updateProjectState(project)
+      setStoryNodes(nodes)
     } catch (error) {
       const message = error instanceof Error ? error.message : '重命名失败。'
       setErrorMessage(message)
@@ -376,38 +380,18 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handleToggleVolumeCollapsed = async (volumeId: string): Promise<void> => {
+  const handleDeleteStoryNode = async (nodeId: string): Promise<void> => {
     if (!currentProject) return
 
     try {
-      const project = await window.api.toggleVolumeCollapsed({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        volumeId
-      })
-      updateProjectState(project)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '切换卷状态失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    }
-  }
-
-  const handleReorderVolumes = async (
-    draggedVolumeId: string,
-    targetVolumeId: string
-  ): Promise<void> => {
-    if (!currentProject || draggedVolumeId === targetVolumeId) return
-
-    try {
       setIsProjectBusy(true)
-      const project = await window.api.reorderVolumes({
+      const nodes = await window.api.deleteStoryNode({
         projectSettingsPath: currentProject.projectSettingsPath,
-        draggedVolumeId,
-        targetVolumeId
+        nodeId
       })
-      updateProjectState(project)
+      setStoryNodes(nodes)
     } catch (error) {
-      const message = error instanceof Error ? error.message : '卷排序失败。'
+      const message = error instanceof Error ? error.message : '删除失败。'
       setErrorMessage(message)
       window.alert(message)
     } finally {
@@ -415,22 +399,22 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handleMoveChapterToVolume = async (
-    chapterId: string,
-    targetVolumeId: string
+  const handleMoveStoryNode = async (
+    nodeId: string,
+    newParentId: string | null
   ): Promise<void> => {
     if (!currentProject) return
 
     try {
       setIsProjectBusy(true)
-      const project = await window.api.moveChapterToVolume({
+      const nodes = await window.api.moveStoryNode({
         projectSettingsPath: currentProject.projectSettingsPath,
-        chapterId,
-        targetVolumeId
+        nodeId,
+        newParentId
       })
-      updateProjectState(project)
+      setStoryNodes(nodes)
     } catch (error) {
-      const message = error instanceof Error ? error.message : '移动章失败。'
+      const message = error instanceof Error ? error.message : '移动失败。'
       setErrorMessage(message)
       window.alert(message)
     } finally {
@@ -438,13 +422,13 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handleOpenChapter = (volume: StoryVolume, chapter: StoryChapter): void => {
-    if (!currentProject) return
+  const handleOpenChapter = (node: StoryNode): void => {
+    if (!currentProject || node.type !== 'file') return
 
-    const path = `${currentProject.projectPath}/story/${volume.folderName}/${chapter.fileName}`
+    const path = `${currentProject.projectPath}/story/${node.parentId}/${node.fileName}`
     openTab({
-      id: `${volume.id}:${chapter.id}`,
-      title: chapter.name,
+      id: node.id,
+      title: node.name,
       type: 'file',
       path
     })
@@ -728,6 +712,7 @@ function App(): React.JSX.Element {
             <Explorer
               activeActivity={activeActivity}
               currentProject={currentProject}
+              storyNodes={storyNodes}
               recentProjects={recentProjects}
               onOpenFolder={handleOpenProject}
               onOpenRecentProject={handleOpenRecentProject}
@@ -735,9 +720,8 @@ function App(): React.JSX.Element {
               onOpenChapter={handleOpenChapter}
               onCreateStoryNode={handleCreateStoryNode}
               onRenameStoryNode={handleRenameStoryNode}
-              onToggleVolumeCollapsed={handleToggleVolumeCollapsed}
-              onReorderVolumes={handleReorderVolumes}
-              onMoveChapterToVolume={handleMoveChapterToVolume}
+              onDeleteStoryNode={handleDeleteStoryNode}
+              onMoveStoryNode={handleMoveStoryNode}
               isOpen={isExplorerOpen}
               width={explorerWidth}
               isBusy={isProjectBusy}
