@@ -329,7 +329,11 @@ export async function reorderStoryNode(input: ReorderNodeInput): Promise<StoryNo
     const nodes = getNodes(db)
     return nodes
   } finally {
-    db.close()
+    try {
+      db.close()
+    } catch (closeError) {
+      console.error('Failed to close database connection:', closeError)
+    }
   }
 }
 
