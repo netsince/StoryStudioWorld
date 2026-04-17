@@ -567,6 +567,31 @@ html {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.story-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.story-toolbar-btn:hover:not(:disabled) {
+  background: var(--toolbar-hover-bg, rgba(255, 255, 255, 0.06));
+  color: var(--text-active, #cccccc);
+}
+
+.story-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .story-project-name {
   color: var(--text-active);
   font-size: 14px;
@@ -587,14 +612,7 @@ html {
 }
 
 .story-action-button {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
+  // 样式继承自 .story-toolbar-btn，此 class 仅用于 CreateMenuPortal 定位
 }
 
 .story-create-menu {

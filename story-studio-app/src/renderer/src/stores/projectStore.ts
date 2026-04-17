@@ -28,6 +28,7 @@ interface ProjectState {
   deleteStoryNode: (nodeId: string) => Promise<void>
   moveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
   reorderStoryNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => Promise<void>
+  refreshStoryNodes: () => Promise<void>
 
   saveNodeContent: (nodeId: string, content: string) => Promise<void>
   setDraft: (nodeId: string, content: string) => void
@@ -229,6 +230,22 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ storyNodes: nodes })
       } catch (error) {
         const message = error instanceof Error ? error.message : '排序失败。'
+        set({ errorMessage: message })
+        window.alert(message)
+      } finally {
+        set({ isProjectBusy: false })
+      }
+    },
+
+    refreshStoryNodes: async () => {
+      const currentProject = get().currentProject
+      if (!currentProject) return
+
+      try {
+        set({ isProjectBusy: true })
+        await loadStoryNodes(currentProject.projectSettingsPath)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '刷新失败。'
         set({ errorMessage: message })
         window.alert(message)
       } finally {

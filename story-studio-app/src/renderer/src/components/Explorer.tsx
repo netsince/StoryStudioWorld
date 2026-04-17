@@ -155,6 +155,8 @@ const Explorer: React.FC = () => {
     openTab({ id: node.id, title: node.name, type: 'file', nodeId: node.id })
   }
 
+  const onRefreshStoryNodes = useProjectStore((s) => s.refreshStoryNodes)
+
   const renderStoryTree = (): React.ReactNode => {
     if (!currentProject) {
       return (
@@ -173,10 +175,21 @@ const Explorer: React.FC = () => {
     return (
       <div className="explorer-story" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="story-toolbar-panel" style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div className="story-toolbar" style={{ display: 'flex', alignItems: 'center' }}>
-            <div className="story-toolbar-actions" style={{ position: 'relative' }}>
+          <div className="story-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px' }}>
+            <div className="story-toolbar-actions" style={{ position: 'relative', display: 'flex', gap: '2px' }}>
               <button
-                className="action-button story-action-button"
+                className="story-toolbar-btn"
+                title="刷新"
+                disabled={isBusy}
+                onClick={() => void onRefreshStoryNodes()}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+              </button>
+              <button
+                className="story-toolbar-btn story-action-button"
                 title="新建"
                 disabled={isBusy}
                 onClick={(event) => {
@@ -184,7 +197,7 @@ const Explorer: React.FC = () => {
                   setIsCreateMenuOpen((prev) => !prev)
                 }}
               >
-                <svg className="icon icon-sm" viewBox="0 0 24 24">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
