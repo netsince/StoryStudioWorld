@@ -38,7 +38,6 @@ export interface UseEditorTreeValue {
   closeOtherTabs: (groupId: string, tabId: string) => void
   closeAllTabs: (groupId: string) => void
   togglePinTab: (groupId: string, tabId: string) => void
-  toggleDirtyTab: (groupId: string, tabId: string) => void
   setDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
   reorderTabs: (groupId: string, draggedId: string, targetId: string) => void
   moveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
@@ -209,15 +208,6 @@ export const useEditorTree = (): UseEditorTreeValue => {
     )
   }, [])
 
-  const toggleDirtyTab = useCallback((groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => ({
-        ...group,
-        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isDirty: !tab.isDirty } : tab))
-      }))
-    )
-  }, [])
-
   const setDirtyTab = useCallback((groupId: string, tabId: string, isDirty: boolean): void => {
     setEditorTree((prev) =>
       updateGroup(prev, groupId, (group) => ({
@@ -379,7 +369,6 @@ export const useEditorTree = (): UseEditorTreeValue => {
     closeOtherTabs,
     closeAllTabs,
     togglePinTab,
-    toggleDirtyTab,
     setDirtyTab,
     reorderTabs,
     moveTab,

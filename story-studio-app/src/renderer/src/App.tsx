@@ -140,7 +140,6 @@ function App(): React.JSX.Element {
               onCloseOthers={editor.closeOtherTabs}
               onCloseAll={editor.closeAllTabs}
               onPinTab={editor.togglePinTab}
-              onDirtyTab={editor.toggleDirtyTab}
               onSetDirtyTab={editor.setDirtyTab}
               onReorderTabs={editor.reorderTabs}
               onMoveTab={editor.moveTab}

@@ -21,7 +21,6 @@ interface EditorProps {
   onCloseOthers: (groupId: string, tabId: string) => void
   onCloseAll: (groupId: string) => void
   onPinTab: (groupId: string, tabId: string) => void
-  onDirtyTab: (groupId: string, tabId: string) => void
   onSetDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
   onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
 
@@ -114,7 +113,6 @@ const Editor: React.FC<EditorProps> = ({
   onCloseOthers,
   onCloseAll,
   onPinTab,
-  onDirtyTab,
   onSetDirtyTab,
   onReorderTabs,
   onMoveTab,
@@ -145,7 +143,6 @@ const Editor: React.FC<EditorProps> = ({
           onCloseOthers={onCloseOthers}
           onCloseAll={onCloseAll}
           onPinTab={onPinTab}
-          onDirtyTab={onDirtyTab}
           onSetDirtyTab={onSetDirtyTab}
           onReorderTabs={onReorderTabs}
           onMoveTab={onMoveTab}
