@@ -32,6 +32,7 @@ interface EditorState {
   openTab: (tab: Tab) => void
   openWelcomeTab: () => void
   openCreateProjectTab: () => void
+  openAboutTab: () => void
   removeCreateProjectTabs: () => void
 
   switchTab: (groupId: string, tabId: string) => void
@@ -90,6 +91,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     openCreateProjectTab: () => {
       const tab: Tab = { id: 'create-project', title: '新建项目', type: 'create-project' }
+      set((state) => {
+        const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
+        const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
+          const exists = group.tabs.some((t) => t.id === tab.id)
+          const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+          return { ...group, tabs: nextTabs, activeTabId: tab.id }
+        })
+        return { editorTree: nextTree, focusedGroupId: targetGroupId }
+      })
+    },
+
+    openAboutTab: () => {
+      const tab: Tab = { id: 'about', title: '关于', type: 'about' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {

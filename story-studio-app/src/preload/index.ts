@@ -85,7 +85,15 @@ const api = {
   readNodeContent: (projectSettingsPath: string, nodeId: string): Promise<string | null> =>
     ipcRenderer.invoke('read-node-content', projectSettingsPath, nodeId),
   writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string): Promise<void> =>
-    ipcRenderer.invoke('write-node-content', projectSettingsPath, nodeId, content)
+    ipcRenderer.invoke('write-node-content', projectSettingsPath, nodeId, content),
+  getAppVersion: (): Promise<{
+    version: string
+    electron: string
+    chrome: string
+    node: string
+    v8: string
+    platform: string
+  }> => ipcRenderer.invoke('get-app-version')
 }
 
 if (process.contextIsolated) {

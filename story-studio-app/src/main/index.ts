@@ -174,6 +174,18 @@ function createWindow(): void {
     }
   )
 
+  ipcMain.handle('get-app-version', async () => {
+    const { default: pkg } = await import('../../package.json')
+    return {
+      version: pkg.version || '0.0.1',
+      electron: process.versions.electron || 'Unknown',
+      chrome: process.versions.chrome || 'Unknown',
+      node: process.versions.node || 'Unknown',
+      v8: process.versions.v8 || 'Unknown',
+      platform: process.platform
+    }
+  })
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {

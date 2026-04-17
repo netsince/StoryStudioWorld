@@ -19,6 +19,14 @@ declare global {
       reorderStoryNode: (input: ReorderNodeInput) => Promise<StoryNode[]>
       readNodeContent: (projectSettingsPath: string, nodeId: string) => Promise<string | null>
       writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string) => Promise<void>
+      getAppVersion: () => Promise<{
+        version: string
+        electron: string
+        chrome: string
+        node: string
+        v8: string
+        platform: string
+      }>
     }
   }
 }

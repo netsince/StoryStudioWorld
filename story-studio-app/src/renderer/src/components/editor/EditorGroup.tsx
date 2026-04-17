@@ -8,6 +8,7 @@ import PlainTextEditor from '../PlainTextEditor'
 import CreateProjectForm from './CreateProjectForm'
 import TabBar from './TabBar'
 import WelcomePage, { EmptyState } from './WelcomePage'
+import AboutPage from './AboutPage'
 import { useTabDrag } from './hooks/useTabDrag'
 
 const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
@@ -147,6 +148,10 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
 
     if (activeTab.type === 'create-project') {
       return <CreateProjectForm onCreateProject={createProject} onPickProjectPath={() => window.api.pickProjectPath()} />
+    }
+
+    if (activeTab.type === 'about') {
+      return <AboutPage />
     }
 
     return renderFile()
