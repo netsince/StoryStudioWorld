@@ -32,6 +32,7 @@ interface EditorProps {
   onCloseAll: (groupId: string) => void
   onPinTab: (groupId: string, tabId: string) => void
   onDirtyTab: (groupId: string, tabId: string) => void
+  onSetDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
   onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
 
   onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
@@ -269,6 +270,7 @@ const EditorGroupView: React.FC<{
   onCloseAll: (groupId: string) => void
   onPinTab: (groupId: string, tabId: string) => void
   onDirtyTab: (groupId: string, tabId: string) => void
+  onSetDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
   onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
 
   onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
@@ -301,6 +303,7 @@ const EditorGroupView: React.FC<{
   onCloseAll,
   onPinTab,
   onDirtyTab,
+  onSetDirtyTab,
   onReorderTabs,
   onMoveTab,
   onDockTabToSplit,
@@ -604,7 +607,7 @@ const EditorGroupView: React.FC<{
   const handleSave = async (): Promise<void> => {
     if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
       await onSaveNodeContent(activeTab.nodeId, editorContent)
-      onDirtyTab(groupId, activeTab.id)
+      onSetDirtyTab(groupId, activeTab.id, false)
     }
   }
 
@@ -828,6 +831,7 @@ const Editor: React.FC<EditorProps> = ({
   onCloseAll,
   onPinTab,
   onDirtyTab,
+  onSetDirtyTab,
   onReorderTabs,
   onMoveTab,
   onDockTabToSplit,
@@ -858,6 +862,7 @@ const Editor: React.FC<EditorProps> = ({
           onCloseAll={onCloseAll}
           onPinTab={onPinTab}
           onDirtyTab={onDirtyTab}
+          onSetDirtyTab={onSetDirtyTab}
           onReorderTabs={onReorderTabs}
           onMoveTab={onMoveTab}
           onDockTabToSplit={onDockTabToSplit}

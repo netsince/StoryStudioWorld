@@ -7,6 +7,7 @@ import RightActivityBar from './components/RightActivityBar'
 import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
+import { StatusbarProvider } from './contexts/StatusbarContext'
 import {
   ActivityType,
   EditorGroupNode,
@@ -592,6 +593,15 @@ function App(): React.JSX.Element {
     )
   }
 
+  const setDirtyTab = (groupId: string, tabId: string, isDirty: boolean): void => {
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => ({
+        ...group,
+        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isDirty } : tab))
+      }))
+    )
+  }
+
   const reorderTabs = (groupId: string, draggedId: string, targetId: string): void => {
     setEditorTree((prev) =>
       updateGroup(prev, groupId, (group) => {
@@ -750,93 +760,96 @@ function App(): React.JSX.Element {
         </defs>
       </svg>
 
-      <div className={`app-container ${isDragging ? 'dragging' : ''} layout-${layoutSize}`}>
-        <TitleBar onOpenWelcome={openWelcomeTab} />
-        <div className="main-area">
-          <ActivityBar
-            activeActivity={activeActivity}
-            onActivityChange={handleActivityChange}
-            isOpen={isExplorerOpen}
-          />
-          <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-            <Explorer
+      <StatusbarProvider>
+        <div className={`app-container ${isDragging ? 'dragging' : ''} layout-${layoutSize}`}>
+          <TitleBar onOpenWelcome={openWelcomeTab} />
+          <div className="main-area">
+            <ActivityBar
               activeActivity={activeActivity}
-              currentProject={currentProject}
-              storyNodes={storyNodes}
-              recentProjects={recentProjects}
-              onOpenFolder={handleOpenProject}
-              onOpenRecentProject={handleOpenRecentProject}
-              onOpenCreateProject={openCreateProjectTab}
-              onOpenChapter={handleOpenChapter}
-              onCreateStoryNode={handleCreateStoryNode}
-              onRenameStoryNode={handleRenameStoryNode}
-              onDeleteStoryNode={handleDeleteStoryNode}
-              onMoveStoryNode={handleMoveStoryNode}
-              onReorderStoryNode={handleReorderStoryNode}
+              onActivityChange={handleActivityChange}
               isOpen={isExplorerOpen}
-              width={explorerWidth}
-              isBusy={isProjectBusy}
-              errorMessage={errorMessage}
             />
-            {isExplorerOpen && (
-              <Sash
-                side="left"
-                onResize={handleExplorerResize}
-                setIsDraggingGlobal={setIsDragging}
-              />
-            )}
-          </div>
-
-          <Editor
-            currentProject={currentProject}
-            onOpenFolder={handleOpenProject}
-            onOpenWelcome={openWelcomeTab}
-            onOpenCreateProject={openCreateProjectTab}
-            onCreateProject={handleCreateProject}
-            onPickProjectPath={() => window.api.pickProjectPath()}
-            onSaveNodeContent={handleSaveNodeContent}
-            editorTree={editorTree}
-            focusedGroupId={focusedGroupId}
-            groupCount={countGroups(editorTree)}
-            onFocusGroup={setFocusedGroupId}
-            onTabSwitch={switchTab}
-            onTabClose={closeTab}
-            onCloseOthers={closeOtherTabs}
-            onCloseAll={closeAllTabs}
-            onPinTab={togglePinTab}
-            onDirtyTab={toggleDirtyTab}
-            onReorderTabs={reorderTabs}
-            onMoveTab={moveTab}
-            onDockTabToSplit={dockTabToSplit}
-            onSplitGroup={splitGroup}
-            onCloseGroup={closeGroup}
-            onResizeSplit={resizeSplit}
-          />
-
-          <div style={{ display: 'flex', height: '100%' }}>
             <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-              {isRightSidebarOpen && (
+              <Explorer
+                activeActivity={activeActivity}
+                currentProject={currentProject}
+                storyNodes={storyNodes}
+                recentProjects={recentProjects}
+                onOpenFolder={handleOpenProject}
+                onOpenRecentProject={handleOpenRecentProject}
+                onOpenCreateProject={openCreateProjectTab}
+                onOpenChapter={handleOpenChapter}
+                onCreateStoryNode={handleCreateStoryNode}
+                onRenameStoryNode={handleRenameStoryNode}
+                onDeleteStoryNode={handleDeleteStoryNode}
+                onMoveStoryNode={handleMoveStoryNode}
+                onReorderStoryNode={handleReorderStoryNode}
+                isOpen={isExplorerOpen}
+                width={explorerWidth}
+                isBusy={isProjectBusy}
+                errorMessage={errorMessage}
+              />
+              {isExplorerOpen && (
                 <Sash
-                  side="right"
-                  onResize={handleRightPanelResize}
+                  side="left"
+                  onResize={handleExplorerResize}
                   setIsDraggingGlobal={setIsDragging}
                 />
               )}
-              <RightPanel
+            </div>
+
+            <Editor
+              currentProject={currentProject}
+              onOpenFolder={handleOpenProject}
+              onOpenWelcome={openWelcomeTab}
+              onOpenCreateProject={openCreateProjectTab}
+              onCreateProject={handleCreateProject}
+              onPickProjectPath={() => window.api.pickProjectPath()}
+              onSaveNodeContent={handleSaveNodeContent}
+              editorTree={editorTree}
+              focusedGroupId={focusedGroupId}
+              groupCount={countGroups(editorTree)}
+              onFocusGroup={setFocusedGroupId}
+              onTabSwitch={switchTab}
+              onTabClose={closeTab}
+              onCloseOthers={closeOtherTabs}
+              onCloseAll={closeAllTabs}
+              onPinTab={togglePinTab}
+              onDirtyTab={toggleDirtyTab}
+              onSetDirtyTab={setDirtyTab}
+              onReorderTabs={reorderTabs}
+              onMoveTab={moveTab}
+              onDockTabToSplit={dockTabToSplit}
+              onSplitGroup={splitGroup}
+              onCloseGroup={closeGroup}
+              onResizeSplit={resizeSplit}
+            />
+
+            <div style={{ display: 'flex', height: '100%' }}>
+              <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
+                {isRightSidebarOpen && (
+                  <Sash
+                    side="right"
+                    onResize={handleRightPanelResize}
+                    setIsDraggingGlobal={setIsDragging}
+                  />
+                )}
+                <RightPanel
+                  activeActivity={activeRightActivity}
+                  isOpen={isRightSidebarOpen}
+                  width={rightPanelWidth}
+                />
+              </div>
+              <RightActivityBar
                 activeActivity={activeRightActivity}
+                onActivityChange={handleRightActivityChange}
                 isOpen={isRightSidebarOpen}
-                width={rightPanelWidth}
               />
             </div>
-            <RightActivityBar
-              activeActivity={activeRightActivity}
-              onActivityChange={handleRightActivityChange}
-              isOpen={isRightSidebarOpen}
-            />
           </div>
+          <StatusBar />
         </div>
-        <StatusBar />
-      </div>
+      </StatusbarProvider>
     </>
   )
 }
