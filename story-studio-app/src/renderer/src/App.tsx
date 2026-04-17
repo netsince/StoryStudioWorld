@@ -181,16 +181,22 @@ function App(): React.JSX.Element {
       const newWidth = window.innerWidth
       setViewportWidth(newWidth)
       
-      // Auto-shrink sidebar if it exceeds viewport
-      const maxAllowedWidth = Math.floor(newWidth * 0.4) // Max 40% of viewport
+      // Auto-shrink sidebars if they exceed viewport
+      const maxAllowedWidth = Math.floor(newWidth * 0.35) // Max 35% of viewport each
       setExplorerWidth((prev) => Math.min(prev, Math.max(220, maxAllowedWidth)))
+      setRightPanelWidth((prev) => Math.min(prev, Math.max(150, maxAllowedWidth)))
+      
+      // Auto-close right sidebar if window is too small
+      if (newWidth < 900 && isRightSidebarOpen) {
+        setIsRightSidebarOpen(false)
+      }
     }
 
     window.addEventListener('resize', handleResize)
     return () => {
       window.removeEventListener('resize', handleResize)
     }
-  }, [])
+  }, [isRightSidebarOpen])
 
   const loadStoryNodes = useCallback(async (projectSettingsPath: string): Promise<void> => {
     try {
@@ -494,12 +500,14 @@ function App(): React.JSX.Element {
 
   const handleExplorerResize = (deltaX: number): void => {
     const currentViewportWidth = window.innerWidth
-    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.4) // Max 40% of current viewport
+    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.35) // Max 35% of current viewport
     setExplorerWidth((prev) => Math.max(220, Math.min(maxAllowedWidth, prev + deltaX)))
   }
 
   const handleRightPanelResize = (deltaX: number): void => {
-    setRightPanelWidth((prev) => Math.max(150, Math.min(600, prev + deltaX)))
+    const currentViewportWidth = window.innerWidth
+    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.35) // Max 35% of current viewport
+    setRightPanelWidth((prev) => Math.max(150, Math.min(maxAllowedWidth, prev + deltaX)))
   }
 
   const openTab = (tab: Tab): void => {
