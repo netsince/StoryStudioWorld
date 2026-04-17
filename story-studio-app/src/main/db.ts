@@ -1,6 +1,4 @@
 import initSqlJs, { Database } from 'sql.js'
-import { readFile, writeFile, mkdir, rm, rename } from 'fs/promises'
-import { join, dirname } from 'path'
 import { randomUUID } from 'crypto'
 
 export const STORY_DB_FILE = 'story.db'
@@ -11,6 +9,7 @@ export interface StoryNode {
   name: string
   type: 'folder' | 'file'
   fileName: string | null
+  content: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -37,7 +36,7 @@ export async function initDatabase(dbPath: string): Promise<Database> {
   let db: Database
 
   try {
-    const buffer = await readFile(dbPath)
+    const buffer = await (await import('fs/promises')).readFile(dbPath)
     db = new SqlJs.Database(buffer)
   } catch {
     db = new SqlJs.Database()
@@ -50,6 +49,7 @@ export async function initDatabase(dbPath: string): Promise<Database> {
       name TEXT NOT NULL,
       type TEXT NOT NULL CHECK (type IN ('folder', 'file')),
       fileName TEXT,
+      content TEXT,
       sortOrder INTEGER DEFAULT 0,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
@@ -71,12 +71,27 @@ export async function initDatabase(dbPath: string): Promise<Database> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_sortOrder ON nodes(sortOrder)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_deletedAt ON nodes(deletedAt)`)
 
+  migrateDatabase(db)
+
   return db
+}
+
+function migrateDatabase(db: Database): void {
+  const result = db.exec("PRAGMA table_info(nodes)")
+  if (result.length === 0) return
+
+  const columns = result[0].values.map((row) => row[1] as string)
+
+  if (!columns.includes('content')) {
+    db.run('ALTER TABLE nodes ADD COLUMN content TEXT')
+  }
 }
 
 export async function saveDatabase(db: Database, dbPath: string): Promise<void> {
   const data = db.export()
   const buffer = Buffer.from(data)
+  const { mkdir, writeFile } = await import('fs/promises')
+  const { dirname } = await import('path')
   await mkdir(dirname(dbPath), { recursive: true })
   await writeFile(dbPath, buffer)
 }
@@ -87,7 +102,7 @@ export async function loadDatabase(dbPath: string): Promise<Database> {
 
 export function getNodes(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -104,7 +119,7 @@ export function getNodes(db: Database): StoryNode[] {
 
 export function getNode(db: Database, nodeId: string): StoryNode | null {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes WHERE id = ?
   `)
   stmt.bind([nodeId])
@@ -120,7 +135,7 @@ export function getNode(db: Database, nodeId: string): StoryNode | null {
 
 export function getChildNodes(db: Database, parentId: string | null): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE parentId IS ? AND deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -152,93 +167,56 @@ export function getMaxSortOrder(db: Database, parentId: string | null): number {
 
 export function createNode(
   db: Database,
-  projectPath: string,
   parentId: string | null,
   name: string,
   type: 'folder' | 'file',
-  fileName?: string
+  content: string = ''
 ): StoryNode {
   const id = randomUUID()
   const now = new Date().toISOString()
   const sortOrder = getMaxSortOrder(db, parentId) + 1
-
-  if (type === 'file' && !fileName) {
-    fileName = `${name}.md`
-  }
+  const fileName = type === 'file' ? `${name}.md` : null
 
   db.run(
-    `INSERT INTO nodes (id, parentId, name, type, fileName, sortOrder, createdAt, updatedAt, deletedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-    [id, parentId, name, type, fileName ?? null, sortOrder, now, now]
+    `INSERT INTO nodes (id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+    [id, parentId, name, type, fileName, type === 'file' ? content : null, sortOrder, now, now]
   )
-
-  if (type === 'folder') {
-    const folderPath = join(projectPath, 'story', id)
-    mkdir(folderPath, { recursive: true })
-  } else if (type === 'file' && parentId) {
-    const parentNode = getNode(db, parentId)
-    if (parentNode) {
-      const filePath = join(projectPath, 'story', parentNode.id, fileName!)
-      writeFile(filePath, '', 'utf-8')
-    }
-  }
 
   return getNode(db, id)!
 }
 
-export function renameNode(db: Database, projectPath: string, nodeId: string, newName: string): StoryNode | null {
+export function renameNode(db: Database, nodeId: string, newName: string): StoryNode | null {
   const node = getNode(db, nodeId)
   if (!node) return null
 
   const now = new Date().toISOString()
+  const newFileName = node.type === 'file' ? `${newName}.md` : node.fileName
 
-  if (node.type === 'file') {
-    const parentNode = getNode(db, node.parentId!)
-    if (parentNode) {
-      const oldPath = join(projectPath, 'story', parentNode.id, node.fileName!)
-      const newFileName = newName.endsWith('.md') ? newName : `${newName}.md`
-      const newPath = join(projectPath, 'story', parentNode.id, newFileName)
-      rename(oldPath, newPath)
-      db.run(
-        `UPDATE nodes SET name = ?, fileName = ?, updatedAt = ? WHERE id = ?`,
-        [newName, newFileName, now, nodeId]
-      )
-    }
-  } else {
-    db.run(`UPDATE nodes SET name = ?, updatedAt = ? WHERE id = ?`, [newName, now, nodeId])
-  }
+  db.run(
+    `UPDATE nodes SET name = ?, fileName = ?, updatedAt = ? WHERE id = ?`,
+    [newName, newFileName, now, nodeId]
+  )
 
   return getNode(db, nodeId)
 }
 
-export function deleteNode(db: Database, projectPath: string, nodeId: string): void {
+export function deleteNode(db: Database, nodeId: string): void {
   const node = getNode(db, nodeId)
   if (!node) return
 
   const now = new Date().toISOString()
-
-  if (node.type === 'folder') {
-    deleteNodeRecursively(db, projectPath, nodeId)
-  } else {
-    const parentNode = getNode(db, node.parentId!)
-    if (parentNode) {
-      const filePath = join(projectPath, 'story', parentNode.id, node.fileName!)
-      rm(filePath, { force: true })
-    }
-    db.run(`UPDATE nodes SET deletedAt = ? WHERE id = ?`, [now, nodeId])
-  }
+  db.run(`UPDATE nodes SET deletedAt = ? WHERE id = ?`, [now, nodeId])
 }
 
-function deleteNodeRecursively(db: Database, projectPath: string, nodeId: string): void {
+export function deleteNodeRecursively(db: Database, nodeId: string): void {
   const children = getChildNodes(db, nodeId)
   for (const child of children) {
-    deleteNodeRecursively(db, projectPath, child.id)
+    deleteNodeRecursively(db, child.id)
   }
 
   const node = getNode(db, nodeId)
   if (node) {
-    const folderPath = join(projectPath, 'story', nodeId)
-    rm(folderPath, { force: true, recursive: true })
     const now = new Date().toISOString()
     db.run(`UPDATE nodes SET deletedAt = ? WHERE id = ?`, [now, nodeId])
   }
@@ -246,7 +224,6 @@ function deleteNodeRecursively(db: Database, projectPath: string, nodeId: string
 
 export function moveNode(
   db: Database,
-  projectPath: string,
   nodeId: string,
   newParentId: string | null
 ): StoryNode | null {
@@ -262,21 +239,6 @@ export function moveNode(
 
   const now = new Date().toISOString()
   const sortOrder = getMaxSortOrder(db, newParentId) + 1
-
-  if (node.type === 'file') {
-    const oldParent = getNode(db, node.parentId!)
-    const newParent = getNode(db, newParentId!)
-
-    if (oldParent && newParent) {
-      const oldPath = join(projectPath, 'story', oldParent.id, node.fileName!)
-      const newPath = join(projectPath, 'story', newParent.id, node.fileName!)
-      rename(oldPath, newPath)
-    }
-  } else {
-    const oldPath = join(projectPath, 'story', node.id)
-    const newPath = join(projectPath, 'story', newParentId || 'root', node.id)
-    rename(oldPath, newPath).catch(() => {})
-  }
 
   db.run(
     `UPDATE nodes SET parentId = ?, sortOrder = ?, updatedAt = ? WHERE id = ?`,
@@ -304,6 +266,20 @@ export function reorderNode(db: Database, nodeId: string, newSortOrder: number):
 
   const now = new Date().toISOString()
   db.run(`UPDATE nodes SET sortOrder = ?, updatedAt = ? WHERE id = ?`, [newSortOrder, now, nodeId])
+}
+
+export function getNodeContent(db: Database, nodeId: string): string | null {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return null
+  return node.content
+}
+
+export function updateNodeContent(db: Database, nodeId: string, content: string): void {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return
+
+  const now = new Date().toISOString()
+  db.run(`UPDATE nodes SET content = ?, updatedAt = ? WHERE id = ?`, [content, now, nodeId])
 }
 
 export function getNodeMetadata(db: Database, nodeId: string): StoryNodeMetadata | null {

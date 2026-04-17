@@ -7,6 +7,7 @@ export interface StoryNode {
   name: string
   type: 'folder' | 'file'
   fileName: string | null
+  content: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -79,7 +80,11 @@ const api = {
   moveStoryNode: (input: MoveNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('move-story-node', input),
   reorderStoryNode: (input: ReorderNodeInput): Promise<StoryNode[]> =>
-    ipcRenderer.invoke('reorder-story-node', input)
+    ipcRenderer.invoke('reorder-story-node', input),
+  readNodeContent: (projectSettingsPath: string, nodeId: string): Promise<string | null> =>
+    ipcRenderer.invoke('read-node-content', projectSettingsPath, nodeId),
+  writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string): Promise<void> =>
+    ipcRenderer.invoke('write-node-content', projectSettingsPath, nodeId, content)
 }
 
 if (process.contextIsolated) {

@@ -10,7 +10,9 @@ import {
   renameStoryNode,
   deleteStoryNode,
   moveStoryNode,
-  reorderStoryNode
+  reorderStoryNode,
+  readNodeContent,
+  writeNodeContent
 } from './project'
 
 function createWindow(): void {
@@ -157,6 +159,17 @@ function createWindow(): void {
       }
     ) => {
       return reorderStoryNode(input)
+    }
+  )
+
+  ipcMain.handle('read-node-content', async (_, projectSettingsPath: string, nodeId: string) => {
+    return readNodeContent({ projectSettingsPath, nodeId })
+  })
+
+  ipcMain.handle(
+    'write-node-content',
+    async (_, projectSettingsPath: string, nodeId: string, content: string) => {
+      return writeNodeContent({ projectSettingsPath, nodeId, content })
     }
   )
 

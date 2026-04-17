@@ -17,6 +17,8 @@ declare global {
       deleteStoryNode: (input: DeleteNodeInput) => Promise<StoryNode[]>
       moveStoryNode: (input: MoveNodeInput) => Promise<StoryNode[]>
       reorderStoryNode: (input: ReorderNodeInput) => Promise<StoryNode[]>
+      readNodeContent: (projectSettingsPath: string, nodeId: string) => Promise<string | null>
+      writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string) => Promise<void>
     }
   }
 }
@@ -27,6 +29,7 @@ export interface StoryNode {
   name: string
   type: 'folder' | 'file'
   fileName: string | null
+  content: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string

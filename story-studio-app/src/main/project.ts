@@ -10,8 +10,11 @@ import {
   createNode,
   renameNode,
   deleteNode,
+  deleteNodeRecursively,
   moveNode,
   reorderNode,
+  getNodeContent,
+  updateNodeContent,
   StoryNode
 } from './db'
 
@@ -69,6 +72,17 @@ export interface ReorderNodeInput {
   newSortOrder: number
 }
 
+export interface ReadNodeContentInput {
+  projectSettingsPath: string
+  nodeId: string
+}
+
+export interface WriteNodeContentInput {
+  projectSettingsPath: string
+  nodeId: string
+  content: string
+}
+
 function normalizeProjectPath(projectPath: string): string {
   return normalize(projectPath.trim())
 }
@@ -110,10 +124,6 @@ async function ensureDirectoryEmpty(projectPath: string): Promise<void> {
 
 function getSettingsPath(projectPath: string): string {
   return join(projectPath, PROJECT_SETTINGS_FILE)
-}
-
-function getStoryRoot(projectPath: string): string {
-  return join(projectPath, 'story')
 }
 
 function getStoryDbPath(projectPath: string): string {
@@ -162,12 +172,11 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   await ensureDirectoryEmpty(projectPath)
   await mkdir(join(projectPath, 'character'), { recursive: true })
   await mkdir(join(projectPath, 'worldviewsetting'), { recursive: true })
-  await mkdir(join(projectPath, 'story'), { recursive: true })
 
   const storyDbPath = getStoryDbPath(projectPath)
   const db = await initDatabase(storyDbPath)
 
-  createNode(db, projectPath, null, '故事', 'folder')
+  createNode(db, null, '故事', 'folder')
 
   await saveDatabase(db, storyDbPath)
   db.close()
@@ -217,7 +226,7 @@ export async function createStoryNode(input: CreateNodeInput): Promise<StoryNode
   const db = await loadDatabase(project.storyDbPath)
 
   const name = input.type === 'file' ? stripMd(input.name) : input.name
-  createNode(db, project.projectPath, input.parentId, name, input.type)
+  createNode(db, input.parentId, name, input.type)
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
@@ -229,7 +238,7 @@ export async function renameStoryNode(input: RenameNodeInput): Promise<StoryNode
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
-  renameNode(db, project.projectPath, input.nodeId, input.newName)
+  renameNode(db, input.nodeId, input.newName)
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
@@ -241,7 +250,16 @@ export async function deleteStoryNode(input: DeleteNodeInput): Promise<StoryNode
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
-  deleteNode(db, project.projectPath, input.nodeId)
+  const node = db.prepare('SELECT type FROM nodes WHERE id = ?').bind([input.nodeId])
+  if (node.step()) {
+    const row = node.getAsObject() as { type: string }
+    if (row.type === 'folder') {
+      deleteNodeRecursively(db, input.nodeId)
+    } else {
+      deleteNode(db, input.nodeId)
+    }
+  }
+  node.free()
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
@@ -253,7 +271,7 @@ export async function moveStoryNode(input: MoveNodeInput): Promise<StoryNode[]> 
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
-  moveNode(db, project.projectPath, input.nodeId, input.newParentId)
+  moveNode(db, input.nodeId, input.newParentId)
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
@@ -273,19 +291,31 @@ export async function reorderStoryNode(input: ReorderNodeInput): Promise<StoryNo
   return nodes
 }
 
+export async function readNodeContent(input: ReadNodeContentInput): Promise<string | null> {
+  const project = await loadProject(input.projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const content = getNodeContent(db, input.nodeId)
+  db.close()
+  return content
+}
+
+export async function writeNodeContent(input: WriteNodeContentInput): Promise<void> {
+  const project = await loadProject(input.projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  updateNodeContent(db, input.nodeId, input.content)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
 export async function clearProjectDirectory(projectPath: string): Promise<void> {
   if (await pathExists(projectPath)) {
     await rm(projectPath, { recursive: true, force: true })
   }
 }
 
-export function getChapterAbsolutePath(project: ProjectData, nodeId: string): string | null {
-  return join(getStoryRoot(project.projectPath), nodeId, 'chapter.md')
-}
-
 export function buildNodeTree(nodes: StoryNode[]): Map<string | null, StoryNode[]> {
   const tree = new Map<string | null, StoryNode[]>()
-  
+
   for (const node of nodes) {
     const parentId = node.parentId
     if (!tree.has(parentId)) {

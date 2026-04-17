@@ -219,7 +219,7 @@ const Explorer: React.FC<ExplorerProps> = ({
             </button>
           )}
           <span className="story-icon">{isFolder ? '📁' : '📄'}</span>
-          <span className="story-label">{node.name}</span>
+          <span className="story-label">{depth > 0 ? '\t' : ''}{node.name}</span>
         </div>
 
         {isFolder && isExpanded && children.map((child) => renderNode(child, depth + 1))}

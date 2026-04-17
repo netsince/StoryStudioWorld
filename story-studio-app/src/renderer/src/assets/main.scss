@@ -756,6 +756,22 @@ html {
   overflow: hidden;
 }
 
+.editor-split-row > .editor-split-child {
+  border-right: 1px solid var(--border-subtle);
+}
+
+.editor-split-row > .editor-split-child:last-child {
+  border-right: none;
+}
+
+.editor-split-column > .editor-split-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.editor-split-column > .editor-split-child:last-child {
+  border-bottom: none;
+}
+
 .editor-split-divider {
   flex: 0 0 4px;
   position: relative;
