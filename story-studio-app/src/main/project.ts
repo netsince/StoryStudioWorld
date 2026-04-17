@@ -287,49 +287,50 @@ export async function reorderStoryNode(input: ReorderNodeInput): Promise<StoryNo
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
-  // 获取要移动的节点和目标节点
-  const stmt = db.prepare(`SELECT id, parentId, sortOrder FROM nodes WHERE id IN (?, ?)`)
-  stmt.bind([input.nodeId, input.targetNodeId])
+  try {
+    // 获取要移动的节点和目标节点
+    const stmt = db.prepare(`SELECT id, parentId, sortOrder FROM nodes WHERE id IN (?, ?)`)
+    stmt.bind([input.nodeId, input.targetNodeId])
 
-  let sourceNode: { id: string; parentId: string | null; sortOrder: number } | null = null
-  let targetNode: { id: string; parentId: string | null; sortOrder: number } | null = null
+    let sourceNode: { id: string; parentId: string | null; sortOrder: number } | null = null
+    let targetNode: { id: string; parentId: string | null; sortOrder: number } | null = null
 
-  while (stmt.step()) {
-    const row = stmt.getAsObject() as { id: string; parentId: string | null; sortOrder: number }
-    if (row.id === input.nodeId) {
-      sourceNode = row
-    } else if (row.id === input.targetNodeId) {
-      targetNode = row
+    while (stmt.step()) {
+      const row = stmt.getAsObject() as { id: string; parentId: string | null; sortOrder: number }
+      if (row.id === input.nodeId) {
+        sourceNode = row
+      } else if (row.id === input.targetNodeId) {
+        targetNode = row
+      }
     }
-  }
-  stmt.free()
+    stmt.free()
 
-  if (!sourceNode || !targetNode) {
+    if (!sourceNode || !targetNode) {
+      throw new Error('节点不存在')
+    }
+
+    // 确保在同一层级
+    if (sourceNode.parentId !== targetNode.parentId) {
+      throw new Error('只能同层级排序')
+    }
+
+    const newSortOrder = input.position === 'before'
+      ? targetNode.sortOrder - 1
+      : targetNode.sortOrder + 1
+
+    // 更新源节点的 sortOrder
+    const now = new Date().toISOString()
+    db.run(
+      `UPDATE nodes SET sortOrder = ?, updatedAt = ? WHERE id = ?`,
+      [newSortOrder, now, input.nodeId]
+    )
+
+    await saveDatabase(db, project.storyDbPath)
+    const nodes = getNodes(db)
+    return nodes
+  } finally {
     db.close()
-    throw new Error('节点不存在')
   }
-
-  // 确保在同一层级
-  if (sourceNode.parentId !== targetNode.parentId) {
-    db.close()
-    throw new Error('只能同层级排序')
-  }
-
-  const newSortOrder = input.position === 'before' 
-    ? targetNode.sortOrder - 1 
-    : targetNode.sortOrder + 1
-
-  // 更新源节点的 sortOrder
-  const now = new Date().toISOString()
-  db.run(
-    `UPDATE nodes SET sortOrder = ?, updatedAt = ? WHERE id = ?`,
-    [newSortOrder, now, input.nodeId]
-  )
-
-  await saveDatabase(db, project.storyDbPath)
-  const nodes = getNodes(db)
-  db.close()
-  return nodes
 }
 
 export async function readNodeContent(input: ReadNodeContentInput): Promise<string | null> {
