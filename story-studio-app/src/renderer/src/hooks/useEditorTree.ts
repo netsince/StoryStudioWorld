@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { EditorGroupNode, EditorNode, Tab } from '../models'
 import {
   clamp,
@@ -103,30 +103,48 @@ export const useEditorTree = (): UseEditorTreeValue => {
     setEditorTree((prev) => removeTabsByType(prev, 'create-project'))
   }, [])
 
+  const pendingCloseRef = useRef<Set<string>>(new Set())
+
   const closeTab = useCallback(
     async (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback): Promise<void> => {
-      let shouldClose = true
+      const closeKey = `${groupId}:${tabId}`
+
+      // 如果该标签已经在关闭流程中，避免重复处理
+      if (pendingCloseRef.current.has(closeKey)) {
+        return
+      }
 
       setEditorTree((prev) => {
         const tab = findGroupNode(prev, groupId)?.tabs.find((item) => item.id === tabId)
         if (tab?.isDirty && onConfirmClose) {
+          // 标记为待关闭状态，防止竞态条件
+          pendingCloseRef.current.add(closeKey)
+
           // 异步确认，先不关闭
           void (async (): Promise<void> => {
-            const result = await onConfirmClose(tab)
-            if (result.shouldClose) {
-              setEditorTree((current) => {
-                const nextTree = updateGroup(current, groupId, (group) => {
-                  const nextTabs = group.tabs.filter((item) => item.id !== tabId)
-                  const nextActive =
-                    group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
-                  return { ...group, tabs: nextTabs, activeTabId: nextActive }
+            try {
+              const result = await onConfirmClose(tab)
+              if (result.shouldClose) {
+                setEditorTree((current) => {
+                  // 二次检查：确认标签仍然存在
+                  const tabStillExists = findGroupNode(current, groupId)?.tabs.find((t) => t.id === tabId)
+                  if (!tabStillExists) return current
+
+                  const nextTree = updateGroup(current, groupId, (group) => {
+                    const nextTabs = group.tabs.filter((item) => item.id !== tabId)
+                    const nextActive =
+                      group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+                    return { ...group, tabs: nextTabs, activeTabId: nextActive }
+                  })
+                  const collapsedTree = collapseEmptyGroups(nextTree)
+                  if (!hasGroup(collapsedTree, focusedGroupId)) {
+                    setFocusedGroupId(findFirstGroupId(collapsedTree))
+                  }
+                  return collapsedTree
                 })
-                const collapsedTree = collapseEmptyGroups(nextTree)
-                if (!hasGroup(collapsedTree, focusedGroupId)) {
-                  setFocusedGroupId(findFirstGroupId(collapsedTree))
-                }
-                return collapsedTree
-              })
+              }
+            } finally {
+              pendingCloseRef.current.delete(closeKey)
             }
           })()
           return prev
