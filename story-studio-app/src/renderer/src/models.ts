@@ -32,6 +32,7 @@ export interface Tab {
   title: string
   type: 'welcome' | 'file' | 'create-project'
   path?: string
+  nodeId?: string
   isDirty?: boolean
   isPinned?: boolean
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { EditorNode, ProjectData, Tab } from '../models'
 import ContextMenu from './ContextMenu'
+import PlainTextEditor from './PlainTextEditor'
 
 const ssworldNobgSvg = new URL('../assets/ssw-nobg.svg', import.meta.url).href
 
@@ -18,6 +19,7 @@ interface EditorProps {
     projectPath: string
   }) => Promise<void>
   onPickProjectPath: () => Promise<string | null>
+  onSaveNodeContent: (nodeId: string, content: string) => Promise<void>
 
   editorTree: EditorNode
   focusedGroupId: string
@@ -259,6 +261,7 @@ const EditorGroupView: React.FC<{
     projectPath: string
   }) => Promise<void>
   onPickProjectPath: () => Promise<string | null>
+  onSaveNodeContent: (nodeId: string, content: string) => Promise<void>
 
   onTabSwitch: (groupId: string, tabId: string) => void
   onTabClose: (groupId: string, tabId: string) => void
@@ -291,6 +294,7 @@ const EditorGroupView: React.FC<{
   onOpenCreateProject,
   onCreateProject,
   onPickProjectPath,
+  onSaveNodeContent,
   onTabSwitch,
   onTabClose,
   onCloseOthers,
@@ -308,6 +312,7 @@ const EditorGroupView: React.FC<{
   const activeTabRef = useRef<HTMLDivElement>(null)
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null)
   const [isSubmittingProject, setIsSubmittingProject] = useState(false)
+  const [editorContent, setEditorContent] = useState<string>('')
   const [createProjectForm, setCreateProjectForm] = useState({
     projectName: '',
     description: '',
@@ -574,38 +579,43 @@ const EditorGroupView: React.FC<{
     </div>
   )
 
+  useEffect(() => {
+    const loadContent = async (): Promise<void> => {
+      if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
+        const content = await window.api.readNodeContent(
+          currentProject.projectSettingsPath,
+          activeTab.nodeId
+        )
+        setEditorContent(content || '')
+      } else {
+        setEditorContent('')
+      }
+    }
+    void loadContent()
+  }, [activeTab?.id, activeTab?.nodeId, currentProject])
+
+  const handleEditorChange = (content: string): void => {
+    setEditorContent(content)
+    if (activeTab) {
+      onDirtyTab(groupId, activeTab.id)
+    }
+  }
+
+  const handleSave = async (): Promise<void> => {
+    if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
+      await onSaveNodeContent(activeTab.nodeId, editorContent)
+      onDirtyTab(groupId, activeTab.id)
+    }
+  }
+
   const renderFile = (): React.ReactNode => (
     <div key={activeTab?.id} className="editor-content">
-      <div style={{ maxWidth: '840px', width: '100%', margin: '0 auto' }}>
-        <h2 className="project-title" style={{ fontSize: '24px', fontWeight: '600' }}>
-          {activeTab?.title} {activeTab?.isPinned && <span style={{ fontSize: '12px' }}>📌</span>}
-        </h2>
-        <p className="project-subtitle" style={{ fontSize: '12px', marginBottom: '20px' }}>
-          {activeTab?.path}
-        </p>
-        <hr
-          style={{
-            border: 'none',
-            borderTop: '1px solid var(--border-color)',
-            marginBottom: '20px'
-          }}
-        />
-        <div style={{ color: 'var(--text-main)', lineHeight: '1.8', fontSize: '15px' }}>
-          <p>
-            当前已经打开 <strong>{activeTab?.title}</strong>。
-          </p>
-          <p>卷章树、项目创建和文件结构已经接入，正文编辑逻辑后续再继续扩展。</p>
-          <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-            <button
-              className="action-button"
-              style={{ width: 'auto' }}
-              onClick={() => activeTab && onDirtyTab(groupId, activeTab.id)}
-            >
-              {activeTab?.isDirty ? '取消模拟修改' : '模拟修改内容'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <PlainTextEditor
+        content={editorContent}
+        onChange={handleEditorChange}
+        onSave={handleSave}
+        placeholder={`开始写作「${activeTab?.title}」...`}
+      />
     </div>
   )
 
@@ -807,6 +817,7 @@ const Editor: React.FC<EditorProps> = ({
   onOpenCreateProject,
   onCreateProject,
   onPickProjectPath,
+  onSaveNodeContent,
   editorTree,
   focusedGroupId,
   groupCount,
@@ -840,6 +851,7 @@ const Editor: React.FC<EditorProps> = ({
           onOpenCreateProject={onOpenCreateProject}
           onCreateProject={onCreateProject}
           onPickProjectPath={onPickProjectPath}
+          onSaveNodeContent={onSaveNodeContent}
           onTabSwitch={onTabSwitch}
           onTabClose={onTabClose}
           onCloseOthers={onCloseOthers}

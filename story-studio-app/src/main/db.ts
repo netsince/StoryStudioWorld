@@ -16,12 +16,6 @@ export interface StoryNode {
   deletedAt: string | null
 }
 
-export interface StoryNodeMetadata {
-  nodeId: string
-  tags: string | null
-  description: string | null
-}
-
 let SQL: initSqlJs.SqlJsStatic | null = null
 
 async function getSqlJs(): Promise<initSqlJs.SqlJsStatic> {
@@ -58,15 +52,6 @@ export async function initDatabase(dbPath: string): Promise<Database> {
     )
   `)
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS node_metadata (
-      nodeId TEXT PRIMARY KEY,
-      tags TEXT,
-      description TEXT,
-      FOREIGN KEY (nodeId) REFERENCES nodes(id) ON DELETE CASCADE
-    )
-  `)
-
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_parentId ON nodes(parentId)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_sortOrder ON nodes(sortOrder)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_deletedAt ON nodes(deletedAt)`)
@@ -85,6 +70,8 @@ function migrateDatabase(db: Database): void {
   if (!columns.includes('content')) {
     db.run('ALTER TABLE nodes ADD COLUMN content TEXT')
   }
+
+  db.exec('DROP TABLE IF EXISTS node_metadata')
 }
 
 export async function saveDatabase(db: Database, dbPath: string): Promise<void> {
@@ -280,29 +267,4 @@ export function updateNodeContent(db: Database, nodeId: string, content: string)
 
   const now = new Date().toISOString()
   db.run(`UPDATE nodes SET content = ?, updatedAt = ? WHERE id = ?`, [content, now, nodeId])
-}
-
-export function getNodeMetadata(db: Database, nodeId: string): StoryNodeMetadata | null {
-  const stmt = db.prepare(`SELECT nodeId, tags, description FROM node_metadata WHERE nodeId = ?`)
-  stmt.bind([nodeId])
-
-  if (stmt.step()) {
-    const metadata = stmt.getAsObject() as StoryNodeMetadata
-    stmt.free()
-    return metadata
-  }
-  stmt.free()
-  return null
-}
-
-export function updateNodeMetadata(
-  db: Database,
-  nodeId: string,
-  tags: string | null,
-  description: string | null
-): void {
-  db.run(
-    `INSERT OR REPLACE INTO node_metadata (nodeId, tags, description) VALUES (?, ?, ?)`,
-    [nodeId, tags, description]
-  )
 }

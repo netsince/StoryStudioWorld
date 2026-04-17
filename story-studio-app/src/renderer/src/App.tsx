@@ -425,13 +425,23 @@ function App(): React.JSX.Element {
   const handleOpenChapter = (node: StoryNode): void => {
     if (!currentProject || node.type !== 'file') return
 
-    const path = `${currentProject.projectPath}/story/${node.parentId}/${node.fileName}`
     openTab({
       id: node.id,
       title: node.name,
       type: 'file',
-      path
+      nodeId: node.id
     })
+  }
+
+  const handleSaveNodeContent = async (nodeId: string, content: string): Promise<void> => {
+    if (!currentProject) return
+
+    try {
+      await window.api.writeNodeContent(currentProject.projectSettingsPath, nodeId, content)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存失败。'
+      window.alert(message)
+    }
   }
 
   const handleActivityChange = (activity: ActivityType): void => {
@@ -743,6 +753,7 @@ function App(): React.JSX.Element {
             onOpenCreateProject={openCreateProjectTab}
             onCreateProject={handleCreateProject}
             onPickProjectPath={() => window.api.pickProjectPath()}
+            onSaveNodeContent={handleSaveNodeContent}
             editorTree={editorTree}
             focusedGroupId={focusedGroupId}
             groupCount={countGroups(editorTree)}
