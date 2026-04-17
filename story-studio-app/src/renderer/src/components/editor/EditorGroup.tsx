@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ProjectData, Tab } from '../../models'
+import type { Tab } from '../../models'
+import { findGroupNode } from '../../editor/editorTree'
+import { useEditorStore } from '../../stores/editorStore'
+import { useProjectStore } from '../../stores/projectStore'
 import ContextMenu from '../ContextMenu'
 import PlainTextEditor from '../PlainTextEditor'
 import CreateProjectForm from './CreateProjectForm'
@@ -7,70 +10,38 @@ import TabBar from './TabBar'
 import WelcomePage, { EmptyState } from './WelcomePage'
 import { useTabDrag } from './hooks/useTabDrag'
 
-interface EditorGroupProps {
-  currentProject: ProjectData | null
-  groupId: string
-  tabs: Tab[]
-  activeTabId: string
-  isFocused: boolean
-  groupCount: number
-
-  onFocusGroup: (groupId: string) => void
-  onOpenFolder: () => void
-  onOpenWelcome: () => void
-  onOpenCreateProject: () => void
-  onCreateProject: (input: { projectName: string; description: string; projectPath: string }) => Promise<void>
-  onPickProjectPath: () => Promise<string | null>
-  onSaveNodeContent: (nodeId: string, content: string) => Promise<void>
-
-  onTabSwitch: (groupId: string, tabId: string) => void
-  onTabClose: (groupId: string, tabId: string) => void
-  onCloseOthers: (groupId: string, tabId: string) => void
-  onCloseAll: (groupId: string) => void
-  onPinTab: (groupId: string, tabId: string) => void
-  onSetDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
-  onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
-
-  onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
-  onDockTabToSplit: (
-    fromGroupId: string,
-    targetGroupId: string,
-    tabId: string,
-    side: 'left' | 'right' | 'top' | 'bottom'
-  ) => void
-
-  onSplitGroup: (groupId: string, direction: 'row' | 'column', tabId?: string) => void
-  onCloseGroup: (groupId: string) => void
-}
-
-const EditorGroup: React.FC<EditorGroupProps> = ({
-  currentProject,
-  groupId,
-  tabs,
-  activeTabId,
-  isFocused,
-  groupCount,
-  onFocusGroup,
-  onOpenFolder,
-  onOpenWelcome,
-  onOpenCreateProject,
-  onCreateProject,
-  onPickProjectPath,
-  onSaveNodeContent,
-  onTabSwitch,
-  onTabClose,
-  onCloseOthers,
-  onCloseAll,
-  onPinTab,
-  onSetDirtyTab,
-  onReorderTabs,
-  onMoveTab,
-  onDockTabToSplit,
-  onSplitGroup,
-  onCloseGroup
-}) => {
+const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const groupRootRef = useRef<HTMLDivElement>(null)
   const [editorContent, setEditorContent] = useState<string>('')
+
+  const currentProject = useProjectStore((s) => s.currentProject)
+  const openProject = useProjectStore((s) => s.openProject)
+  const createProject = useProjectStore((s) => s.createProject)
+  const saveNodeContent = useProjectStore((s) => s.saveNodeContent)
+  const setDraft = useProjectStore((s) => s.setDraft)
+  const clearDraft = useProjectStore((s) => s.clearDraft)
+
+  const group = useEditorStore(useCallback((s) => findGroupNode(s.editorTree, groupId), [groupId]))
+  const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
+  const groupCount = useEditorStore((s) => s.groupCount())
+  const setFocusedGroupId = useEditorStore((s) => s.setFocusedGroupId)
+  const switchTab = useEditorStore((s) => s.switchTab)
+  const closeTab = useEditorStore((s) => s.closeTab)
+  const closeOtherTabs = useEditorStore((s) => s.closeOtherTabs)
+  const closeAllTabs = useEditorStore((s) => s.closeAllTabs)
+  const togglePinTab = useEditorStore((s) => s.togglePinTab)
+  const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
+  const reorderTabs = useEditorStore((s) => s.reorderTabs)
+  const moveTab = useEditorStore((s) => s.moveTab)
+  const dockTabToSplit = useEditorStore((s) => s.dockTabToSplit)
+  const splitGroup = useEditorStore((s) => s.splitGroup)
+  const closeGroup = useEditorStore((s) => s.closeGroup)
+  const openWelcomeTab = useEditorStore((s) => s.openWelcomeTab)
+  const openCreateProjectTab = useEditorStore((s) => s.openCreateProjectTab)
+
+  const isFocused = focusedGroupId === groupId
+  const tabs = group?.tabs ?? []
+  const activeTabId = group?.activeTabId ?? ''
 
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
@@ -78,9 +49,9 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
     groupId,
     tabsCount: tabs.length,
     tabsVisible: true,
-    onReorderTabs,
-    onMoveTab,
-    onDockTabToSplit
+    onReorderTabs: reorderTabs,
+    onMoveTab: moveTab,
+    onDockTabToSplit: dockTabToSplit
   })
 
   const [contextMenu, setContextMenu] = useState<{
@@ -101,9 +72,26 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
     setContextMenu({ x: event.clientX, y: event.clientY, groupId, tabId })
   }
 
+  const confirmClose = useCallback(
+    (tab: Tab) => {
+      const shouldClose = window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)
+      if (shouldClose && tab.type === 'file' && tab.nodeId) {
+        clearDraft(tab.nodeId)
+      }
+      return { shouldClose }
+    },
+    [clearDraft]
+  )
+
   useEffect(() => {
     const loadContent = async (): Promise<void> => {
       if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
+        const draft = useProjectStore.getState().draftsByNodeId[activeTab.nodeId]
+        if (typeof draft === 'string') {
+          setEditorContent(draft)
+          return
+        }
+
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, activeTab.nodeId)
         setEditorContent(content || '')
       } else {
@@ -115,15 +103,19 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
 
   const handleEditorChange = (content: string): void => {
     setEditorContent(content)
-    if (activeTab) {
-      onSetDirtyTab(groupId, activeTab.id, true)
+    if (activeTab?.type === 'file') {
+      setDirtyTab(groupId, activeTab.id, true)
+      if (activeTab.nodeId) {
+        setDraft(activeTab.nodeId, content)
+      }
     }
   }
 
   const handleSave = async (): Promise<void> => {
     if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
-      await onSaveNodeContent(activeTab.nodeId, editorContent)
-      onSetDirtyTab(groupId, activeTab.id, false)
+      await saveNodeContent(activeTab.nodeId, editorContent)
+      setDirtyTab(groupId, activeTab.id, false)
+      clearDraft(activeTab.nodeId)
     }
   }
 
@@ -140,21 +132,21 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
 
   const renderContent = (): React.ReactNode => {
     if (!activeTab) {
-      return <EmptyState onOpenWelcome={onOpenWelcome} />
+      return <EmptyState onOpenWelcome={openWelcomeTab} />
     }
 
     if (activeTab.type === 'welcome') {
       return (
         <WelcomePage
           currentProject={currentProject}
-          onOpenCreateProject={onOpenCreateProject}
-          onOpenFolder={onOpenFolder}
+          onOpenCreateProject={openCreateProjectTab}
+          onOpenFolder={openProject}
         />
       )
     }
 
     if (activeTab.type === 'create-project') {
-      return <CreateProjectForm onCreateProject={onCreateProject} onPickProjectPath={onPickProjectPath} />
+      return <CreateProjectForm onCreateProject={createProject} onPickProjectPath={() => window.api.pickProjectPath()} />
     }
 
     return renderFile()
@@ -162,17 +154,21 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
 
   const onTabClick = useCallback(
     (tabId: string): void => {
-      onFocusGroup(groupId)
-      onTabSwitch(groupId, tabId)
+      setFocusedGroupId(groupId)
+      switchTab(groupId, tabId)
     },
-    [groupId, onFocusGroup, onTabSwitch]
+    [groupId, setFocusedGroupId, switchTab]
   )
+
+  if (!group) {
+    return null
+  }
 
   return (
     <div
       ref={groupRootRef}
       className={`editor-group ${isFocused ? 'focused' : ''}`}
-      onMouseDown={() => onFocusGroup(groupId)}
+      onMouseDown={() => setFocusedGroupId(groupId)}
       onDragEnter={tabDrag.onGroupDragEnter}
       onDragOver={tabDrag.onGroupDragOver}
       onDragLeave={tabDrag.onGroupDragLeave}
@@ -192,7 +188,7 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
         activeTabId={activeTabId}
         draggedTabId={tabDrag.draggedTabId}
         onTabClick={onTabClick}
-        onTabClose={(tabId) => onTabClose(groupId, tabId)}
+        onTabClose={(tabId) => closeTab(groupId, tabId, confirmClose)}
         onTabContextMenu={handleContextMenu}
         onTabDragStart={tabDrag.onTabDragStart}
         onTabDragOver={tabDrag.onTabDragOver}
@@ -210,12 +206,12 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
                   {
                     key: 'split-right',
                     label: '向右分屏',
-                    onSelect: () => onSplitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
+                    onSelect: () => splitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
                   },
                   {
                     key: 'split-down',
                     label: '向下分屏',
-                    onSelect: () => onSplitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
+                    onSelect: () => splitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
                   }
                 ]
               : []),
@@ -224,29 +220,29 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
                   {
                     key: 'close-group',
                     label: '关闭分屏',
-                    onSelect: () => onCloseGroup(contextMenu.groupId)
+                    onSelect: () => closeGroup(contextMenu.groupId)
                   }
                 ]
               : []),
             {
               key: 'close',
               label: '关闭',
-              onSelect: () => onTabClose(contextMenu.groupId, contextMenu.tabId)
+              onSelect: () => closeTab(contextMenu.groupId, contextMenu.tabId, confirmClose)
             },
             {
               key: 'pin',
               label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned ? '取消固定' : '固定',
-              onSelect: () => onPinTab(contextMenu.groupId, contextMenu.tabId)
+              onSelect: () => togglePinTab(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-others',
               label: '关闭其他',
-              onSelect: () => onCloseOthers(contextMenu.groupId, contextMenu.tabId)
+              onSelect: () => closeOtherTabs(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-all',
               label: '关闭所有',
-              onSelect: () => onCloseAll(contextMenu.groupId)
+              onSelect: () => closeAllTabs(contextMenu.groupId)
             }
           ]}
         />
@@ -258,4 +254,3 @@ const EditorGroup: React.FC<EditorGroupProps> = ({
 }
 
 export default EditorGroup
-

@@ -1,14 +1,13 @@
 import React from 'react'
-import { RightActivityType } from '../models'
 import Sidebar from './Sidebar'
+import { useLayoutStore } from '../stores/layoutStore'
+import { useUiStore } from '../stores/uiStore'
 
-interface RightPanelProps {
-  activeActivity: RightActivityType
-  isOpen: boolean
-  width: number
-}
+const RightPanel: React.FC = () => {
+  const activeActivity = useUiStore((s) => s.activeRightActivity)
+  const isOpen = useUiStore((s) => s.isRightSidebarOpen)
+  const width = useLayoutStore((s) => s.rightPanelWidth)
 
-const RightPanel: React.FC<RightPanelProps> = ({ activeActivity, isOpen, width }) => {
   return (
     <Sidebar isOpen={isOpen} width={width} side="right" className="right-panel">
       <div className="explorer-header" style={{ padding: '10px 15px' }}>

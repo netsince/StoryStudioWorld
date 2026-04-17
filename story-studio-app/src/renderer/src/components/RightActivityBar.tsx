@@ -1,17 +1,11 @@
 import React from 'react'
-import { RightActivityType } from '../models'
+import { useUiStore } from '../stores/uiStore'
 
-interface RightActivityBarProps {
-  activeActivity: RightActivityType
-  onActivityChange: (activity: RightActivityType) => void
-  isOpen: boolean
-}
+const RightActivityBar: React.FC = () => {
+  const activeActivity = useUiStore((s) => s.activeRightActivity)
+  const isOpen = useUiStore((s) => s.isRightSidebarOpen)
+  const onActivityChange = useUiStore((s) => s.handleRightActivityChange)
 
-const RightActivityBar: React.FC<RightActivityBarProps> = ({
-  activeActivity,
-  onActivityChange,
-  isOpen
-}) => {
   return (
     <div className="right-activity-bar">
       <div

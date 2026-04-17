@@ -1,41 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
-import type { EditorNode, ProjectData } from '../models'
+import type { EditorNode } from '../models'
 import EditorGroup from './editor/EditorGroup'
-
-interface EditorProps {
-  currentProject: ProjectData | null
-  onOpenFolder: () => void
-  onOpenWelcome: () => void
-  onOpenCreateProject: () => void
-  onCreateProject: (input: { projectName: string; description: string; projectPath: string }) => Promise<void>
-  onPickProjectPath: () => Promise<string | null>
-  onSaveNodeContent: (nodeId: string, content: string) => Promise<void>
-
-  editorTree: EditorNode
-  focusedGroupId: string
-  groupCount: number
-  onFocusGroup: (groupId: string) => void
-
-  onTabSwitch: (groupId: string, tabId: string) => void
-  onTabClose: (groupId: string, tabId: string) => void
-  onCloseOthers: (groupId: string, tabId: string) => void
-  onCloseAll: (groupId: string) => void
-  onPinTab: (groupId: string, tabId: string) => void
-  onSetDirtyTab: (groupId: string, tabId: string, isDirty: boolean) => void
-  onReorderTabs: (groupId: string, draggedId: string, targetId: string) => void
-
-  onMoveTab: (fromGroupId: string, toGroupId: string, tabId: string, beforeTabId?: string) => void
-  onDockTabToSplit: (
-    fromGroupId: string,
-    targetGroupId: string,
-    tabId: string,
-    side: 'left' | 'right' | 'top' | 'bottom'
-  ) => void
-
-  onSplitGroup: (groupId: string, direction: 'row' | 'column', tabId?: string) => void
-  onCloseGroup: (groupId: string) => void
-  onResizeSplit: (splitId: string, ratio: number) => void
-}
+import { useEditorStore } from '../stores/editorStore'
 
 const SplitDivider: React.FC<{
   direction: 'row' | 'column'
@@ -96,61 +62,13 @@ const SplitDivider: React.FC<{
   )
 }
 
-const Editor: React.FC<EditorProps> = ({
-  currentProject,
-  onOpenFolder,
-  onOpenWelcome,
-  onOpenCreateProject,
-  onCreateProject,
-  onPickProjectPath,
-  onSaveNodeContent,
-  editorTree,
-  focusedGroupId,
-  groupCount,
-  onFocusGroup,
-  onTabSwitch,
-  onTabClose,
-  onCloseOthers,
-  onCloseAll,
-  onPinTab,
-  onSetDirtyTab,
-  onReorderTabs,
-  onMoveTab,
-  onDockTabToSplit,
-  onSplitGroup,
-  onCloseGroup,
-  onResizeSplit
-}) => {
+const Editor: React.FC = () => {
+  const editorTree = useEditorStore((s) => s.editorTree)
+  const onResizeSplit = useEditorStore((s) => s.resizeSplit)
+
   const renderNode = (node: EditorNode): React.ReactNode => {
     if (node.kind === 'group') {
-      return (
-        <EditorGroup
-          currentProject={currentProject}
-          groupId={node.id}
-          tabs={node.tabs}
-          activeTabId={node.activeTabId}
-          isFocused={node.id === focusedGroupId}
-          groupCount={groupCount}
-          onFocusGroup={onFocusGroup}
-          onOpenFolder={onOpenFolder}
-          onOpenWelcome={onOpenWelcome}
-          onOpenCreateProject={onOpenCreateProject}
-          onCreateProject={onCreateProject}
-          onPickProjectPath={onPickProjectPath}
-          onSaveNodeContent={onSaveNodeContent}
-          onTabSwitch={onTabSwitch}
-          onTabClose={onTabClose}
-          onCloseOthers={onCloseOthers}
-          onCloseAll={onCloseAll}
-          onPinTab={onPinTab}
-          onSetDirtyTab={onSetDirtyTab}
-          onReorderTabs={onReorderTabs}
-          onMoveTab={onMoveTab}
-          onDockTabToSplit={onDockTabToSplit}
-          onSplitGroup={onSplitGroup}
-          onCloseGroup={onCloseGroup}
-        />
-      )
+      return <EditorGroup groupId={node.id} />
     }
 
     return (
@@ -170,4 +88,3 @@ const Editor: React.FC<EditorProps> = ({
 }
 
 export default Editor
-

@@ -1,12 +1,10 @@
 import React from 'react'
+import { useEditorStore } from '../stores/editorStore'
 
 const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 
-interface TitleBarProps {
-  onOpenWelcome: () => void
-}
-
-const TitleBar: React.FC<TitleBarProps> = ({ onOpenWelcome }) => {
+const TitleBar: React.FC = () => {
+  const onOpenWelcome = useEditorStore((s) => s.openWelcomeTab)
   const handleMinimize = (): void => window.api.minimize()
   const handleMaximize = (): void => window.api.maximize()
   const handleClose = (): void => window.api.close()

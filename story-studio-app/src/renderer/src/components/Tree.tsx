@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { StoryNode } from '../models'
+import RenameDialog from './RenameDialog'
 
 interface TreeProps {
   nodes: StoryNode[]
@@ -30,6 +31,7 @@ const Tree: React.FC<TreeProps> = ({
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [dropPosition, setDropPosition] = useState<DropPosition>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
+  const [renameDialog, setRenameDialog] = useState<{ nodeId: string; initialValue: string } | null>(null)
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const treeRef = useRef<HTMLDivElement>(null)
 
@@ -408,10 +410,7 @@ const Tree: React.FC<TreeProps> = ({
             onClick={() => {
               const node = getNodeById(contextMenu.nodeId)
               if (node) {
-                const newName = prompt('重命名', node.name)
-                if (newName && newName !== node.name) {
-                  onRenameNode(node.id, newName)
-                }
+                setRenameDialog({ nodeId: node.id, initialValue: node.name })
               }
               setContextMenu(null)
             }}
@@ -452,6 +451,20 @@ const Tree: React.FC<TreeProps> = ({
             zIndex: 999,
           }}
           onClick={() => setContextMenu(null)}
+        />
+      )}
+
+      {renameDialog && (
+        <RenameDialog
+          title="重命名"
+          initialValue={renameDialog.initialValue}
+          onCancel={() => setRenameDialog(null)}
+          onConfirm={(nextValue) => {
+            if (nextValue && nextValue !== renameDialog.initialValue) {
+              onRenameNode(renameDialog.nodeId, nextValue)
+            }
+            setRenameDialog(null)
+          }}
         />
       )}
     </div>

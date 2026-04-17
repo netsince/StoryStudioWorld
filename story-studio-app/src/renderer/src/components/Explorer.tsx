@@ -1,8 +1,11 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { ActivityType, ProjectData, RecentProject, StoryNode } from '../models'
+import type { StoryNode } from '../models'
+import { useEditorStore } from '../stores/editorStore'
+import { useLayoutStore } from '../stores/layoutStore'
+import { useProjectStore } from '../stores/projectStore'
+import { useUiStore } from '../stores/uiStore'
 import Tree from './Tree'
-import RenameDialog from './RenameDialog'
 import Sidebar from './Sidebar'
 
 interface CreateMenuPortalProps {
@@ -97,51 +100,28 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFo
   )
 }
 
-interface ExplorerProps {
-  activeActivity: ActivityType
-  currentProject: ProjectData | null
-  storyNodes: StoryNode[]
-  recentProjects: RecentProject[]
-  onOpenFolder: () => void
-  onOpenRecentProject: (projectSettingsPath: string) => Promise<void>
-  onOpenCreateProject: () => void
-  onOpenChapter: (node: StoryNode) => void
-  onCreateStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file') => Promise<void>
-  onRenameStoryNode: (nodeId: string, newName: string) => Promise<void>
-  onDeleteStoryNode: (nodeId: string) => Promise<void>
-  onMoveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
-  onReorderStoryNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => Promise<void>
-  isOpen: boolean
-  width: number
-  isBusy: boolean
-  errorMessage: string | null
-}
+const Explorer: React.FC = () => {
+  const activeActivity = useUiStore((s) => s.activeActivity)
+  const isOpen = useUiStore((s) => s.isExplorerOpen)
+  const width = useLayoutStore((s) => s.explorerWidth)
 
-const Explorer: React.FC<ExplorerProps> = ({
-  activeActivity,
-  currentProject,
-  storyNodes,
-  recentProjects,
-  onOpenFolder,
-  onOpenRecentProject,
-  onOpenCreateProject,
-  onOpenChapter,
-  onCreateStoryNode,
-  onRenameStoryNode,
-  onDeleteStoryNode,
-  onMoveStoryNode,
-  onReorderStoryNode,
-  isOpen,
-  width,
-  isBusy,
-  errorMessage
-}) => {
+  const currentProject = useProjectStore((s) => s.currentProject)
+  const storyNodes = useProjectStore((s) => s.storyNodes)
+  const recentProjects = useProjectStore((s) => s.recentProjects)
+  const isBusy = useProjectStore((s) => s.isProjectBusy)
+  const errorMessage = useProjectStore((s) => s.errorMessage)
+  const onOpenFolder = useProjectStore((s) => s.openProject)
+  const onOpenRecentProject = useProjectStore((s) => s.openRecentProject)
+  const onCreateStoryNode = useProjectStore((s) => s.createStoryNode)
+  const onRenameStoryNode = useProjectStore((s) => s.renameStoryNode)
+  const onDeleteStoryNode = useProjectStore((s) => s.deleteStoryNode)
+  const onMoveStoryNode = useProjectStore((s) => s.moveStoryNode)
+  const onReorderStoryNode = useProjectStore((s) => s.reorderStoryNode)
+
+  const onOpenCreateProject = useEditorStore((s) => s.openCreateProjectTab)
+  const openTab = useEditorStore((s) => s.openTab)
+
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
-  const [renameDialog, setRenameDialog] = useState<{
-    nodeId: string
-    title: string
-    initialValue: string
-  } | null>(null)
 
   const activityTitle = useMemo(() => {
     switch (activeActivity) {
@@ -168,6 +148,11 @@ const Explorer: React.FC<ExplorerProps> = ({
     }
     await onCreateStoryNode(null, name, type)
     setIsCreateMenuOpen(false)
+  }
+
+  const onOpenChapter = (node: StoryNode): void => {
+    if (!currentProject || node.type !== 'file') return
+    openTab({ id: node.id, title: node.name, type: 'file', nodeId: node.id })
   }
 
   const renderStoryTree = (): React.ReactNode => {
@@ -274,17 +259,6 @@ const Explorer: React.FC<ExplorerProps> = ({
           )}
         </div>
 
-        {renameDialog && (
-          <RenameDialog
-            title={renameDialog.title}
-            initialValue={renameDialog.initialValue}
-            onCancel={() => setRenameDialog(null)}
-            onConfirm={(nextValue) => {
-              void onRenameStoryNode(renameDialog.nodeId, nextValue)
-              setRenameDialog(null)
-            }}
-          />
-        )}
     </Sidebar>
   )
 }
