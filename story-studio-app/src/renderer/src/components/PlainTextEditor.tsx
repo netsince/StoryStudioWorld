@@ -160,7 +160,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       let endLine = 0
 
       for (let i = 0; i < lines.length; i++) {
-        const lineLength = lines[i].length + 1 // +1 for \n
+        const lineLength = lines[i].length + (i < lines.length - 1 ? 1 : 0) // +1 for \n except last line
         if (currentPos <= start && start < currentPos + lineLength) {
           startLine = i
         }

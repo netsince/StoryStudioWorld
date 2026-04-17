@@ -8,6 +8,10 @@ export interface CreateProjectInput {
   projectPath: string
 }
 
+export interface UseProjectManagerOptions {
+  onError?: (message: string) => void
+}
+
 export interface UseProjectManagerValue {
   currentProject: ProjectData | null
   storyNodes: StoryNode[]
@@ -17,7 +21,7 @@ export interface UseProjectManagerValue {
 
   openProject: () => Promise<void>
   openRecentProject: (projectSettingsPath: string) => Promise<void>
-  loadProject: (projectSettingsPath: string, showAlert?: boolean) => Promise<boolean>
+  loadProject: (projectSettingsPath: string) => Promise<boolean>
   createProject: (input: CreateProjectInput) => Promise<void>
 
   createStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file') => Promise<void>
@@ -33,7 +37,8 @@ export interface UseProjectManagerValue {
 }
 
 export const useProjectManager = (
-  onProjectLoaded?: (project: ProjectData) => void
+  onProjectLoaded?: (project: ProjectData) => void,
+  options?: UseProjectManagerOptions
 ): UseProjectManagerValue => {
   const [currentProject, setCurrentProject] = useState<ProjectData | null>(null)
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([])
@@ -74,7 +79,7 @@ export const useProjectManager = (
   )
 
   const loadProject = useCallback(
-    async (projectSettingsPath: string, showAlert = true): Promise<boolean> => {
+    async (projectSettingsPath: string): Promise<boolean> => {
       try {
         setIsProjectBusy(true)
         const project = await window.api.loadProject(projectSettingsPath)
@@ -83,15 +88,13 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '打开项目失败。'
         setErrorMessage(message)
-        if (showAlert) {
-          window.alert(message)
-        }
+        options?.onError?.(message)
         return false
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [handleProjectLoaded]
+    [handleProjectLoaded, options]
   )
 
   const openProject = useCallback(async (): Promise<void> => {
@@ -117,13 +120,13 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '创建项目失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
         throw error
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [handleProjectLoaded]
+    [handleProjectLoaded, options]
   )
 
   const createStoryNode = useCallback(
@@ -142,12 +145,12 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '创建失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const renameStoryNode = useCallback(
@@ -165,12 +168,12 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '重命名失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const deleteStoryNode = useCallback(
@@ -187,12 +190,12 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '删除失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const moveStoryNode = useCallback(
@@ -210,12 +213,12 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '移动失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const reorderStoryNode = useCallback(
@@ -234,12 +237,12 @@ export const useProjectManager = (
       } catch (error) {
         const message = error instanceof Error ? error.message : '排序失败。'
         setErrorMessage(message)
-        window.alert(message)
+        options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const saveNodeContent = useCallback(
@@ -250,10 +253,11 @@ export const useProjectManager = (
         await window.api.writeNodeContent(currentProject.projectSettingsPath, nodeId, content)
       } catch (error) {
         const message = error instanceof Error ? error.message : '保存失败。'
-        window.alert(message)
+        setErrorMessage(message)
+        options?.onError?.(message)
       }
     },
-    [currentProject]
+    [currentProject, options]
   )
 
   const lastProjectMarker = useCallback(

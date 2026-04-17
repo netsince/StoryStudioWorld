@@ -16,6 +16,12 @@ import {
   updateSplitRatio
 } from '../editor/editorTree'
 
+export interface ConfirmCloseResult {
+  shouldClose: boolean
+}
+
+export type OnConfirmCloseCallback = (tab: Tab) => Promise<ConfirmCloseResult> | ConfirmCloseResult
+
 export interface UseEditorTreeValue {
   editorTree: EditorNode
   focusedGroupId: string
@@ -28,7 +34,7 @@ export interface UseEditorTreeValue {
   removeCreateProjectTabs: () => void
 
   switchTab: (groupId: string, tabId: string) => void
-  closeTab: (groupId: string, tabId: string) => void
+  closeTab: (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback) => void
   closeOtherTabs: (groupId: string, tabId: string) => void
   closeAllTabs: (groupId: string) => void
   togglePinTab: (groupId: string, tabId: string) => void
@@ -98,14 +104,35 @@ export const useEditorTree = (): UseEditorTreeValue => {
   }, [])
 
   const closeTab = useCallback(
-    (groupId: string, tabId: string): void => {
-      setEditorTree((prev) => {
-        const nextTree = updateGroup(prev, groupId, (group) => {
-          const tab = group.tabs.find((item) => item.id === tabId)
-          if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
-            return group
-          }
+    async (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback): Promise<void> => {
+      let shouldClose = true
 
+      setEditorTree((prev) => {
+        const tab = findGroupNode(prev, groupId)?.tabs.find((item) => item.id === tabId)
+        if (tab?.isDirty && onConfirmClose) {
+          // 异步确认，先不关闭
+          void (async (): Promise<void> => {
+            const result = await onConfirmClose(tab)
+            if (result.shouldClose) {
+              setEditorTree((current) => {
+                const nextTree = updateGroup(current, groupId, (group) => {
+                  const nextTabs = group.tabs.filter((item) => item.id !== tabId)
+                  const nextActive =
+                    group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+                  return { ...group, tabs: nextTabs, activeTabId: nextActive }
+                })
+                const collapsedTree = collapseEmptyGroups(nextTree)
+                if (!hasGroup(collapsedTree, focusedGroupId)) {
+                  setFocusedGroupId(findFirstGroupId(collapsedTree))
+                }
+                return collapsedTree
+              })
+            }
+          })()
+          return prev
+        }
+
+        const nextTree = updateGroup(prev, groupId, (group) => {
           const nextTabs = group.tabs.filter((item) => item.id !== tabId)
           const nextActive =
             group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
