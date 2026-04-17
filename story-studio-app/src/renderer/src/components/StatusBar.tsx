@@ -7,12 +7,14 @@ const StatusBar: React.FC = () => {
   const leftEntries = useMemo(() => {
     return Array.from(entries.values())
       .filter(e => e.alignment === StatusbarAlignment.LEFT)
+      // priority 数值越大优先级越高，排在前面（靠外侧）
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
   }, [entries])
 
   const rightEntries = useMemo(() => {
     return Array.from(entries.values())
       .filter(e => e.alignment === StatusbarAlignment.RIGHT)
+      // priority 数值越大优先级越高，排在前面（靠外侧）
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
   }, [entries])
 

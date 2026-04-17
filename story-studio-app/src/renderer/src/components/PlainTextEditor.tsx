@@ -135,12 +135,33 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     onChange(newText)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    // Ctrl+S 保存
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault()
       if (onSave) {
         onSave()
       }
+      return
+    }
+
+    // Tab 插入制表符
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      const textarea = e.currentTarget
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const value = textarea.value
+
+      // 插入真正的制表符
+      const newText = value.substring(0, start) + '\t' + value.substring(end)
+      setText(newText)
+      onChange(newText)
+
+      // 恢复光标位置
+      requestAnimationFrame(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 1
+      })
     }
   }
 
