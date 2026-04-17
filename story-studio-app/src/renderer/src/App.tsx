@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import TitleBar from './components/TitleBar'
 import ActivityBar from './components/ActivityBar'
 import Explorer from './components/Explorer'
@@ -8,478 +8,44 @@ import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
 import { StatusbarProvider } from './contexts/StatusbarContext'
-import {
-  ActivityType,
-  EditorGroupNode,
-  EditorNode,
-  ProjectData,
-  RecentProject,
-  RightActivityType,
-  StoryNode,
-  Tab
-} from './models'
-
-const LAST_PROJECT_SETTINGS_PATH_KEY = 'ssw:last-project-settings-path'
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, value))
-
-const createId = (prefix: string): string => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return `${prefix}:${crypto.randomUUID()}`
-  }
-  return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`
-}
-
-const createEmptyGroup = (): EditorGroupNode => ({
-  kind: 'group',
-  id: createId('group'),
-  tabs: [],
-  activeTabId: ''
-})
-
-const countGroups = (node: EditorNode): number =>
-  node.kind === 'group' ? 1 : countGroups(node.first) + countGroups(node.second)
-
-const hasGroup = (node: EditorNode, groupId: string): boolean => {
-  if (node.kind === 'group') return node.id === groupId
-  return hasGroup(node.first, groupId) || hasGroup(node.second, groupId)
-}
-
-const findFirstGroupId = (node: EditorNode): string =>
-  node.kind === 'group' ? node.id : findFirstGroupId(node.first)
-
-const findGroupNode = (node: EditorNode, groupId: string): EditorGroupNode | null => {
-  if (node.kind === 'group') return node.id === groupId ? node : null
-  return findGroupNode(node.first, groupId) ?? findGroupNode(node.second, groupId)
-}
-
-const updateGroup = (
-  node: EditorNode,
-  groupId: string,
-  updater: (group: EditorGroupNode) => EditorGroupNode
-): EditorNode => {
-  if (node.kind === 'group') {
-    return node.id === groupId ? updater(node) : node
-  }
-  const nextFirst = updateGroup(node.first, groupId, updater)
-  const nextSecond = updateGroup(node.second, groupId, updater)
-  if (nextFirst === node.first && nextSecond === node.second) return node
-  return { ...node, first: nextFirst, second: nextSecond }
-}
-
-const mapGroups = (
-  node: EditorNode,
-  mapper: (group: EditorGroupNode) => EditorGroupNode
-): EditorNode => {
-  if (node.kind === 'group') return mapper(node)
-  return { ...node, first: mapGroups(node.first, mapper), second: mapGroups(node.second, mapper) }
-}
-
-const updateSplitRatio = (node: EditorNode, splitId: string, ratio: number): EditorNode => {
-  if (node.kind === 'group') return node
-  if (node.id === splitId) return { ...node, ratio }
-  const nextFirst = updateSplitRatio(node.first, splitId, ratio)
-  const nextSecond = updateSplitRatio(node.second, splitId, ratio)
-  if (nextFirst === node.first && nextSecond === node.second) return node
-  return { ...node, first: nextFirst, second: nextSecond }
-}
-
-const splitAtGroup = (
-  node: EditorNode,
-  groupId: string,
-  direction: 'row' | 'column',
-  newGroup: EditorGroupNode,
-  place: 'first' | 'second' = 'second'
-): EditorNode => {
-  if (node.kind === 'group') {
-    if (node.id !== groupId) return node
-    return {
-      kind: 'split',
-      id: createId('split'),
-      direction,
-      ratio: 0.5,
-      first: place === 'first' ? newGroup : node,
-      second: place === 'first' ? node : newGroup
-    }
-  }
-  const nextFirst = splitAtGroup(node.first, groupId, direction, newGroup, place)
-  const nextSecond = splitAtGroup(node.second, groupId, direction, newGroup, place)
-  if (nextFirst === node.first && nextSecond === node.second) return node
-  return { ...node, first: nextFirst, second: nextSecond }
-}
-
-const removeGroup = (
-  node: EditorNode,
-  groupId: string
-): { node: EditorNode | null; removed: boolean } => {
-  if (node.kind === 'group') {
-    return node.id === groupId ? { node: null, removed: true } : { node, removed: false }
-  }
-
-  const left = removeGroup(node.first, groupId)
-  if (left.removed) {
-    if (left.node === null) return { node: node.second, removed: true }
-    return { node: { ...node, first: left.node }, removed: true }
-  }
-
-  const right = removeGroup(node.second, groupId)
-  if (right.removed) {
-    if (right.node === null) return { node: node.first, removed: true }
-    return { node: { ...node, second: right.node }, removed: true }
-  }
-
-  return { node, removed: false }
-}
-
-const collapseEmptyGroups = (node: EditorNode): EditorNode => {
-  if (countGroups(node) <= 1) return node
-
-  const visit = (current: EditorNode): EditorNode | null => {
-    if (current.kind === 'group') {
-      return current.tabs.length === 0 ? null : current
-    }
-
-    const nextFirst = visit(current.first)
-    const nextSecond = visit(current.second)
-
-    if (!nextFirst && !nextSecond) return null
-    if (!nextFirst) return nextSecond
-    if (!nextSecond) return nextFirst
-    if (nextFirst === current.first && nextSecond === current.second) return current
-    return { ...current, first: nextFirst, second: nextSecond }
-  }
-
-  return visit(node) ?? node
-}
+import type { ActivityType, RightActivityType, StoryNode } from './models'
+import { useEditorTree } from './hooks/useEditorTree'
+import { useProjectManager } from './hooks/useProjectManager'
+import { useResponsiveLayout } from './hooks/useResponsiveLayout'
 
 function App(): React.JSX.Element {
-  const [viewportWidth, setViewportWidth] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1200
-  )
   const [activeActivity, setActiveActivity] = useState<ActivityType>('chapter')
   const [activeRightActivity, setActiveRightActivity] = useState<RightActivityType>('proofread')
   const [isExplorerOpen, setIsExplorerOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
-  const [currentProject, setCurrentProject] = useState<ProjectData | null>(null)
-  const [storyNodes, setStoryNodes] = useState<StoryNode[]>([])
-  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isProjectBusy, setIsProjectBusy] = useState(false)
+  const closeRightSidebar = useCallback((): void => setIsRightSidebarOpen(false), [])
 
-  const [explorerWidth, setExplorerWidth] = useState(280)
-  const [rightPanelWidth, setRightPanelWidth] = useState(300)
-  const [isDragging, setIsDragging] = useState(false)
-  const [initialEditor] = useState(() => {
-    const root = createEmptyGroup()
-    return { root, focusedGroupId: root.id }
-  })
-  const [editorTree, setEditorTree] = useState<EditorNode>(initialEditor.root)
-  const [focusedGroupId, setFocusedGroupId] = useState<string>(initialEditor.focusedGroupId)
-
-  useEffect(() => {
-    const handleResize = (): void => {
-      const newWidth = window.innerWidth
-      setViewportWidth(newWidth)
-      
-      // Auto-shrink sidebars if they exceed viewport
-      const maxAllowedWidth = Math.floor(newWidth * 0.35) // Max 35% of viewport each
-      setExplorerWidth((prev) => Math.min(prev, Math.max(220, maxAllowedWidth)))
-      setRightPanelWidth((prev) => Math.min(prev, Math.max(150, maxAllowedWidth)))
-      
-      // Auto-close right sidebar if window is too small
-      if (newWidth < 900 && isRightSidebarOpen) {
-        setIsRightSidebarOpen(false)
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [isRightSidebarOpen])
-
-  const loadStoryNodes = useCallback(async (projectSettingsPath: string): Promise<void> => {
-    try {
-      const nodes = await window.api.getProjectNodes(projectSettingsPath)
-      setStoryNodes(nodes)
-    } catch (error) {
-      console.error('Failed to load story nodes:', error)
-    }
-  }, [])
-
-  const layoutSize = useMemo(() => {
-    if (viewportWidth <= 720) return 'tiny'
-    if (viewportWidth <= 900) return 'narrow'
-    if (viewportWidth <= 1200) return 'compact'
-    return 'default'
-  }, [viewportWidth])
-
-  const updateRecentProjects = useCallback((project: ProjectData): void => {
-    setRecentProjects((prev) => {
-      const next = [
-        { projectSettingsPath: project.projectSettingsPath, name: project.projectName },
-        ...prev
-      ]
-      const deduped = next.filter(
-        (item, index) =>
-          next.findIndex(
-            (candidate) => candidate.projectSettingsPath === item.projectSettingsPath
-          ) === index
-      )
-      return deduped.slice(0, 8)
-    })
-  }, [])
-
-  const handleProjectLoaded = useCallback(
-    (project: ProjectData): void => {
-      setCurrentProject(project)
-      setErrorMessage(null)
-      window.localStorage.setItem(LAST_PROJECT_SETTINGS_PATH_KEY, project.projectSettingsPath)
-      updateRecentProjects(project)
-      setEditorTree((prev) =>
-        mapGroups(prev, (group) => {
-          const nextTabs = group.tabs.filter((tab) => tab.type !== 'create-project')
-          const nextActiveTabId = group.activeTabId === 'create-project' ? '' : group.activeTabId
-          return group.tabs === nextTabs && group.activeTabId === nextActiveTabId
-            ? group
-            : { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
-        })
-      )
-      void loadStoryNodes(project.projectSettingsPath)
-    },
-    [updateRecentProjects, loadStoryNodes]
-  )
-
-  const openWelcomeTab = useCallback((): void => {
-    const tab: Tab = { id: 'welcome', title: '欢迎使用', type: 'welcome' }
-    setEditorTree((prev) => {
-      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
-      return updateGroup(prev, targetGroupId, (group) => {
-        const exists = group.tabs.some((t) => t.id === tab.id)
-        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
-        return { ...group, tabs: nextTabs, activeTabId: tab.id }
-      })
-    })
-  }, [focusedGroupId])
-
-  const loadProject = useCallback(
-    async (projectSettingsPath: string, showAlert = true): Promise<boolean> => {
-      try {
-        setIsProjectBusy(true)
-        const project = await window.api.loadProject(projectSettingsPath)
-        handleProjectLoaded(project)
-        return true
-      } catch (error) {
-        const message = error instanceof Error ? error.message : '打开项目失败。'
-        setErrorMessage(message)
-        if (showAlert) {
-          window.alert(message)
-        }
-        return false
-      } finally {
-        setIsProjectBusy(false)
-      }
-    },
-    [handleProjectLoaded]
-  )
+  const editor = useEditorTree()
+  const project = useProjectManager(editor.removeCreateProjectTabs)
+  const layout = useResponsiveLayout(isRightSidebarOpen, closeRightSidebar)
 
   useEffect(() => {
     const restoreLastProject = async (): Promise<void> => {
-      const lastProjectSettingsPath = window.localStorage.getItem(LAST_PROJECT_SETTINGS_PATH_KEY)
+      const lastProjectSettingsPath = project.lastProjectMarker()
       if (lastProjectSettingsPath) {
-        const loaded = await loadProject(lastProjectSettingsPath, false)
-        if (loaded) {
-          return
-        }
-        window.localStorage.removeItem(LAST_PROJECT_SETTINGS_PATH_KEY)
+        const loaded = await project.loadProject(lastProjectSettingsPath, false)
+        if (loaded) return
+        project.clearLastProjectMarker()
       }
 
-      openWelcomeTab()
+      editor.openWelcomeTab()
     }
 
     void restoreLastProject()
-  }, [loadProject, openWelcomeTab])
+  }, [project.clearLastProjectMarker, project.lastProjectMarker, project.loadProject, editor.openWelcomeTab])
 
-  const handleOpenProject = async (): Promise<void> => {
-    const projectSettingsPath = await window.api.openProject()
-    if (projectSettingsPath) {
-      await loadProject(projectSettingsPath)
-    }
-  }
-
-  const openCreateProjectTab = (): void => {
-    const tab: Tab = { id: 'create-project', title: '新建项目', type: 'create-project' }
-    setEditorTree((prev) => {
-      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
-      setFocusedGroupId(targetGroupId)
-      return updateGroup(prev, targetGroupId, (group) => {
-        const exists = group.tabs.some((t) => t.id === tab.id)
-        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
-        return { ...group, tabs: nextTabs, activeTabId: tab.id }
-      })
-    })
-  }
-
-  const handleOpenRecentProject = async (projectSettingsPath: string): Promise<void> => {
-    await loadProject(projectSettingsPath)
-  }
-
-  const handleCreateProject = async (input: {
-    projectName: string
-    description: string
-    projectPath: string
-  }): Promise<void> => {
-    try {
-      setIsProjectBusy(true)
-      const project = await window.api.createProject(input)
-      handleProjectLoaded(project)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '创建项目失败。'
-      setErrorMessage(message)
-      window.alert(message)
-      throw error
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleCreateStoryNode = async (
-    parentId: string | null,
-    name: string,
-    type: 'folder' | 'file'
-  ): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      setIsProjectBusy(true)
-      const nodes = await window.api.createStoryNode({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        parentId,
-        name,
-        type
-      })
-      setStoryNodes(nodes)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '创建失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleRenameStoryNode = async (
-    nodeId: string,
-    newName: string
-  ): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      setIsProjectBusy(true)
-      const nodes = await window.api.renameStoryNode({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        nodeId,
-        newName
-      })
-      setStoryNodes(nodes)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '重命名失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleDeleteStoryNode = async (nodeId: string): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      setIsProjectBusy(true)
-      const nodes = await window.api.deleteStoryNode({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        nodeId
-      })
-      setStoryNodes(nodes)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '删除失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleMoveStoryNode = async (
-    nodeId: string,
-    newParentId: string | null
-  ): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      setIsProjectBusy(true)
-      const nodes = await window.api.moveStoryNode({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        nodeId,
-        newParentId
-      })
-      setStoryNodes(nodes)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '移动失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleReorderStoryNode = async (
-    nodeId: string,
-    targetNodeId: string,
-    position: 'before' | 'after'
-  ): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      setIsProjectBusy(true)
-      const nodes = await window.api.reorderStoryNode({
-        projectSettingsPath: currentProject.projectSettingsPath,
-        nodeId,
-        targetNodeId,
-        position
-      })
-      setStoryNodes(nodes)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '排序失败。'
-      setErrorMessage(message)
-      window.alert(message)
-    } finally {
-      setIsProjectBusy(false)
-    }
-  }
-
-  const handleOpenChapter = (node: StoryNode): void => {
-    if (!currentProject || node.type !== 'file') return
-
-    openTab({
-      id: node.id,
-      title: node.name,
-      type: 'file',
-      nodeId: node.id
-    })
-  }
-
-  const handleSaveNodeContent = async (nodeId: string, content: string): Promise<void> => {
-    if (!currentProject) return
-
-    try {
-      await window.api.writeNodeContent(currentProject.projectSettingsPath, nodeId, content)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '保存失败。'
-      window.alert(message)
-    }
-  }
+  const handleOpenChapter = useCallback(
+    (node: StoryNode): void => {
+      if (!project.currentProject || node.type !== 'file') return
+      editor.openTab({ id: node.id, title: node.name, type: 'file', nodeId: node.id })
+    },
+    [project.currentProject, editor.openTab]
+  )
 
   const handleActivityChange = (activity: ActivityType): void => {
     if (activeActivity === activity) {
@@ -497,249 +63,6 @@ function App(): React.JSX.Element {
       setActiveRightActivity(activity)
       setIsRightSidebarOpen(true)
     }
-  }
-
-  const handleExplorerResize = (deltaX: number): void => {
-    const currentViewportWidth = window.innerWidth
-    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.35) // Max 35% of current viewport
-    setExplorerWidth((prev) => Math.max(220, Math.min(maxAllowedWidth, prev + deltaX)))
-  }
-
-  const handleRightPanelResize = (deltaX: number): void => {
-    const currentViewportWidth = window.innerWidth
-    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.35) // Max 35% of current viewport
-    setRightPanelWidth((prev) => Math.max(150, Math.min(maxAllowedWidth, prev + deltaX)))
-  }
-
-  const openTab = (tab: Tab): void => {
-    setEditorTree((prev) => {
-      const targetGroupId = hasGroup(prev, focusedGroupId) ? focusedGroupId : findFirstGroupId(prev)
-      return updateGroup(prev, targetGroupId, (group) => {
-        const exists = group.tabs.some((item) => item.id === tab.id)
-        const nextTabs = exists ? group.tabs : [...group.tabs, tab]
-        return { ...group, tabs: nextTabs, activeTabId: tab.id }
-      })
-    })
-  }
-
-  const closeTab = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) => {
-      const nextTree = updateGroup(prev, groupId, (group) => {
-        const tab = group.tabs.find((item) => item.id === tabId)
-        if (tab?.isDirty && !window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)) {
-          return group
-        }
-
-        const nextTabs = group.tabs.filter((item) => item.id !== tabId)
-        const nextActive =
-          group.activeTabId === tabId
-            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
-            : group.activeTabId
-        return { ...group, tabs: nextTabs, activeTabId: nextActive }
-      })
-      const collapsedTree = collapseEmptyGroups(nextTree)
-      if (!hasGroup(collapsedTree, focusedGroupId)) {
-        setFocusedGroupId(findFirstGroupId(collapsedTree))
-      }
-      return collapsedTree
-    })
-  }
-
-  const closeOtherTabs = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) => {
-      const nextTree = updateGroup(prev, groupId, (group) => {
-        const nextTabs = group.tabs.filter((tab) => tab.id === tabId || tab.isPinned)
-        return { ...group, tabs: nextTabs, activeTabId: tabId }
-      })
-      const collapsedTree = collapseEmptyGroups(nextTree)
-      if (!hasGroup(collapsedTree, focusedGroupId)) {
-        setFocusedGroupId(findFirstGroupId(collapsedTree))
-      }
-      return collapsedTree
-    })
-  }
-
-  const closeAllTabs = (groupId: string): void => {
-    setEditorTree((prev) => {
-      const nextTree = updateGroup(prev, groupId, (group) => {
-        const nextTabs = group.tabs.filter((tab) => tab.isPinned)
-        return { ...group, tabs: nextTabs, activeTabId: nextTabs[0]?.id ?? '' }
-      })
-      const collapsedTree = collapseEmptyGroups(nextTree)
-      if (!hasGroup(collapsedTree, focusedGroupId)) {
-        setFocusedGroupId(findFirstGroupId(collapsedTree))
-      }
-      return collapsedTree
-    })
-  }
-
-  const togglePinTab = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => ({
-        ...group,
-        tabs: group.tabs.map((tab) =>
-          tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab
-        )
-      }))
-    )
-  }
-
-  const toggleDirtyTab = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => ({
-        ...group,
-        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isDirty: !tab.isDirty } : tab))
-      }))
-    )
-  }
-
-  const setDirtyTab = (groupId: string, tabId: string, isDirty: boolean): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => ({
-        ...group,
-        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isDirty } : tab))
-      }))
-    )
-  }
-
-  const reorderTabs = (groupId: string, draggedId: string, targetId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => {
-        const draggedIndex = group.tabs.findIndex((tab) => tab.id === draggedId)
-        const targetIndex = group.tabs.findIndex((tab) => tab.id === targetId)
-        if (draggedIndex === -1 || targetIndex === -1) return group
-
-        const nextTabs = [...group.tabs]
-        const [draggedTab] = nextTabs.splice(draggedIndex, 1)
-        nextTabs.splice(targetIndex, 0, draggedTab)
-        return { ...group, tabs: nextTabs }
-      })
-    )
-  }
-
-  const moveTab = (
-    fromGroupId: string,
-    toGroupId: string,
-    tabId: string,
-    beforeTabId?: string
-  ): void => {
-    setEditorTree((prev) => {
-      if (fromGroupId === toGroupId) return prev
-
-      let movedTab: Tab | undefined
-      const withoutSource = updateGroup(prev, fromGroupId, (group) => {
-        const tab = group.tabs.find((t) => t.id === tabId)
-        if (!tab) return group
-        movedTab = tab
-        const nextTabs = group.tabs.filter((t) => t.id !== tabId)
-        const nextActiveTabId =
-          group.activeTabId === tabId
-            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
-            : group.activeTabId
-        return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
-      })
-
-      if (!movedTab) return prev
-
-      const next = updateGroup(withoutSource, toGroupId, (group) => {
-        if (group.tabs.some((t) => t.id === movedTab!.id)) {
-          return { ...group, activeTabId: movedTab!.id }
-        }
-        const nextTabs = [...group.tabs]
-        const insertIndex = beforeTabId ? nextTabs.findIndex((t) => t.id === beforeTabId) : -1
-        if (insertIndex === -1) {
-          nextTabs.push(movedTab!)
-        } else {
-          nextTabs.splice(Math.max(0, insertIndex), 0, movedTab!)
-        }
-        return { ...group, tabs: nextTabs, activeTabId: movedTab!.id }
-      })
-
-      const collapsedTree = collapseEmptyGroups(next)
-      setFocusedGroupId(toGroupId)
-      return collapsedTree
-    })
-  }
-
-  const dockTabToSplit = (
-    fromGroupId: string,
-    targetGroupId: string,
-    tabId: string,
-    side: 'left' | 'right' | 'top' | 'bottom'
-  ): void => {
-    setEditorTree((prev) => {
-      const sourceGroup = findGroupNode(prev, fromGroupId)
-      if (fromGroupId === targetGroupId && sourceGroup && sourceGroup.tabs.length <= 1) {
-        return prev
-      }
-
-      let movedTab: Tab | undefined
-      const withoutSource = updateGroup(prev, fromGroupId, (group) => {
-        const tab = group.tabs.find((t) => t.id === tabId)
-        if (!tab) return group
-        movedTab = tab
-        const nextTabs = group.tabs.filter((t) => t.id !== tabId)
-        const nextActiveTabId =
-          group.activeTabId === tabId
-            ? (nextTabs[nextTabs.length - 1]?.id ?? '')
-            : group.activeTabId
-        return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
-      })
-
-      if (!movedTab) return prev
-
-      const newGroup: EditorGroupNode = {
-        kind: 'group',
-        id: createId('group'),
-        tabs: [movedTab],
-        activeTabId: movedTab.id
-      }
-
-      const direction: 'row' | 'column' = side === 'left' || side === 'right' ? 'row' : 'column'
-      const place: 'first' | 'second' = side === 'left' || side === 'top' ? 'first' : 'second'
-      const next = splitAtGroup(withoutSource, targetGroupId, direction, newGroup, place)
-      const collapsedTree = collapseEmptyGroups(next)
-      setFocusedGroupId(newGroup.id)
-      return collapsedTree
-    })
-  }
-
-  const switchTab = (groupId: string, tabId: string): void => {
-    setEditorTree((prev) =>
-      updateGroup(prev, groupId, (group) => ({ ...group, activeTabId: tabId }))
-    )
-  }
-
-  const splitGroup = (groupId: string, direction: 'row' | 'column', tabId?: string): void => {
-    setEditorTree((prev) => {
-      const sourceGroup = tabId ? findGroupNode(prev, groupId) : null
-      if (tabId && sourceGroup && sourceGroup.tabs.length <= 1) return prev
-
-      const tab = tabId ? sourceGroup?.tabs.find((t) => t.id === tabId) : undefined
-      const newGroup: EditorGroupNode = tab
-        ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
-        : createEmptyGroup()
-      const nextTree = collapseEmptyGroups(splitAtGroup(prev, groupId, direction, newGroup, 'second'))
-      setFocusedGroupId(newGroup.id)
-      return nextTree
-    })
-  }
-
-  const closeGroup = (groupId: string): void => {
-    setEditorTree((prev) => {
-      if (countGroups(prev) <= 1) return prev
-      const next = removeGroup(prev, groupId).node
-      if (!next) return prev
-      const normalizedTree = collapseEmptyGroups(next)
-      if (!hasGroup(normalizedTree, focusedGroupId)) {
-        setFocusedGroupId(findFirstGroupId(normalizedTree))
-      }
-      return normalizedTree
-    })
-  }
-
-  const resizeSplit = (splitId: string, ratio: number): void => {
-    setEditorTree((prev) => updateSplitRatio(prev, splitId, clamp(ratio, 0.1, 0.9)))
   }
 
   return (
@@ -761,8 +84,10 @@ function App(): React.JSX.Element {
       </svg>
 
       <StatusbarProvider>
-        <div className={`app-container ${isDragging ? 'dragging' : ''} layout-${layoutSize}`}>
-          <TitleBar onOpenWelcome={openWelcomeTab} />
+        <div
+          className={`app-container ${layout.isDragging ? 'dragging' : ''} layout-${layout.layoutSize}`}
+        >
+          <TitleBar onOpenWelcome={editor.openWelcomeTab} />
           <div className="main-area">
             <ActivityBar
               activeActivity={activeActivity}
@@ -772,57 +97,57 @@ function App(): React.JSX.Element {
             <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
               <Explorer
                 activeActivity={activeActivity}
-                currentProject={currentProject}
-                storyNodes={storyNodes}
-                recentProjects={recentProjects}
-                onOpenFolder={handleOpenProject}
-                onOpenRecentProject={handleOpenRecentProject}
-                onOpenCreateProject={openCreateProjectTab}
+                currentProject={project.currentProject}
+                storyNodes={project.storyNodes}
+                recentProjects={project.recentProjects}
+                onOpenFolder={project.openProject}
+                onOpenRecentProject={project.openRecentProject}
+                onOpenCreateProject={editor.openCreateProjectTab}
                 onOpenChapter={handleOpenChapter}
-                onCreateStoryNode={handleCreateStoryNode}
-                onRenameStoryNode={handleRenameStoryNode}
-                onDeleteStoryNode={handleDeleteStoryNode}
-                onMoveStoryNode={handleMoveStoryNode}
-                onReorderStoryNode={handleReorderStoryNode}
+                onCreateStoryNode={project.createStoryNode}
+                onRenameStoryNode={project.renameStoryNode}
+                onDeleteStoryNode={project.deleteStoryNode}
+                onMoveStoryNode={project.moveStoryNode}
+                onReorderStoryNode={project.reorderStoryNode}
                 isOpen={isExplorerOpen}
-                width={explorerWidth}
-                isBusy={isProjectBusy}
-                errorMessage={errorMessage}
+                width={layout.explorerWidth}
+                isBusy={project.isProjectBusy}
+                errorMessage={project.errorMessage}
               />
               {isExplorerOpen && (
                 <Sash
                   side="left"
-                  onResize={handleExplorerResize}
-                  setIsDraggingGlobal={setIsDragging}
+                  onResize={layout.handleExplorerResize}
+                  setIsDraggingGlobal={layout.setIsDragging}
                 />
               )}
             </div>
 
             <Editor
-              currentProject={currentProject}
-              onOpenFolder={handleOpenProject}
-              onOpenWelcome={openWelcomeTab}
-              onOpenCreateProject={openCreateProjectTab}
-              onCreateProject={handleCreateProject}
+              currentProject={project.currentProject}
+              onOpenFolder={project.openProject}
+              onOpenWelcome={editor.openWelcomeTab}
+              onOpenCreateProject={editor.openCreateProjectTab}
+              onCreateProject={project.createProject}
               onPickProjectPath={() => window.api.pickProjectPath()}
-              onSaveNodeContent={handleSaveNodeContent}
-              editorTree={editorTree}
-              focusedGroupId={focusedGroupId}
-              groupCount={countGroups(editorTree)}
-              onFocusGroup={setFocusedGroupId}
-              onTabSwitch={switchTab}
-              onTabClose={closeTab}
-              onCloseOthers={closeOtherTabs}
-              onCloseAll={closeAllTabs}
-              onPinTab={togglePinTab}
-              onDirtyTab={toggleDirtyTab}
-              onSetDirtyTab={setDirtyTab}
-              onReorderTabs={reorderTabs}
-              onMoveTab={moveTab}
-              onDockTabToSplit={dockTabToSplit}
-              onSplitGroup={splitGroup}
-              onCloseGroup={closeGroup}
-              onResizeSplit={resizeSplit}
+              onSaveNodeContent={project.saveNodeContent}
+              editorTree={editor.editorTree}
+              focusedGroupId={editor.focusedGroupId}
+              groupCount={editor.groupCount}
+              onFocusGroup={editor.setFocusedGroupId}
+              onTabSwitch={editor.switchTab}
+              onTabClose={editor.closeTab}
+              onCloseOthers={editor.closeOtherTabs}
+              onCloseAll={editor.closeAllTabs}
+              onPinTab={editor.togglePinTab}
+              onDirtyTab={editor.toggleDirtyTab}
+              onSetDirtyTab={editor.setDirtyTab}
+              onReorderTabs={editor.reorderTabs}
+              onMoveTab={editor.moveTab}
+              onDockTabToSplit={editor.dockTabToSplit}
+              onSplitGroup={editor.splitGroup}
+              onCloseGroup={editor.closeGroup}
+              onResizeSplit={editor.resizeSplit}
             />
 
             <div style={{ display: 'flex', height: '100%' }}>
@@ -830,14 +155,14 @@ function App(): React.JSX.Element {
                 {isRightSidebarOpen && (
                   <Sash
                     side="right"
-                    onResize={handleRightPanelResize}
-                    setIsDraggingGlobal={setIsDragging}
+                    onResize={layout.handleRightPanelResize}
+                    setIsDraggingGlobal={layout.setIsDragging}
                   />
                 )}
                 <RightPanel
                   activeActivity={activeRightActivity}
                   isOpen={isRightSidebarOpen}
-                  width={rightPanelWidth}
+                  width={layout.rightPanelWidth}
                 />
               </div>
               <RightActivityBar
