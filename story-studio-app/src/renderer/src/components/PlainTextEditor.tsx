@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
+import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 
 interface PlainTextEditorProps {
   content: string
@@ -67,11 +68,51 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const charCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const wordCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // 历史记录用于撤销/重做
+  const historyRef = useRef<string[]>([])
+  const historyIndexRef = useRef<number>(-1)
+  const isUndoingRef = useRef(false)
+  const isInitializedRef = useRef(false)
+
+  // 从 props 同步 content（仅在非撤销操作时）
   useEffect(() => {
-    if (content !== text) {
+    if (content !== text && !isUndoingRef.current) {
       setText(content || '')
     }
+  }, [content, text])
+
+  // 保存历史记录
+  const saveHistory = useCallback((newText: string) => {
+    if (isUndoingRef.current) return
+    
+    // 如果新文本与当前历史记录相同，不保存
+    if (historyRef.current[historyIndexRef.current] === newText) return
+    
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1)
+    historyRef.current.push(newText)
+    historyIndexRef.current = historyRef.current.length - 1
+    
+    // 限制历史记录数量
+    if (historyRef.current.length > 50) {
+      historyRef.current.shift()
+      historyIndexRef.current--
+    }
+  }, [])
+
+  // 初始化历史记录（仅执行一次）
+  useEffect(() => {
+    if (isInitializedRef.current) return
+    isInitializedRef.current = true
+    
+    const initialContent = content || ''
+    historyRef.current = [initialContent]
+    historyIndexRef.current = 0
+    setText(initialContent)
   }, [content])
 
   // Register status bar entries on mount
@@ -133,7 +174,96 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     const newText = e.target.value
     setText(newText)
     onChange(newText)
+    saveHistory(newText)
   }
+
+  // 撤销
+  const handleUndo = useCallback(() => {
+    if (historyIndexRef.current > 0) {
+      isUndoingRef.current = true
+      historyIndexRef.current--
+      const prevText = historyRef.current[historyIndexRef.current]
+      setText(prevText)
+      onChange(prevText)
+      
+      // 恢复光标位置
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus()
+        isUndoingRef.current = false
+      })
+    }
+  }, [onChange])
+
+  // 重做
+  const handleRedo = useCallback(() => {
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      isUndoingRef.current = true
+      historyIndexRef.current++
+      const nextText = historyRef.current[historyIndexRef.current]
+      setText(nextText)
+      onChange(nextText)
+      
+      // 恢复光标位置
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus()
+        isUndoingRef.current = false
+      })
+    }
+  }, [onChange])
+
+  // 全选
+  const handleSelectAll = useCallback(() => {
+    textareaRef.current?.select()
+  }, [])
+
+  // 复制
+  const handleCopy = useCallback(async () => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
+    if (selectedText) {
+      await navigator.clipboard.writeText(selectedText)
+    }
+  }, [])
+
+  // 剪切
+  const handleCut = useCallback(async () => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selectedText = textarea.value.substring(start, end)
+    if (selectedText) {
+      await navigator.clipboard.writeText(selectedText)
+      const newText = textarea.value.substring(0, start) + textarea.value.substring(end)
+      setText(newText)
+      onChange(newText)
+      saveHistory(newText)
+      requestAnimationFrame(() => {
+        textarea.selectionStart = textarea.selectionEnd = start
+      })
+    }
+  }, [onChange, saveHistory])
+
+  // 粘贴
+  const handlePaste = useCallback(async () => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    try {
+      const clipboardText = await navigator.clipboard.readText()
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const newText = textarea.value.substring(0, start) + clipboardText + textarea.value.substring(end)
+      setText(newText)
+      onChange(newText)
+      saveHistory(newText)
+      requestAnimationFrame(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length
+      })
+    } catch {
+      // 剪贴板访问失败
+    }
+  }, [onChange, saveHistory])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
     // Ctrl+S 保存
@@ -142,6 +272,26 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       if (onSave) {
         onSave()
       }
+      return
+    }
+
+    // Ctrl+Z 撤销
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault()
+      handleUndo()
+      return
+    }
+
+    // Ctrl+Y 或 Ctrl+Shift+Z 重做
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault()
+      handleRedo()
+      return
+    }
+
+    // Ctrl+A 全选（浏览器默认支持，但阻止冒泡）
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      e.stopPropagation()
       return
     }
 
@@ -176,6 +326,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         const newText = value.substring(0, start) + '\t' + value.substring(end)
         setText(newText)
         onChange(newText)
+        saveHistory(newText)
         requestAnimationFrame(() => {
           textarea.selectionStart = textarea.selectionEnd = start + 1
         })
@@ -212,6 +363,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         const newText = lines.join('\n')
         setText(newText)
         onChange(newText)
+        saveHistory(newText)
         requestAnimationFrame(() => {
           textarea.selectionStart = newSelectionStart
           textarea.selectionEnd = newSelectionEnd
@@ -220,17 +372,75 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   }
 
+  // 右键菜单
+  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null)
+  }
+
+  const contextMenuItems: ContextMenuItem[] = [
+    {
+      key: 'undo',
+      label: '撤销 (Ctrl+Z)',
+      onSelect: handleUndo
+    },
+    {
+      key: 'redo',
+      label: '重做 (Ctrl+Y)',
+      onSelect: handleRedo
+    },
+    {
+      key: 'separator1',
+      label: '---',
+      onSelect: () => {}
+    },
+    {
+      key: 'cut',
+      label: '剪切 (Ctrl+X)',
+      onSelect: handleCut
+    },
+    {
+      key: 'copy',
+      label: '复制 (Ctrl+C)',
+      onSelect: handleCopy
+    },
+    {
+      key: 'paste',
+      label: '粘贴 (Ctrl+V)',
+      onSelect: handlePaste
+    },
+    {
+      key: 'selectAll',
+      label: '全选 (Ctrl+A)',
+      onSelect: handleSelectAll
+    }
+  ]
+
   return (
     <div className="plain-text-editor">
       <textarea
+        ref={textareaRef}
         className="plain-text-editor-textarea"
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onContextMenu={handleContextMenu}
         placeholder={placeholder}
         spellCheck={false}
         autoFocus
       />
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenuItems}
+          onClose={handleCloseContextMenu}
+        />
+      )}
     </div>
   )
 }
