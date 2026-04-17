@@ -103,8 +103,8 @@ export const useEditorTree = (): UseEditorTreeValue => {
     setEditorTree((prev) => removeTabsByType(prev, 'create-project'))
   }, [])
 
-  const pendingCloseRef = useRef<Set<string>>(null)
-  if (pendingCloseRef.current === null) {
+  const pendingCloseRef = useRef<Set<string>>()
+  if (!pendingCloseRef.current) {
     pendingCloseRef.current = new Set()
   }
 
