@@ -222,7 +222,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (!textarea) return
     const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
     if (selectedText) {
-      await navigator.clipboard.writeText(selectedText)
+      try {
+        await navigator.clipboard.writeText(selectedText)
+      } catch (error) {
+        console.error('复制失败:', error)
+      }
     }
   }, [])
 
