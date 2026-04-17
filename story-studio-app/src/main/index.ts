@@ -155,7 +155,8 @@ function createWindow(): void {
       input: {
         projectSettingsPath: string
         nodeId: string
-        newSortOrder: number
+        targetNodeId: string
+        position: 'before' | 'after'
       }
     ) => {
       return reorderStoryNode(input)

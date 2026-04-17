@@ -1,7 +1,101 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { ActivityType, ProjectData, RecentProject, StoryNode } from '../models'
-import ContextMenu from './ContextMenu'
+import Tree from './Tree'
 import RenameDialog from './RenameDialog'
+import Sidebar from './Sidebar'
+
+interface CreateMenuPortalProps {
+  onClose: () => void
+  onCreateFolder: () => void
+  onCreateFile: () => void
+}
+
+const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFolder, onCreateFile }) => {
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const button = document.querySelector('.story-action-button') as HTMLElement
+    if (button) {
+      const rect = button.getBoundingClientRect()
+      setPosition({ top: rect.bottom + 4, left: rect.left })
+    }
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose])
+
+  if (!position) return null
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: 'fixed',
+        top: position.top,
+        left: position.left,
+        zIndex: 999999,
+        background: 'var(--panel-bg, #252526)',
+        border: '1px solid var(--border-color, #454545)',
+        borderRadius: '4px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        minWidth: '120px',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div
+        style={{
+          padding: '8px 16px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          color: 'var(--foreground, #ccc)',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }}
+        onClick={() => {
+          onCreateFolder()
+          onClose()
+        }}
+      >
+        📁 文件夹
+      </div>
+      <div
+        style={{
+          padding: '8px 16px',
+          cursor: 'pointer',
+          fontSize: '13px',
+          color: 'var(--foreground, #ccc)',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }}
+        onClick={() => {
+          onCreateFile()
+          onClose()
+        }}
+      >
+        📄 章
+      </div>
+    </div>,
+    document.body
+  )
+}
 
 interface ExplorerProps {
   activeActivity: ActivityType
@@ -16,13 +110,12 @@ interface ExplorerProps {
   onRenameStoryNode: (nodeId: string, newName: string) => Promise<void>
   onDeleteStoryNode: (nodeId: string) => Promise<void>
   onMoveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
+  onReorderStoryNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => Promise<void>
   isOpen: boolean
   width: number
   isBusy: boolean
   errorMessage: string | null
 }
-
-type SelectedNode = { type: 'node'; nodeId: string } | null
 
 const Explorer: React.FC<ExplorerProps> = ({
   activeActivity,
@@ -37,52 +130,18 @@ const Explorer: React.FC<ExplorerProps> = ({
   onRenameStoryNode,
   onDeleteStoryNode,
   onMoveStoryNode,
+  onReorderStoryNode,
   isOpen,
   width,
   isBusy,
   errorMessage
 }) => {
-  const [selectedNode, setSelectedNode] = useState<SelectedNode>(null)
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
-  const [createMenuParentId, setCreateMenuParentId] = useState<string | null>(null)
-  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
-  const [contextMenu, setContextMenu] = useState<{
-    x: number
-    y: number
-    nodeId: string
-    nodeType: 'folder' | 'file'
-  } | null>(null)
   const [renameDialog, setRenameDialog] = useState<{
     nodeId: string
     title: string
     initialValue: string
   } | null>(null)
-
-  useEffect(() => {
-    const closeMenus = (): void => {
-      setIsCreateMenuOpen(false)
-      setContextMenu(null)
-    }
-
-    const handleMouseDown = (event: MouseEvent): void => {
-      if (event.button !== 0) return
-      closeMenus()
-    }
-
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        closeMenus()
-      }
-    }
-
-    window.addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('mousedown', handleMouseDown)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [])
 
   const activityTitle = useMemo(() => {
     switch (activeActivity) {
@@ -99,37 +158,6 @@ const Explorer: React.FC<ExplorerProps> = ({
     }
   }, [activeActivity])
 
-  const nodeTree = useMemo(() => {
-    const tree = new Map<string | null, StoryNode[]>()
-    for (const node of storyNodes) {
-      const parentId = node.parentId
-      if (!tree.has(parentId)) {
-        tree.set(parentId, [])
-      }
-      tree.get(parentId)!.push(node)
-    }
-    for (const children of tree.values()) {
-      children.sort((a, b) => a.sortOrder - b.sortOrder)
-    }
-    return tree
-  }, [storyNodes])
-
-  const getNodeById = (nodeId: string): StoryNode | undefined => {
-    return storyNodes.find((n) => n.id === nodeId)
-  }
-
-  const toggleExpanded = (nodeId: string): void => {
-    setExpandedNodes((prev) => {
-      const next = new Set(prev)
-      if (next.has(nodeId)) {
-        next.delete(nodeId)
-      } else {
-        next.add(nodeId)
-      }
-      return next
-    })
-  }
-
   const handleCreateNode = async (type: 'folder' | 'file'): Promise<void> => {
     let name: string
     if (type === 'folder') {
@@ -138,99 +166,8 @@ const Explorer: React.FC<ExplorerProps> = ({
       const fileCount = storyNodes.filter((n) => n.type === 'file').length
       name = `第${fileCount + 1}章`
     }
-    await onCreateStoryNode(createMenuParentId, name, type)
+    await onCreateStoryNode(null, name, type)
     setIsCreateMenuOpen(false)
-  }
-
-  const handleRename = async (): Promise<void> => {
-    if (!contextMenu || !currentProject) return
-
-    const node = getNodeById(contextMenu.nodeId)
-    if (!node) return
-
-    setContextMenu(null)
-    setRenameDialog({
-      nodeId: contextMenu.nodeId,
-      title: contextMenu.nodeType === 'folder' ? '重命名文件夹' : '重命名文件',
-      initialValue: node.name
-    })
-  }
-
-  const handleDelete = async (): Promise<void> => {
-    if (!contextMenu || !currentProject) return
-    await onDeleteStoryNode(contextMenu.nodeId)
-    setContextMenu(null)
-  }
-
-  const renderNode = (node: StoryNode, depth: number): React.ReactNode => {
-    const isExpanded = expandedNodes.has(node.id)
-    const isFolder = node.type === 'folder'
-    const isSelected = selectedNode?.type === 'node' && selectedNode.nodeId === node.id
-    const children = nodeTree.get(node.id) || []
-
-    return (
-      <div key={node.id}>
-        <div
-          className={`story-tree-item ${isFolder ? 'folder' : 'file'} ${isSelected ? 'selected' : ''}`}
-          style={{ paddingLeft: `${depth * 16 + 8}px` }}
-          draggable
-          onClick={() => {
-            setSelectedNode({ type: 'node', nodeId: node.id })
-            if (isFolder) {
-              toggleExpanded(node.id)
-            }
-          }}
-          onDoubleClick={() => {
-            if (!isFolder) {
-              onOpenChapter(node)
-            }
-          }}
-          onDragStart={(event) => {
-            setDraggingNodeId(node.id)
-            event.dataTransfer.effectAllowed = 'move'
-          }}
-          onDragOver={(event) => {
-            event.preventDefault()
-            if (draggingNodeId && isFolder) {
-              event.dataTransfer.dropEffect = 'move'
-            }
-          }}
-          onDrop={(event) => {
-            event.preventDefault()
-            if (draggingNodeId && isFolder && draggingNodeId !== node.id) {
-              onMoveStoryNode(draggingNodeId, node.id)
-            }
-            setDraggingNodeId(null)
-          }}
-          onDragEnd={() => setDraggingNodeId(null)}
-          onContextMenu={(event) => {
-            event.preventDefault()
-            setContextMenu({
-              x: event.clientX,
-              y: event.clientY,
-              nodeId: node.id,
-              nodeType: node.type
-            })
-          }}
-        >
-          {isFolder && (
-            <button
-              className={`story-toggle ${isExpanded ? '' : 'collapsed'}`}
-              onClick={(event) => {
-                event.stopPropagation()
-                toggleExpanded(node.id)
-              }}
-            >
-              {isExpanded ? '▾' : '▸'}
-            </button>
-          )}
-          <span className="story-icon">{isFolder ? '📁' : '📄'}</span>
-          <span className="story-label">{depth > 0 ? '\t' : ''}{node.name}</span>
-        </div>
-
-        {isFolder && isExpanded && children.map((child) => renderNode(child, depth + 1))}
-      </div>
-    )
   }
 
   const renderStoryTree = (): React.ReactNode => {
@@ -248,20 +185,17 @@ const Explorer: React.FC<ExplorerProps> = ({
       )
     }
 
-    const rootNodes = nodeTree.get(null) || []
-
     return (
-      <div className="explorer-story">
-        <div className="story-toolbar-panel">
-          <div className="story-toolbar">
-            <div className="story-toolbar-actions">
+      <div className="explorer-story" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="story-toolbar-panel" style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div className="story-toolbar" style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="story-toolbar-actions" style={{ position: 'relative' }}>
               <button
                 className="action-button story-action-button"
                 title="新建"
                 disabled={isBusy}
                 onClick={(event) => {
                   event.stopPropagation()
-                  setCreateMenuParentId(null)
                   setIsCreateMenuOpen((prev) => !prev)
                 }}
               >
@@ -271,67 +205,38 @@ const Explorer: React.FC<ExplorerProps> = ({
                 </svg>
               </button>
               {isCreateMenuOpen && (
-                <div
-                  className="context-menu story-create-menu"
-                  onClick={(event) => event.stopPropagation()}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onContextMenu={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                  }}
-                >
-                  <div
-                    className="menu-item"
-                    onMouseDown={(event) => {
-                      if (event.button !== 0) return
-                      event.preventDefault()
-                      event.stopPropagation()
-                      void handleCreateNode('folder')
-                    }}
-                  >
-                    📁 文件夹
-                  </div>
-                  <div
-                    className="menu-item"
-                    onMouseDown={(event) => {
-                      if (event.button !== 0) return
-                      event.preventDefault()
-                      event.stopPropagation()
-                      void handleCreateNode('file')
-                    }}
-                  >
-                    📄 章
-                  </div>
-                </div>
+                <CreateMenuPortal
+                  onClose={() => setIsCreateMenuOpen(false)}
+                  onCreateFolder={() => void handleCreateNode('folder')}
+                  onCreateFile={() => void handleCreateNode('file')}
+                />
               )}
             </div>
           </div>
         </div>
 
-        <div className="story-list-panel">
-          <div className="story-tree">
-            {rootNodes.map((node) => renderNode(node, 0))}
-          </div>
+        <div className="story-list-panel" style={{ flex: 1, overflow: 'hidden' }}>
+          <Tree
+            nodes={storyNodes}
+            onOpenChapter={onOpenChapter}
+            onMoveNode={onMoveStoryNode}
+            onReorderNode={onReorderStoryNode}
+            onRenameNode={onRenameStoryNode}
+            onDeleteNode={onDeleteStoryNode}
+          />
         </div>
       </div>
     )
   }
 
   return (
-    <div
-      className={`explorer-panel ${isOpen ? 'open' : ''}`}
-      style={{ width: `${isOpen ? width : 0}px` }}
-    >
-      <div
-        className="panel-inner"
-        style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
-      >
-        <div className="explorer-header">{activityTitle}</div>
+    <Sidebar isOpen={isOpen} width={width} side="left" className="explorer-panel">
+      <div className="explorer-header">{activityTitle}</div>
 
-        <div className="explorer-body">
+        <div className="explorer-body" style={{ height: 'calc(100% - 40px)' }}>
           {activeActivity === 'chapter' ? (
             <>
-              <div className="explorer-static-section">
+              <div className="explorer-static-section" style={{ height: '100%' }}>
                 {renderStoryTree()}
 
                 {errorMessage && <div className="explorer-inline-error">{errorMessage}</div>}
@@ -369,26 +274,6 @@ const Explorer: React.FC<ExplorerProps> = ({
           )}
         </div>
 
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            onClose={() => setContextMenu(null)}
-            items={[
-              {
-                key: 'rename',
-                label: '重命名',
-                onSelect: () => void handleRename()
-              },
-              {
-                key: 'delete',
-                label: '删除',
-                onSelect: () => void handleDelete()
-              }
-            ]}
-          />
-        )}
-
         {renameDialog && (
           <RenameDialog
             title={renameDialog.title}
@@ -400,8 +285,7 @@ const Explorer: React.FC<ExplorerProps> = ({
             }}
           />
         )}
-      </div>
-    </div>
+    </Sidebar>
   )
 }
 

@@ -19,7 +19,7 @@ const Sash: React.FC<SashProps> = ({ onResize, side, setIsDraggingGlobal }) => {
     const handleMouseMove = (e: MouseEvent): void => {
       if (!isDragging) return
       // 根据侧向决定 deltaX 的方向
-      const deltaX = side === 'left' ? e.movementX : -e.movementX
+      const deltaX = e.movementX
       onResize(deltaX)
     }
 

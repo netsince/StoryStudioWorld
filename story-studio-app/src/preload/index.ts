@@ -56,7 +56,8 @@ export interface MoveNodeInput {
 export interface ReorderNodeInput {
   projectSettingsPath: string
   nodeId: string
-  newSortOrder: number
+  targetNodeId: string
+  position: 'before' | 'after'
 }
 
 const api = {

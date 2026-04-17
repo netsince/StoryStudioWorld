@@ -422,6 +422,31 @@ function App(): React.JSX.Element {
     }
   }
 
+  const handleReorderStoryNode = async (
+    nodeId: string,
+    targetNodeId: string,
+    position: 'before' | 'after'
+  ): Promise<void> => {
+    if (!currentProject) return
+
+    try {
+      setIsProjectBusy(true)
+      const nodes = await window.api.reorderStoryNode({
+        projectSettingsPath: currentProject.projectSettingsPath,
+        nodeId,
+        targetNodeId,
+        position
+      })
+      setStoryNodes(nodes)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '排序失败。'
+      setErrorMessage(message)
+      window.alert(message)
+    } finally {
+      setIsProjectBusy(false)
+    }
+  }
+
   const handleOpenChapter = (node: StoryNode): void => {
     if (!currentProject || node.type !== 'file') return
 
@@ -463,11 +488,11 @@ function App(): React.JSX.Element {
   }
 
   const handleExplorerResize = (deltaX: number): void => {
-    setExplorerWidth((prev) => Math.max(220, Math.min(600, prev + deltaX)))
+    setExplorerWidth((prev) => Math.max(200, Math.min(500, prev + deltaX)))
   }
 
   const handleRightPanelResize = (deltaX: number): void => {
-    setRightPanelWidth((prev) => Math.max(150, Math.min(600, prev + deltaX)))
+    setRightPanelWidth((prev) => Math.max(200, Math.min(500, prev + deltaX)))
   }
 
   const openTab = (tab: Tab): void => {
@@ -732,6 +757,7 @@ function App(): React.JSX.Element {
               onRenameStoryNode={handleRenameStoryNode}
               onDeleteStoryNode={handleDeleteStoryNode}
               onMoveStoryNode={handleMoveStoryNode}
+              onReorderStoryNode={handleReorderStoryNode}
               isOpen={isExplorerOpen}
               width={explorerWidth}
               isBusy={isProjectBusy}

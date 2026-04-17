@@ -1,0 +1,28 @@
+import React from 'react'
+
+interface SidebarProps {
+  isOpen: boolean
+  width: number
+  side: 'left' | 'right'
+  className?: string
+  children: React.ReactNode
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, width, side, className = '', children }) => {
+  return (
+    <div
+      className={`sidebar sidebar-${side} ${isOpen ? 'open' : ''} ${className}`}
+      style={{
+        width: `${isOpen ? width : 0}px`,
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}
+    >
+      <div className="sidebar-inner" style={{ width: '100%', height: '100%' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export default Sidebar
