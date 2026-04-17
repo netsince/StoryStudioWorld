@@ -21,7 +21,7 @@ export interface UseProjectManagerValue {
 
   openProject: () => Promise<void>
   openRecentProject: (projectSettingsPath: string) => Promise<void>
-  loadProject: (projectSettingsPath: string) => Promise<boolean>
+  loadProject: (projectSettingsPath: string, showAlert?: boolean) => Promise<boolean>
   createProject: (input: CreateProjectInput) => Promise<void>
 
   createStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file') => Promise<void>

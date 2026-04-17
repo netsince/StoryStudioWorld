@@ -103,10 +103,7 @@ export const useEditorTree = (): UseEditorTreeValue => {
     setEditorTree((prev) => removeTabsByType(prev, 'create-project'))
   }, [])
 
-  const pendingCloseRef = useRef<Set<string>>()
-  if (!pendingCloseRef.current) {
-    pendingCloseRef.current = new Set()
-  }
+  const pendingCloseRef = useRef<Set<string>>(new Set())
 
   const closeTab = useCallback(
     async (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback): Promise<void> => {
@@ -392,4 +389,3 @@ export const useEditorTree = (): UseEditorTreeValue => {
     resizeSplit
   }
 }
-
