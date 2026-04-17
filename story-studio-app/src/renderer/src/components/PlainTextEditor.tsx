@@ -145,7 +145,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       return
     }
 
-    // Tab 插入制表符
+    // Tab 插入/删除制表符
     if (e.key === 'Tab') {
       e.preventDefault()
       const textarea = e.currentTarget
@@ -153,15 +153,70 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       const end = textarea.selectionEnd
       const value = textarea.value
 
-      // 插入真正的制表符
-      const newText = value.substring(0, start) + '\t' + value.substring(end)
-      setText(newText)
-      onChange(newText)
+      // 找到选中的起始行和结束行
+      const lines = value.split('\n')
+      let currentPos = 0
+      let startLine = 0
+      let endLine = 0
 
-      // 恢复光标位置
-      requestAnimationFrame(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 1
-      })
+      for (let i = 0; i < lines.length; i++) {
+        const lineLength = lines[i].length + 1 // +1 for \n
+        if (currentPos <= start && start < currentPos + lineLength) {
+          startLine = i
+        }
+        if (currentPos <= end && end <= currentPos + lineLength) {
+          endLine = i
+          break
+        }
+        currentPos += lineLength
+      }
+
+      if (start === end) {
+        // 单行模式：插入制表符
+        const newText = value.substring(0, start) + '\t' + value.substring(end)
+        setText(newText)
+        onChange(newText)
+        requestAnimationFrame(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 1
+        })
+      } else {
+        // 多行模式：增加或删除缩进
+        const isUnindent = e.shiftKey
+        let newSelectionStart = start
+        let newSelectionEnd = end
+
+        for (let i = startLine; i <= endLine; i++) {
+          if (isUnindent) {
+            // Shift+Tab: 删除行首的制表符或空格
+            if (lines[i].startsWith('\t')) {
+              lines[i] = lines[i].substring(1)
+              if (i === startLine) newSelectionStart -= 1
+              newSelectionEnd -= 1
+            } else if (lines[i].startsWith('  ')) {
+              lines[i] = lines[i].substring(2)
+              if (i === startLine) newSelectionStart -= 2
+              newSelectionEnd -= 2
+            } else if (lines[i].startsWith(' ')) {
+              lines[i] = lines[i].substring(1)
+              if (i === startLine) newSelectionStart -= 1
+              newSelectionEnd -= 1
+            }
+          } else {
+            // Tab: 添加制表符
+            lines[i] = '\t' + lines[i]
+            if (i === startLine) newSelectionStart += 1
+            newSelectionEnd += 1
+          }
+        }
+
+        const newText = lines.join('\n')
+        setText(newText)
+        onChange(newText)
+        requestAnimationFrame(() => {
+          textarea.selectionStart = newSelectionStart
+          textarea.selectionEnd = newSelectionEnd
+        })
+      }
     }
   }
 
