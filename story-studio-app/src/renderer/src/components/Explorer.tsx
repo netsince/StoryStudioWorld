@@ -131,7 +131,13 @@ const Explorer: React.FC<ExplorerProps> = ({
   }
 
   const handleCreateNode = async (type: 'folder' | 'file'): Promise<void> => {
-    const name = type === 'folder' ? '新文件夹' : '新章节'
+    let name: string
+    if (type === 'folder') {
+      name = '新文件夹'
+    } else {
+      const fileCount = storyNodes.filter((n) => n.type === 'file').length
+      name = `第${fileCount + 1}章`
+    }
     await onCreateStoryNode(createMenuParentId, name, type)
     setIsCreateMenuOpen(false)
   }
@@ -283,7 +289,7 @@ const Explorer: React.FC<ExplorerProps> = ({
                       void handleCreateNode('folder')
                     }}
                   >
-                    📁 新建文件夹
+                    📁 文件夹
                   </div>
                   <div
                     className="menu-item"
@@ -294,7 +300,7 @@ const Explorer: React.FC<ExplorerProps> = ({
                       void handleCreateNode('file')
                     }}
                   >
-                    📄 新建文件
+                    📄 章
                   </div>
                 </div>
               )}

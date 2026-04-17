@@ -176,7 +176,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   const storyDbPath = getStoryDbPath(projectPath)
   const db = await initDatabase(storyDbPath)
 
-  createNode(db, null, '故事', 'folder')
+  createNode(db, null, '故事', 'file')
 
   await saveDatabase(db, storyDbPath)
   db.close()
@@ -250,16 +250,15 @@ export async function deleteStoryNode(input: DeleteNodeInput): Promise<StoryNode
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
-  const node = db.prepare('SELECT type FROM nodes WHERE id = ?').bind([input.nodeId])
-  if (node.step()) {
-    const row = node.getAsObject() as { type: string }
-    if (row.type === 'folder') {
+  const result = db.exec(`SELECT type FROM nodes WHERE id = '${input.nodeId}'`)
+  if (result.length > 0 && result[0].values.length > 0) {
+    const type = result[0].values[0][0] as string
+    if (type === 'folder') {
       deleteNodeRecursively(db, input.nodeId)
     } else {
       deleteNode(db, input.nodeId)
     }
   }
-  node.free()
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
