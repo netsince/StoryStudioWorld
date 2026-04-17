@@ -178,7 +178,12 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     const handleResize = (): void => {
-      setViewportWidth(window.innerWidth)
+      const newWidth = window.innerWidth
+      setViewportWidth(newWidth)
+      
+      // Auto-shrink sidebar if it exceeds viewport
+      const maxAllowedWidth = Math.floor(newWidth * 0.4) // Max 40% of viewport
+      setExplorerWidth((prev) => Math.min(prev, Math.max(220, maxAllowedWidth)))
     }
 
     window.addEventListener('resize', handleResize)
@@ -488,11 +493,13 @@ function App(): React.JSX.Element {
   }
 
   const handleExplorerResize = (deltaX: number): void => {
-    setExplorerWidth((prev) => Math.max(200, Math.min(500, prev + deltaX)))
+    const currentViewportWidth = window.innerWidth
+    const maxAllowedWidth = Math.floor(currentViewportWidth * 0.4) // Max 40% of current viewport
+    setExplorerWidth((prev) => Math.max(220, Math.min(maxAllowedWidth, prev + deltaX)))
   }
 
   const handleRightPanelResize = (deltaX: number): void => {
-    setRightPanelWidth((prev) => Math.max(200, Math.min(500, prev + deltaX)))
+    setRightPanelWidth((prev) => Math.max(150, Math.min(600, prev + deltaX)))
   }
 
   const openTab = (tab: Tab): void => {
