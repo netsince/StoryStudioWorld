@@ -110,13 +110,32 @@ const PreferencesPage: React.FC = () => {
           <div style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>编辑器</h3>
             
+            {/* 预览 */}
+            <div style={{ 
+              marginBottom: '24px',
+              backgroundColor: 'var(--panel-bg)',
+              borderRadius: '8px',
+              padding: '20px',
+              border: '1px solid var(--border-color)',
+            }}>
+              <div style={{ 
+                fontFamily: settings.editorFontFamily,
+                fontSize: `${settings.editorFontSize}px`,
+                lineHeight: settings.editorLineHeight,
+                color: 'var(--text-color)',
+              }}>
+                <div style={{ marginBottom: '8px' }}>{PREVIEW_TEXT_CN}</div>
+                <div style={{ fontSize: `${settings.editorFontSize - 2}px`, color: 'var(--text-muted)' }}>{PREVIEW_TEXT_EN}</div>
+              </div>
+            </div>
+
             {/* 字体 */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
                 字体
               </label>
               <div style={{ 
-                maxHeight: '200px', 
+                maxHeight: '180px', 
                 overflow: 'auto', 
                 border: '1px solid var(--border-color)',
                 borderRadius: '6px',
@@ -249,31 +268,8 @@ const PreferencesPage: React.FC = () => {
       </div>
 
       {/* 主内容 */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* 设置内容 */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          {renderSection()}
-        </div>
-
-        {/* 预览 */}
-        <div style={{ 
-          borderTop: '1px solid var(--border-color)',
-          padding: '20px 24px',
-          backgroundColor: 'var(--panel-bg)',
-        }}>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>
-            预览
-          </div>
-          <div style={{ 
-            fontFamily: settings.editorFontFamily,
-            fontSize: `${settings.editorFontSize}px`,
-            lineHeight: settings.editorLineHeight,
-            color: 'var(--text-color)',
-          }}>
-            <div style={{ marginBottom: '8px' }}>{PREVIEW_TEXT_CN}</div>
-            <div style={{ fontSize: `${settings.editorFontSize - 2}px`, color: 'var(--text-muted)' }}>{PREVIEW_TEXT_EN}</div>
-          </div>
-        </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {renderSection()}
       </div>
     </div>
   )
