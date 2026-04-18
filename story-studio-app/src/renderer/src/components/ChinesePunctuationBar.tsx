@@ -1,0 +1,124 @@
+import React, { useState, useEffect, useCallback } from 'react'
+
+interface PunctuationBarProps {
+  isVisible: boolean
+  position: { x: number; y: number }
+  onClose: () => void
+  onInsert: (symbol: string) => void
+}
+
+const PUNCTUATIONS = [
+  ['「', '」'],
+  ['『', '』'],
+  ['"', '"'],
+  ['（', '）'],
+  ['【', '】'],
+  ['《', '》'],
+  ['……', '——'],
+  ['，', '。'],
+  ['！', '？'],
+  ['：', '；'],
+]
+
+const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
+  isVisible,
+  position,
+  onClose,
+  onInsert
+}) => {
+  const [showChoice, setShowChoice] = useState<{ x: number; y: number; symbol: string } | null>(null)
+
+  useEffect(() => {
+    if (!isVisible) {
+      setShowChoice(null)
+    }
+  }, [isVisible])
+
+  const handleClick = useCallback((symbol: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    onInsert(symbol)
+    onClose()
+  }, [onInsert, onClose])
+
+  const handleLongPress = useCallback((symbol: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (symbol.length === 2 && symbol !== '……' && symbol !== '——') {
+      const rect = (e.target as HTMLElement).getBoundingClientRect()
+      setShowChoice({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 8,
+        symbol
+      })
+    }
+  }, [])
+
+  const handleChoice = useCallback((char: string) => {
+    if (showChoice) {
+      onInsert(char)
+      setShowChoice(null)
+      onClose()
+    }
+  }, [showChoice, onInsert, onClose])
+
+  if (!isVisible) return null
+
+  const barStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: Math.min(position.x, window.innerWidth - 280),
+    top: Math.min(position.y + 20, window.innerHeight - 120),
+    zIndex: 10000,
+    pointerEvents: 'auto',
+  }
+
+  return (
+    <>
+      <div
+        className="chinese-punctuation-bar"
+        style={barStyle}
+      >
+        {PUNCTUATIONS.map((pair, index) => (
+          <div key={index} className="punctuation-pair">
+            {pair.map((symbol, i) => (
+              <button
+                key={i}
+                className="punctuation-btn"
+                onClick={(e) => handleClick(symbol, e)}
+                onMouseDown={(e) => handleLongPress(symbol, e)}
+                title={i === 0 ? `左: ${symbol}` : `右: ${symbol}`}
+              >
+                {symbol}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      {showChoice && (
+        <div
+          className="punctuation-choice-menu"
+          style={{
+            position: 'fixed',
+            left: showChoice.x,
+            top: showChoice.y,
+            transform: 'translateX(-50%) translateY(-100%)',
+            zIndex: 10001,
+          }}
+        >
+          <button
+            className="punctuation-choice-btn"
+            onClick={() => handleChoice(showChoice.symbol[0])}
+          >
+            {showChoice.symbol[0]}
+          </button>
+          <button
+            className="punctuation-choice-btn"
+            onClick={() => handleChoice(showChoice.symbol[1])}
+          >
+            {showChoice.symbol[1]}
+          </button>
+        </div>
+      )}
+    </>
+  )
+}
+
+export default ChinesePunctuationBar

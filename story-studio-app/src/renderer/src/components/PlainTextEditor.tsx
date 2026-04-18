@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
+import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { commandService, Commands } from '../services/commandService'
 
@@ -76,6 +77,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // 中文标点工具栏状态
+  const [punctuationBarVisible, setPunctuationBarVisible] = useState(false)
+  const [punctuationBarPosition, setPunctuationBarPosition] = useState({ x: 0, y: 0 })
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isLongPressRef = useRef(false)
+  const mousePositionRef = useRef({ x: 0, y: 0 })
 
   // 查找/替换窗口状态
   const [isFindWidgetVisible, setIsFindWidgetVisible] = useState(false)
@@ -609,13 +617,90 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         })
       }
     }
+
+    // Alt+. 显示中文标点工具栏
+    if (e.altKey && e.key === '.') {
+      e.preventDefault()
+      const pos = mousePositionRef.current
+      if (pos.x > 0 && pos.y > 0) {
+        setPunctuationBarPosition(pos)
+        setPunctuationBarVisible(true)
+      }
+      return
+    }
   }
 
   // 右键菜单
   const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     e.preventDefault()
-    setContextMenu({ x: e.clientX, y: e.clientY })
   }
+
+  // 长按显示中文标点工具栏
+  const handleMouseDown = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    mousePositionRef.current = { x: e.clientX, y: e.clientY }
+    if (e.button === 2) {
+      e.preventDefault()
+      isLongPressRef.current = false
+      longPressTimerRef.current = setTimeout(() => {
+        isLongPressRef.current = true
+        setPunctuationBarPosition({ x: e.clientX, y: e.clientY })
+        setPunctuationBarVisible(true)
+      }, 400)
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    mousePositionRef.current = { x: e.clientX, y: e.clientY }
+  }
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    if (!isLongPressRef.current && e.button === 2) {
+      setContextMenu({ x: e.clientX, y: e.clientY })
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  // 插入标点符号
+  const handleInsertPunctuation = useCallback((symbol: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const value = textarea.value
+
+    let newOffset: number
+    if (symbol.length === 2 && ['「」', '『』', '""', '（）', '【】', '《》'].includes(symbol)) {
+      newOffset = start + 1
+    } else {
+      newOffset = start + symbol.length
+    }
+
+    const newText = value.substring(0, start) + symbol + value.substring(end)
+    setText(newText)
+    onChange(newText)
+    saveHistory(newText)
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newOffset, newOffset)
+    })
+  }, [onChange, saveHistory])
+
+  // 关闭标点工具栏
+  const handleClosePunctuationBar = useCallback(() => {
+    setPunctuationBarVisible(false)
+  }, [])
 
   const handleCloseContextMenu = () => {
     setContextMenu(null)
@@ -728,6 +813,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onContextMenu={handleContextMenu}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           onBlur={saveSelection}
           onScroll={handleScroll}
           placeholder={placeholder}
@@ -735,6 +824,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           autoFocus
         />
       </div>
+      <ChinesePunctuationBar
+        isVisible={punctuationBarVisible}
+        position={punctuationBarPosition}
+        onClose={handleClosePunctuationBar}
+        onInsert={handleInsertPunctuation}
+      />
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}

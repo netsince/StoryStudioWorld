@@ -1026,8 +1026,8 @@ html {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @keyframes contentFadeIn {
@@ -1435,6 +1435,7 @@ html {
 .plain-text-editor-textarea {
   flex: 1;
   width: 100%;
+  min-height: 0;
   border: none;
   outline: none;
   resize: none;
@@ -1443,7 +1444,7 @@ html {
   font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
   font-size: 18px;
   line-height: 2;
-  padding: 48px 64px;
+  padding: 24px 32px;
   box-sizing: border-box;
 }
 
@@ -1481,6 +1482,7 @@ html {
 .plain-text-editor-container {
   position: relative;
   flex: 1;
+  display: flex;
   overflow: hidden;
   background: var(--bg-base);
 }
@@ -1492,7 +1494,7 @@ html {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 48px 64px;
+  padding: 24px 32px;
   font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
   font-size: 18px;
   line-height: 2;
@@ -1531,6 +1533,91 @@ html {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+// Chinese Punctuation Bar Styles
+.chinese-punctuation-bar {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 280px;
+  user-select: none;
+}
+
+.punctuation-pair {
+  display: flex;
+  gap: 2px;
+}
+
+.punctuation-btn {
+  width: 32px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.punctuation-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.1);
+}
+
+.punctuation-btn:active {
+  background: var(--bg-active);
+  transform: scale(0.95);
+}
+
+@keyframes punctuBarIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.punctuation-choice-menu {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: punctuBarIn 0.15s ease;
+}
+
+.punctuation-choice-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.1s ease;
+}
+
+.punctuation-choice-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.1);
 }
 
 .find-replace-tabs {
