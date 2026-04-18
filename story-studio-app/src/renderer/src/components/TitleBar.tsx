@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
@@ -14,7 +14,6 @@ const TitleBar: React.FC = () => {
     openCreateProjectTab,
     openAboutTab,
     openPreferencesTab,
-    editorTree,
   } = useEditorStore()
 
   const {
@@ -66,16 +65,6 @@ const TitleBar: React.FC = () => {
     }
     setActiveMenu(menuId)
   }
-
-  // 获取当前活动的文件 tab
-  const getActiveFileTab = useCallback(() => {
-    const group = editorTree.kind === 'group' 
-      ? editorTree 
-      : null
-    if (!group) return null
-    const activeTab = group.tabs.find((t) => t.id === group.activeTabId)
-    return activeTab?.type === 'file' ? activeTab : null
-  }, [editorTree])
 
   // 文件菜单
   const fileMenuItems: ContextMenuItem[] = [

@@ -128,6 +128,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
         onChange={handleEditorChange}
         onSave={handleSave}
         placeholder={`开始写作「${activeTab?.title}」...`}
+        tabId={activeTab?.id}
       />
     </div>
   )

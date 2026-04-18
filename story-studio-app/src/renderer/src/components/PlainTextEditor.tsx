@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
 import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
@@ -12,6 +12,7 @@ interface PlainTextEditorProps {
   onChange: (content: string) => void
   onSave?: () => void
   placeholder?: string
+  tabId?: string
 }
 
 // 全语言支持的字数统计
@@ -66,7 +67,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   content,
   onChange,
   onSave,
-  placeholder = '开始写作...'
+  placeholder = '开始写作...',
+  tabId
 }) => {
   const [text, setText] = useState(content || '')
   const { addEntry } = useStatusbar()
@@ -76,8 +78,48 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // 用 tabId 作为 key 保存每个文件的滚动位置
+  const scrollPositionsRef = useRef<Map<string, { scrollTop: number; scrollLeft: number }>>(new Map())
+  const pendingRestoreScrollRef = useRef(false)
+  const lastRestoredTabIdRef = useRef<string | undefined>(undefined)
+  const scrollDebugEnabledRef = useRef(false)
+  const scrollEventSeqRef = useRef(0)
+
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    try {
+      scrollDebugEnabledRef.current =
+        typeof localStorage !== 'undefined' && localStorage.getItem('ssw:debugScroll') === '1'
+    } catch {
+      scrollDebugEnabledRef.current = false
+    }
+  }, [])
+
+  const debugScroll = useCallback(
+    (message: string, extra?: Record<string, unknown>) => {
+      if (!scrollDebugEnabledRef.current) return
+      const textarea = textareaRef.current
+      const overlay = highlightOverlayRef.current
+      const payload = {
+        tabId,
+        textLength: text.length,
+        textareaScrollTop: textarea?.scrollTop,
+        textareaScrollLeft: textarea?.scrollLeft,
+        overlayPresent: Boolean(overlay),
+        overlayScrollTop: overlay?.scrollTop,
+        overlayScrollLeft: overlay?.scrollLeft,
+        pendingRestore: pendingRestoreScrollRef.current,
+        lastRestoredTabId: lastRestoredTabIdRef.current,
+        saved: tabId ? scrollPositionsRef.current.get(tabId) : undefined,
+        ...extra
+      }
+      // eslint-disable-next-line no-console
+      console.debug(`[PlainTextEditor][scroll] ${message}`, payload)
+    },
+    [tabId, text.length]
+  )
 
   // 中文标点工具栏状态
   const [punctuationBarVisible, setPunctuationBarVisible] = useState(false)
@@ -104,11 +146,28 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const handleScroll = useCallback(() => {
     const textarea = textareaRef.current
     const overlay = highlightOverlayRef.current
-    if (!textarea || !overlay) return
+    if (!textarea) return
 
-    overlay.scrollTop = textarea.scrollTop
-    overlay.scrollLeft = textarea.scrollLeft
-  }, [])
+    // overlay 只有在有匹配高亮时才存在；不存在时也要正常保存滚动位置
+    if (overlay) {
+      overlay.scrollTop = textarea.scrollTop
+      overlay.scrollLeft = textarea.scrollLeft
+    }
+    
+    // 用 tabId 保存滚动位置
+    if (tabId) {
+      // content 同步触发的“被动滚动重置”不应覆盖原有的滚动记忆
+      if (pendingRestoreScrollRef.current) return
+      scrollPositionsRef.current.set(tabId, {
+        scrollTop: textarea.scrollTop,
+        scrollLeft: textarea.scrollLeft
+      })
+      if (scrollDebugEnabledRef.current) {
+        scrollEventSeqRef.current += 1
+        debugScroll('save', { seq: scrollEventSeqRef.current })
+      }
+    }
+  }, [tabId, debugScroll])
 
   // 历史记录用于撤销/重做
   const historyRef = useRef<string[]>([])
@@ -147,9 +206,45 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
   useEffect(() => {
     if (content !== text && !isUndoingRef.current) {
+      // value 更新会导致浏览器把 textarea 滚动重置到顶部；等下一次 commit 后再恢复滚动位置
+      pendingRestoreScrollRef.current = true
+      debugScroll('content->text sync (mark pending restore)', { contentLength: (content || '').length })
       setText(content || '')
     }
-  }, [content, text])
+  }, [content, text, debugScroll])
+
+  // 恢复滚动位置 - 使用 useLayoutEffect 在 DOM 更新后同步执行
+  useLayoutEffect(() => {
+    if (!tabId || !textareaRef.current) return
+
+    const tabChanged = lastRestoredTabIdRef.current !== tabId
+    const shouldRestore = pendingRestoreScrollRef.current || tabChanged
+    if (!shouldRestore) return
+
+    const saved = scrollPositionsRef.current.get(tabId)
+    if (!saved) {
+      pendingRestoreScrollRef.current = false
+      lastRestoredTabIdRef.current = tabId
+      debugScroll('restore skipped (no saved)')
+      return
+    }
+
+    const textarea = textareaRef.current
+    const overlay = highlightOverlayRef.current
+    
+    // 立即应用滚动位置
+    debugScroll('restore start', { reason: pendingRestoreScrollRef.current ? 'pending' : 'tabChanged' })
+    textarea.scrollTop = saved.scrollTop
+    textarea.scrollLeft = saved.scrollLeft
+    if (overlay) {
+      overlay.scrollTop = saved.scrollTop
+      overlay.scrollLeft = saved.scrollLeft
+    }
+
+    pendingRestoreScrollRef.current = false
+    lastRestoredTabIdRef.current = tabId
+    debugScroll('restore done')
+  }, [tabId, text, debugScroll])
 
   // 保存历史记录
   const saveHistory = useCallback((newText: string) => {
@@ -831,7 +926,6 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           onScroll={handleScroll}
           placeholder={placeholder}
           spellCheck={false}
-          autoFocus
         />
       </div>
       <ChinesePunctuationBar
