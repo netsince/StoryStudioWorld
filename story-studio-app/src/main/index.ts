@@ -175,7 +175,8 @@ function createWindow(): void {
   )
 
   ipcMain.handle('get-app-version', async () => {
-    const { default: pkg } = await import('../../package.json')
+    const pkgPath = join(__dirname, '../../package.json')
+    const { default: pkg } = await import(pkgPath)
     return {
       version: pkg.version || '0.0.1',
       electron: process.versions.electron || 'Unknown',

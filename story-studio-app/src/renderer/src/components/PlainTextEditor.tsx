@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
+import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import { commandService, Commands } from '../services/commandService'
 
 interface PlainTextEditorProps {
@@ -73,6 +74,24 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // 查找/替换窗口状态
+  const [isFindWidgetVisible, setIsFindWidgetVisible] = useState(false)
+
+  // 查找匹配高亮状态
+  const [highlightMatches, setHighlightMatches] = useState<MatchRange[]>([])
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1)
+  const highlightOverlayRef = useRef<HTMLDivElement>(null)
+
+  // 同步滚动 - textarea 滚动时更新高亮层
+  const handleScroll = useCallback(() => {
+    const textarea = textareaRef.current
+    const overlay = highlightOverlayRef.current
+    if (!textarea || !overlay) return
+
+    overlay.scrollTop = textarea.scrollTop
+    overlay.scrollLeft = textarea.scrollLeft
+  }, [])
 
   // 历史记录用于撤销/重做
   const historyRef = useRef<string[]>([])
@@ -194,6 +213,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           })
         } catch (error) {
           console.error('剪切失败:', error)
+          alert('剪切失败，请重试')
         }
       }
     })
@@ -232,8 +252,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     })
 
     const unregisterFind = commandService.registerCommand(Commands.FIND, () => {
-      // 查找功能待实现，可以打开一个查找框
-      console.log('查找功能')
+      setIsFindWidgetVisible(true)
     })
 
     // 选择命令
@@ -379,15 +398,6 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       }
     })
 
-    // 查找导航命令
-    const unregisterPrevMatch = commandService.registerCommand(Commands.PREV_MATCH, () => {
-      console.log('上一个匹配')
-    })
-
-    const unregisterNextMatch = commandService.registerCommand(Commands.NEXT_MATCH, () => {
-      console.log('下一个匹配')
-    })
-
     // 导航历史命令
     const unregisterNavBack = commandService.registerCommand(Commands.NAV_BACK, () => {
       console.log('返回')
@@ -413,8 +423,6 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterCursorLeft()
       unregisterCursorRight()
       unregisterSave()
-      unregisterPrevMatch()
-      unregisterNextMatch()
       unregisterNavBack()
       unregisterNavForward()
     }
@@ -605,6 +613,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     setContextMenu(null)
   }
 
+  const handleCloseFindWidget = useCallback(() => {
+    setIsFindWidgetVisible(false)
+    textareaRef.current?.focus()
+  }, [])
+
   const contextMenuItems: ContextMenuItem[] = [
     {
       key: 'undo',
@@ -643,20 +656,80 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   ]
 
+  // 渲染带高亮的文本内容
+  const renderHighlightedText = (): React.ReactNode => {
+    if (highlightMatches.length === 0) return text
+
+    const parts: React.ReactNode[] = []
+    let lastIndex = 0
+
+    highlightMatches.forEach((match, index) => {
+      // 添加匹配前的文本
+      if (match.start > lastIndex) {
+        parts.push(
+          <span key={`text-${index}`}>
+            {text.substring(lastIndex, match.start)}
+          </span>
+        )
+      }
+      // 添加高亮的匹配文本
+      parts.push(
+        <span
+          key={`match-${index}`}
+          className={`highlight-match ${index === currentMatchIndex ? 'current' : ''}`}
+        >
+          {text.substring(match.start, match.end)}
+        </span>
+      )
+      lastIndex = match.end
+    })
+
+    // 添加剩余文本
+    if (lastIndex < text.length) {
+      parts.push(<span key="text-end">{text.substring(lastIndex)}</span>)
+    }
+
+    return parts
+  }
+
   return (
     <div className="plain-text-editor">
-      <textarea
-        ref={textareaRef}
-        className="plain-text-editor-textarea"
-        value={text}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onContextMenu={handleContextMenu}
-        onBlur={saveSelection}
-        placeholder={placeholder}
-        spellCheck={false}
-        autoFocus
+      <FindReplaceWidget
+        isVisible={isFindWidgetVisible}
+        onClose={handleCloseFindWidget}
+        text={text}
+        textareaRef={textareaRef}
+        onTextChange={(newText) => {
+          setText(newText)
+          onChange(newText)
+          saveHistory(newText)
+        }}
+        onMatchesChange={(matches, currentIdx) => {
+          setHighlightMatches(matches)
+          setCurrentMatchIndex(currentIdx)
+        }}
       />
+      <div className="plain-text-editor-container">
+        {/* 高亮层 - 显示所有匹配 */}
+        {highlightMatches.length > 0 && (
+          <div ref={highlightOverlayRef} className="highlight-overlay" aria-hidden="true">
+            {renderHighlightedText()}
+          </div>
+        )}
+        <textarea
+          ref={textareaRef}
+          className="plain-text-editor-textarea"
+          value={text}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onContextMenu={handleContextMenu}
+          onBlur={saveSelection}
+          onScroll={handleScroll}
+          placeholder={placeholder}
+          spellCheck={false}
+          autoFocus
+        />
+      </div>
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}

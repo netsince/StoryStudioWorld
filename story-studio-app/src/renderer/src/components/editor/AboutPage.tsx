@@ -132,7 +132,7 @@ const AboutPage: React.FC = () => {
           textAlign: 'center',
         }}
       >
-        © 2026 netSince.com. All rights reserved.
+        Copyright © {new Date().getFullYear()} netSince.com. Licensed under MIT.
       </div>
     </div>
   )

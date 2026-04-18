@@ -20,6 +20,7 @@ const TitleBar: React.FC = () => {
     currentProject,
     openProject,
     createStoryNode,
+    storyNodes,
   } = useProjectStore()
 
   const handleMinimize = (): void => window.api.minimize()
@@ -102,30 +103,27 @@ const TitleBar: React.FC = () => {
       key: 'new-folder',
       label: '新建文件夹',
       onSelect: () => {
+        setActiveMenu(null)
         if (currentProject) {
-          const name = prompt('文件夹名称')
-          if (name) {
-            void createStoryNode(null, name, 'folder')
-          }
+          void createStoryNode(null, '新文件夹', 'folder')
         } else {
           alert('请先打开一个项目')
         }
-        setActiveMenu(null)
       },
     },
     {
       key: 'new-chapter',
       label: '新建章',
       onSelect: () => {
+        setActiveMenu(null)
         if (currentProject) {
-          const name = prompt('章节名称')
-          if (name) {
-            void createStoryNode(null, name, 'file')
-          }
+          // 获取当前章节数量，生成 "第x章" 名称
+          const fileCount = storyNodes.filter((n) => n.type === 'file').length
+          const name = `第${fileCount + 1}章`
+          void createStoryNode(null, name, 'file')
         } else {
           alert('请先打开一个项目')
         }
-        setActiveMenu(null)
       },
     },
     {
@@ -145,14 +143,6 @@ const TitleBar: React.FC = () => {
       key: 'separator3',
       label: '---',
       onSelect: () => {},
-    },
-    {
-      key: 'new-window',
-      label: '新窗口',
-      onSelect: () => {
-        window.api.openNewWindow()
-        setActiveMenu(null)
-      },
     },
     {
       key: 'close-window',
@@ -298,27 +288,6 @@ const TitleBar: React.FC = () => {
       label: '光标向右移动',
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_RIGHT)
-        setActiveMenu(null)
-      },
-    },
-    {
-      key: 'separator3',
-      label: '---',
-      onSelect: () => {},
-    },
-    {
-      key: 'prev-match',
-      label: '上一个匹配',
-      onSelect: () => {
-        commandService.executeCommand(Commands.PREV_MATCH)
-        setActiveMenu(null)
-      },
-    },
-    {
-      key: 'next-match',
-      label: '下一个匹配',
-      onSelect: () => {
-        commandService.executeCommand(Commands.NEXT_MATCH)
         setActiveMenu(null)
       },
     },

@@ -1462,3 +1462,185 @@ html {
   background: var(--panel-bg);
   justify-content: flex-end;
 }
+
+// Find/Replace Widget Styles
+.find-replace-widget {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  min-width: 320px;
+  animation: findWidgetEnter 0.2s ease;
+}
+
+// Plain Text Editor Container for highlight overlay
+.plain-text-editor-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+// Highlight Overlay - sits behind textarea, shows all matches
+.highlight-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 48px 64px;
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  font-size: 18px;
+  line-height: 2;
+  color: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: auto;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.highlight-match {
+  background-color: rgba(255, 235, 59, 0.6);
+  border-radius: 2px;
+  color: transparent;
+}
+
+.highlight-match.current {
+  background-color: rgba(255, 193, 7, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 152, 0, 0.6);
+}
+
+// Adjust textarea to sit above overlay
+.plain-text-editor-container .plain-text-editor-textarea {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+@keyframes findWidgetEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.find-replace-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.find-replace-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.find-replace-tab:hover {
+  color: var(--text-main);
+  background: var(--hover-bg);
+}
+
+.find-replace-tab.active {
+  color: var(--text-active);
+  border-bottom: 2px solid var(--accent-color);
+  margin-bottom: -1px;
+}
+
+.find-replace-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.find-replace-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.find-replace-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.find-replace-input:focus {
+  border-color: var(--accent-color);
+}
+
+.find-replace-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.find-replace-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+.find-replace-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.find-replace-btn {
+  padding: 5px 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.find-replace-btn:hover:not(:disabled) {
+  background: var(--hover-bg);
+  border-color: var(--text-muted);
+}
+
+.find-replace-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.find-replace-btn.close-btn {
+  margin-left: auto;
+  padding: 5px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.find-replace-btn.close-btn:hover {
+  background: rgba(232, 17, 35, 0.2);
+  color: #e81123;
+  border-color: transparent;
+}

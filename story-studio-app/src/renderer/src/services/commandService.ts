@@ -17,16 +17,19 @@ class CommandService {
     }
   }
 
-  executeCommand(id: string, ...args: unknown[]): void {
+  executeCommand(id: string, ...args: unknown[]): Promise<void> {
     const command = this.commands.get(id)
     if (command) {
       try {
-        command.handler(...args)
+        const result = command.handler(...args)
+        return result instanceof Promise ? result : Promise.resolve()
       } catch (error) {
         console.error(`Command '${id}' failed:`, error)
+        return Promise.reject(error)
       }
     } else {
       console.warn(`Command '${id}' not found`)
+      return Promise.resolve()
     }
   }
 
@@ -56,8 +59,6 @@ export const Commands = {
   CURSOR_DOWN: 'editor.cursorDown',
   CURSOR_LEFT: 'editor.cursorLeft',
   CURSOR_RIGHT: 'editor.cursorRight',
-  PREV_MATCH: 'editor.prevMatch',
-  NEXT_MATCH: 'editor.nextMatch',
 
   // 文件
   SAVE: 'file.save',
