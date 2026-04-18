@@ -27,12 +27,23 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
   onInsert
 }) => {
   const [showChoice, setShowChoice] = useState<{ x: number; y: number; symbol: string } | null>(null)
+  const barRef = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isVisible) {
       setShowChoice(null)
+      return
     }
-  }, [isVisible])
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        onClose()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isVisible, onClose])
 
   const handleClick = useCallback((symbol: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -73,6 +84,7 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
   return (
     <>
       <div
+        ref={barRef}
         className="chinese-punctuation-bar"
         style={barStyle}
       >

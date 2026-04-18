@@ -9,6 +9,7 @@ import CreateProjectForm from './CreateProjectForm'
 import TabBar from './TabBar'
 import WelcomePage, { EmptyState } from './WelcomePage'
 import AboutPage from './AboutPage'
+import PreferencesPage from './PreferencesPage'
 import { useTabDrag } from './hooks/useTabDrag'
 
 const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
@@ -121,7 +122,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   }
 
   const renderFile = (): React.ReactNode => (
-    <div key={activeTab?.id} className="editor-content">
+    <div className="editor-content">
       <PlainTextEditor
         content={editorContent}
         onChange={handleEditorChange}
@@ -152,6 +153,10 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
 
     if (activeTab.type === 'about') {
       return <AboutPage />
+    }
+
+    if (activeTab.type === 'preferences') {
+      return <PreferencesPage />
     }
 
     return renderFile()

@@ -13,6 +13,7 @@ const TitleBar: React.FC = () => {
     openWelcomeTab,
     openCreateProjectTab,
     openAboutTab,
+    openPreferencesTab,
     editorTree,
   } = useEditorStore()
 
@@ -312,6 +313,14 @@ const TitleBar: React.FC = () => {
       label: '欢迎使用',
       onSelect: () => {
         openWelcomeTab()
+        setActiveMenu(null)
+      },
+    },
+    {
+      key: 'preferences',
+      label: '首选项',
+      onSelect: () => {
+        openPreferencesTab()
         setActiveMenu(null)
       },
     },

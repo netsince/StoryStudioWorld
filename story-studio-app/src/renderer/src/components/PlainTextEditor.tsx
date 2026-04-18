@@ -5,6 +5,7 @@ import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { commandService, Commands } from '../services/commandService'
+import { getTabBehavior } from './editor/PreferencesPage'
 
 interface PlainTextEditorProps {
   content: string
@@ -542,9 +543,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       return
     }
 
-    // Tab 插入/删除制表符
+    // Tab 插入/删除缩进
     if (e.key === 'Tab') {
       e.preventDefault()
+      const tabBehavior = getTabBehavior()
+      const insertChars = tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
+      const removeChars = tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
+      
       const textarea = e.currentTarget
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
@@ -569,24 +574,29 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       }
 
       if (start === end) {
-        // 单行模式：插入制表符
-        const newText = value.substring(0, start) + '\t' + value.substring(end)
+        // 单行模式：插入缩进
+        const newText = value.substring(0, start) + insertChars + value.substring(end)
         setText(newText)
         onChange(newText)
         saveHistory(newText)
         requestAnimationFrame(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + 1
+          textarea.selectionStart = textarea.selectionEnd = start + insertChars.length
         })
       } else {
         // 多行模式：增加或删除缩进
         const isUnindent = e.shiftKey
         let newSelectionStart = start
         let newSelectionEnd = end
+        const removeLen = removeChars.length
 
         for (let i = startLine; i <= endLine; i++) {
           if (isUnindent) {
-            // Shift+Tab: 删除行首的制表符或空格
-            if (lines[i].startsWith('\t')) {
+            // Shift+Tab: 删除行首的缩进
+            if (lines[i].startsWith(removeChars)) {
+              lines[i] = lines[i].substring(removeLen)
+              if (i === startLine) newSelectionStart -= removeLen
+              newSelectionEnd -= removeLen
+            } else if (lines[i].startsWith('\t')) {
               lines[i] = lines[i].substring(1)
               if (i === startLine) newSelectionStart -= 1
               newSelectionEnd -= 1
@@ -600,10 +610,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
               newSelectionEnd -= 1
             }
           } else {
-            // Tab: 添加制表符
-            lines[i] = '\t' + lines[i]
-            if (i === startLine) newSelectionStart += 1
-            newSelectionEnd += 1
+            // Tab: 添加缩进
+            lines[i] = insertChars + lines[i]
+            if (i === startLine) newSelectionStart += insertChars.length
+            newSelectionEnd += insertChars.length
           }
         }
 

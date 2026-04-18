@@ -30,7 +30,7 @@ export interface RecentProject {
 export interface Tab {
   id: string
   title: string
-  type: 'welcome' | 'file' | 'create-project' | 'about'
+  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences'
   path?: string
   nodeId?: string
   isDirty?: boolean

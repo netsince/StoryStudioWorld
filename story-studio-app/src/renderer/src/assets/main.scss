@@ -1441,9 +1441,9 @@ html {
   resize: none;
   background: var(--editor-bg, var(--panel-bg));
   color: var(--text-main);
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
-  font-size: 18px;
-  line-height: 2;
+  font-family: var(--editor-font-family, 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif);
+  font-size: var(--editor-font-size, 18px);
+  line-height: var(--editor-line-height, 2);
   padding: 24px 32px;
   box-sizing: border-box;
 }
@@ -1495,9 +1495,9 @@ html {
   right: 0;
   bottom: 0;
   padding: 24px 32px;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
-  font-size: 18px;
-  line-height: 2;
+  font-family: var(--editor-font-family, 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif);
+  font-size: var(--editor-font-size, 18px);
+  line-height: var(--editor-line-height, 2);
   color: transparent;
   white-space: pre-wrap;
   word-wrap: break-word;
