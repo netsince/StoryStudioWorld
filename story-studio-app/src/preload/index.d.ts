@@ -27,6 +27,8 @@ declare global {
         v8: string
         platform: string
       }>
+      toggleDevTools: () => void
+      openNewWindow: () => void
     }
   }
 }

@@ -93,7 +93,9 @@ const api = {
     node: string
     v8: string
     platform: string
-  }> => ipcRenderer.invoke('get-app-version')
+  }> => ipcRenderer.invoke('get-app-version'),
+  toggleDevTools: (): void => ipcRenderer.send('toggle-devtools'),
+  openNewWindow: (): void => ipcRenderer.send('open-new-window')
 }
 
 if (process.contextIsolated) {

@@ -186,6 +186,18 @@ function createWindow(): void {
     }
   })
 
+  ipcMain.on('toggle-devtools', () => {
+    if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools()
+    } else {
+      mainWindow.webContents.openDevTools()
+    }
+  })
+
+  ipcMain.on('open-new-window', () => {
+    createWindow()
+  })
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
