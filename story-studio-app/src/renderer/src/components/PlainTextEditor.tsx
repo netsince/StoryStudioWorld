@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
+import { useEditorStore } from '../stores/editorStore'
 import { commandService, Commands } from '../services/commandService'
 
 interface PlainTextEditorProps {
@@ -67,6 +68,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 }) => {
   const [text, setText] = useState(content || '')
   const { addEntry } = useStatusbar()
+  const { goBack, goForward } = useEditorStore()
   const charCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const wordCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
@@ -82,6 +84,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const [highlightMatches, setHighlightMatches] = useState<MatchRange[]>([])
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1)
   const highlightOverlayRef = useRef<HTMLDivElement>(null)
+
+  // 使用 useCallback 避免无限渲染循环
+  const handleMatchesChange = useCallback((matches: MatchRange[], currentIdx: number) => {
+    setHighlightMatches(matches)
+    setCurrentMatchIndex(currentIdx)
+  }, [])
 
   // 同步滚动 - textarea 滚动时更新高亮层
   const handleScroll = useCallback(() => {
@@ -400,11 +408,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
     // 导航历史命令
     const unregisterNavBack = commandService.registerCommand(Commands.NAV_BACK, () => {
-      console.log('返回')
+      goBack()
     })
 
     const unregisterNavForward = commandService.registerCommand(Commands.NAV_FORWARD, () => {
-      console.log('前进')
+      goForward()
     })
 
     return () => {
@@ -426,7 +434,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavBack()
       unregisterNavForward()
     }
-  }, [onChange, onSave, saveHistory])
+  }, [onChange, onSave, saveHistory, goBack, goForward])
 
   // Register status bar entries on mount
   useEffect(() => {
@@ -704,10 +712,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           onChange(newText)
           saveHistory(newText)
         }}
-        onMatchesChange={(matches, currentIdx) => {
-          setHighlightMatches(matches)
-          setCurrentMatchIndex(currentIdx)
-        }}
+        onMatchesChange={handleMatchesChange}
       />
       <div className="plain-text-editor-container">
         {/* 高亮层 - 显示所有匹配 */}

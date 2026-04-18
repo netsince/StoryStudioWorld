@@ -182,7 +182,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
         if (activeTab === 'find') {
           findInputRef.current?.focus()
         } else {
-          findInputRef.current?.focus()
+          replaceInputRef.current?.focus()
         }
       }, 10)
     }

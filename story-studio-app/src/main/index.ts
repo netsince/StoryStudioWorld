@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
+import { readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
@@ -176,7 +177,7 @@ function createWindow(): void {
 
   ipcMain.handle('get-app-version', async () => {
     const pkgPath = join(__dirname, '../../package.json')
-    const { default: pkg } = await import(pkgPath)
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
     return {
       version: pkg.version || '0.0.1',
       electron: process.versions.electron || 'Unknown',

@@ -22,9 +22,25 @@ export interface ConfirmCloseResult {
 
 export type OnConfirmCloseCallback = (tab: Tab) => Promise<ConfirmCloseResult> | ConfirmCloseResult
 
+// 导航历史记录项
+interface NavigationHistoryEntry {
+  groupId: string
+  tabId: string
+  tabType: Tab['type']
+  nodeId?: string
+}
+
 interface EditorState {
   editorTree: EditorNode
   focusedGroupId: string
+
+  // 导航历史
+  navHistory: NavigationHistoryEntry[]
+  navHistoryIndex: number
+  canGoBack: () => boolean
+  canGoForward: () => boolean
+  goBack: () => void
+  goForward: () => void
 
   groupCount: () => number
   setFocusedGroupId: (groupId: string) => void
@@ -70,6 +86,48 @@ export const useEditorStore = create<EditorState>((set, get) => {
     editorTree: root,
     focusedGroupId: root.id,
 
+    // 导航历史
+    navHistory: [],
+    navHistoryIndex: -1,
+    canGoBack: () => get().navHistoryIndex > 0,
+    canGoForward: () => get().navHistoryIndex < get().navHistory.length - 1,
+    goBack: () => {
+      const state = get()
+      if (state.navHistoryIndex <= 0) return
+      const newIndex = state.navHistoryIndex - 1
+      const entry = state.navHistory[newIndex]
+      if (entry) {
+        const group = findGroupNode(state.editorTree, entry.groupId)
+        if (group && group.tabs.some(t => t.id === entry.tabId)) {
+          set({
+            navHistoryIndex: newIndex,
+            focusedGroupId: entry.groupId
+          })
+          set((s) => ({
+            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({ ...g, activeTabId: entry.tabId }))
+          }))
+        }
+      }
+    },
+    goForward: () => {
+      const state = get()
+      if (state.navHistoryIndex >= state.navHistory.length - 1) return
+      const newIndex = state.navHistoryIndex + 1
+      const entry = state.navHistory[newIndex]
+      if (entry) {
+        const group = findGroupNode(state.editorTree, entry.groupId)
+        if (group && group.tabs.some(t => t.id === entry.tabId)) {
+          set({
+            navHistoryIndex: newIndex,
+            focusedGroupId: entry.groupId
+          })
+          set((s) => ({
+            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({ ...g, activeTabId: entry.tabId }))
+          }))
+        }
+      }
+    },
+
     groupCount: () => countGroups(get().editorTree),
     setFocusedGroupId: (groupId) => set({ focusedGroupId: groupId }),
 
@@ -81,7 +139,30 @@ export const useEditorStore = create<EditorState>((set, get) => {
           const nextTabs = exists ? group.tabs : [...group.tabs, tab]
           return { ...group, tabs: nextTabs, activeTabId: tab.id }
         })
-        return { editorTree: nextTree }
+
+        // 记录导航历史
+        const newEntry: NavigationHistoryEntry = {
+          groupId: targetGroupId,
+          tabId: tab.id,
+          tabType: tab.type,
+          nodeId: tab.type === 'file' ? tab.nodeId : undefined
+        }
+        const newHistory = state.navHistory.slice(0, state.navHistoryIndex + 1)
+        // 避免连续重复记录相同位置
+        const lastEntry = newHistory[newHistory.length - 1]
+        if (!lastEntry || lastEntry.groupId !== newEntry.groupId || lastEntry.tabId !== newEntry.tabId) {
+          newHistory.push(newEntry)
+          // 限制历史记录长度
+          if (newHistory.length > 50) {
+            newHistory.shift()
+          }
+        }
+
+        return {
+          editorTree: nextTree,
+          navHistory: newHistory,
+          navHistoryIndex: newHistory.length - 1
+        }
       })
     },
 
@@ -120,9 +201,38 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     switchTab: (groupId, tabId) => {
-      set((state) => ({
-        editorTree: updateGroup(state.editorTree, groupId, (group) => ({ ...group, activeTabId: tabId }))
-      }))
+      set((state) => {
+        const group = findGroupNode(state.editorTree, groupId)
+        const tab = group?.tabs.find(t => t.id === tabId)
+
+        // 记录导航历史
+        if (tab) {
+          const newEntry: NavigationHistoryEntry = {
+            groupId,
+            tabId,
+            tabType: tab.type,
+            nodeId: tab.type === 'file' ? tab.nodeId : undefined
+          }
+          const newHistory = state.navHistory.slice(0, state.navHistoryIndex + 1)
+          const lastEntry = newHistory[newHistory.length - 1]
+          if (!lastEntry || lastEntry.groupId !== newEntry.groupId || lastEntry.tabId !== newEntry.tabId) {
+            newHistory.push(newEntry)
+            if (newHistory.length > 50) {
+              newHistory.shift()
+            }
+          }
+
+          return {
+            editorTree: updateGroup(state.editorTree, groupId, (g) => ({ ...g, activeTabId: tabId })),
+            navHistory: newHistory,
+            navHistoryIndex: newHistory.length - 1
+          }
+        }
+
+        return {
+          editorTree: updateGroup(state.editorTree, groupId, (group) => ({ ...group, activeTabId: tabId }))
+        }
+      })
     },
 
     closeTab: (groupId, tabId, onConfirmClose) => {
