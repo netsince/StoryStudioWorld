@@ -111,7 +111,7 @@ const PreferencesPage: React.FC = () => {
     switch (activeSection) {
       case 'editor':
         return (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: '24px', paddingBottom: '48px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>编辑器</h3>
             
             {/* 预览 */}
