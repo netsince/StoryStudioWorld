@@ -5,7 +5,7 @@ import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { commandService, Commands } from '../services/commandService'
-import { getTabBehavior } from './editor/PreferencesPage'
+import { getTabBehavior, getAutoSaveSettings } from './editor/PreferencesPage'
 
 interface PlainTextEditorProps {
   content: string
@@ -76,6 +76,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const charCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const wordCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
+  const autoSaveAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // 用 tabId 作为 key 保存每个文件的滚动位置
@@ -124,7 +125,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   // 中文标点工具栏状态
   const [punctuationBarVisible, setPunctuationBarVisible] = useState(false)
   const [punctuationBarPosition, setPunctuationBarPosition] = useState({ x: 0, y: 0 })
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isLongPressRef = useRef(false)
   const mousePositionRef = useRef({ x: 0, y: 0 })
 
@@ -135,6 +136,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const [highlightMatches, setHighlightMatches] = useState<MatchRange[]>([])
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1)
   const highlightOverlayRef = useRef<HTMLDivElement>(null)
+
+  // 自动保存状态
+  const autoSaveTimerRef = useRef<number | null>(null)
+  const lastSavedTextRef = useRef<string>('')
+  const textRef = useRef(text)
+  textRef.current = text
 
   // 使用 useCallback 避免无限渲染循环
   const handleMatchesChange = useCallback((matches: MatchRange[], currentIdx: number) => {
@@ -507,6 +514,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     const unregisterSave = commandService.registerCommand(Commands.SAVE, () => {
       if (onSave) {
         onSave()
+        lastSavedTextRef.current = textRef.current
+        const now = new Date()
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        autoSaveAccessorRef.current?.update({ text: `${timeStr} 自动保存` })
       }
     })
 
@@ -575,10 +586,29 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       80
     )
 
+    const autoSaveSettings = getAutoSaveSettings()
+    if (autoSaveSettings.enabled) {
+      const formatTime = (): string => {
+        const now = new Date()
+        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+      }
+      autoSaveAccessorRef.current = addEntry(
+        'editor-auto-save',
+        {
+          name: '自动保存',
+          text: `${formatTime()} 自动保存`,
+          ariaLabel: '自动保存状态'
+        },
+        StatusbarAlignment.RIGHT,
+        70
+      )
+    }
+
     return () => {
       charCountAccessorRef.current?.dispose()
       wordCountAccessorRef.current?.dispose()
       readingTimeAccessorRef.current?.dispose()
+      autoSaveAccessorRef.current?.dispose()
     }
   }, [addEntry])
 
@@ -595,11 +625,41 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     readingTimeAccessorRef.current?.update({ text: timeText })
   }, [text])
 
+  // 自动保存逻辑
+  const scheduleAutoSave = useCallback(() => {
+    const autoSaveSettings = getAutoSaveSettings()
+    if (!autoSaveSettings.enabled) return
+
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current)
+    }
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      if (onSave && textRef.current !== lastSavedTextRef.current) {
+        lastSavedTextRef.current = textRef.current
+        onSave()
+        
+        const now = new Date()
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        autoSaveAccessorRef.current?.update({ text: `${timeStr} 自动保存` })
+      }
+    }, autoSaveSettings.interval)
+  }, [onSave])
+
+  // 组件卸载时清理计时器
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const newText = e.target.value
     setText(newText)
     onChange(newText)
     saveHistory(newText)
+    scheduleAutoSave()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {

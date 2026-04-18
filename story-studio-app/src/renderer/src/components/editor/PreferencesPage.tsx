@@ -9,6 +9,8 @@ interface AppSettings {
   editorFontSize: number
   editorLineHeight: number
   editorTabBehavior: TabBehavior
+  autoSaveEnabled: boolean
+  autoSaveInterval: number
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -16,6 +18,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   editorFontSize: 18,
   editorLineHeight: 2.0,
   editorTabBehavior: 'tab',
+  autoSaveEnabled: true,
+  autoSaveInterval: 30,
 }
 
 const OPEN_SOURCE_FONTS = [
@@ -204,7 +208,7 @@ const PreferencesPage: React.FC = () => {
             </div>
 
             {/* 按下 Tab 时 */}
-            <div>
+            <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
                 按下 Tab 时
               </label>
@@ -227,6 +231,47 @@ const PreferencesPage: React.FC = () => {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* 自动保存 */}
+            <div>
+              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                自动保存
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoSaveEnabled}
+                    onChange={e => applySettings({ autoSaveEnabled: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '13px' }}>启用自动保存</span>
+                </label>
+              </div>
+              {settings.autoSaveEnabled && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>保存间隔:</span>
+                  <select
+                    value={settings.autoSaveInterval}
+                    onChange={e => applySettings({ autoSaveInterval: parseInt(e.target.value) })}
+                    style={{
+                      padding: '6px 10px',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '6px',
+                      background: 'var(--bg-color)',
+                      color: 'var(--text-color)',
+                      fontSize: '13px',
+                    }}
+                  >
+                    <option value={10}>10 秒</option>
+                    <option value={30}>30 秒</option>
+                    <option value={60}>1 分钟</option>
+                    <option value={120}>2 分钟</option>
+                    <option value={300}>5 分钟</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -295,4 +340,9 @@ export const applyAppSettings = (settings: AppSettings): void => {
 export const getTabBehavior = (): TabBehavior => {
   const settings = loadSettings()
   return settings.editorTabBehavior
+}
+
+export const getAutoSaveSettings = (): { enabled: boolean; interval: number } => {
+  const settings = loadSettings()
+  return { enabled: settings.autoSaveEnabled, interval: settings.autoSaveInterval * 1000 }
 }
