@@ -30,9 +30,39 @@ interface NavigationHistoryEntry {
   nodeId?: string
 }
 
+// 活动组变更回调类型
+export type ActiveGroupChangeCallback = (groupId: string | null) => void
+
+// 编辑器统计状态
+export interface EditorStats {
+  chars: number
+  words: number
+  charsWithoutSpaces: number
+  paragraphs: number
+  readingTime: number
+}
+
+// 组级别的编辑器状态
+export interface GroupEditorState {
+  stats: EditorStats
+  lastSavedAt?: string
+  autoSaveEnabled: boolean
+}
+
 interface EditorState {
   editorTree: EditorNode
   focusedGroupId: string
+
+  // 活动组相关
+  activeGroupId: string | null
+  setActiveGroup: (groupId: string | null) => void
+  onActiveGroupChange: (callback: ActiveGroupChangeCallback) => () => void
+
+  // 组编辑器状态
+  groupEditorStates: Map<string, GroupEditorState>
+  updateGroupEditorState: (groupId: string, state: Partial<GroupEditorState>) => void
+  getGroupEditorState: (groupId: string) => GroupEditorState | undefined
+  onGroupEditorStateChange: (callback: (groupId: string, state: GroupEditorState) => void) => () => void
 
   // 导航历史
   navHistory: NavigationHistoryEntry[]
@@ -74,6 +104,9 @@ interface EditorState {
 
 const pendingCloseKeys = new Set<string>()
 
+// 活动组变更监听器集合
+const activeGroupListeners = new Set<ActiveGroupChangeCallback>()
+
 export const useEditorStore = create<EditorState>((set, get) => {
   const root = createEmptyGroup()
 
@@ -86,6 +119,49 @@ export const useEditorStore = create<EditorState>((set, get) => {
   return {
     editorTree: root,
     focusedGroupId: root.id,
+
+    // 活动组相关
+    activeGroupId: null,
+    setActiveGroup: (groupId: string | null) => {
+      const current = get().activeGroupId
+      if (current !== groupId) {
+        set({ activeGroupId: groupId })
+        // 通知所有监听器
+        activeGroupListeners.forEach(cb => cb(groupId))
+      }
+    },
+    onActiveGroupChange: (callback: ActiveGroupChangeCallback) => {
+      activeGroupListeners.add(callback)
+      // 立即通知当前状态
+      callback(get().activeGroupId)
+      return () => {
+        activeGroupListeners.delete(callback)
+      }
+    },
+
+    // 组编辑器状态
+    groupEditorStates: new Map(),
+    updateGroupEditorState: (groupId: string, state: Partial<GroupEditorState>) => {
+      set((s) => {
+        const newStates = new Map(s.groupEditorStates)
+        const current = newStates.get(groupId)
+        const mergedStats = { ...(current?.stats ?? { chars: 0, words: 0, charsWithoutSpaces: 0, paragraphs: 0, readingTime: 0 }), ...(state.stats ?? {}) }
+        const newState: GroupEditorState = {
+          stats: mergedStats,
+          autoSaveEnabled: state.autoSaveEnabled ?? current?.autoSaveEnabled ?? false,
+          lastSavedAt: state.lastSavedAt ?? current?.lastSavedAt
+        }
+        newStates.set(groupId, newState)
+        return { groupEditorStates: newStates }
+      })
+    },
+    getGroupEditorState: (groupId: string) => {
+      return get().groupEditorStates.get(groupId)
+    },
+    onGroupEditorStateChange: (_callback) => {
+      // 返回一个 no-op 取消函数，实际监听通过订阅 store 实现
+      return () => {}
+    },
 
     // 导航历史
     navHistory: [],

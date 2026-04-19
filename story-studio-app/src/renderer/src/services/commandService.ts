@@ -4,37 +4,78 @@ type CommandHandler = (...args: unknown[]) => void | Promise<void>
 
 interface Command {
   id: string
+  groupId: string
   handler: CommandHandler
 }
 
 class CommandService {
-  private commands = new Map<string, Command>()
+  private commands = new Map<string, Command[]>()
+  private activeGroupId: string | null = null
 
-  registerCommand(id: string, handler: CommandHandler): () => void {
-    this.commands.set(id, { id, handler })
+  // 设置当前活动组
+  setActiveGroup(groupId: string | null): void {
+    this.activeGroupId = groupId
+  }
+
+  registerCommand(id: string, handler: CommandHandler, groupId: string = 'default'): () => void {
+    const command: Command = { id, groupId, handler }
+
+    if (!this.commands.has(id)) {
+      this.commands.set(id, [])
+    }
+
+    const commandList = this.commands.get(id)!
+    commandList.push(command)
+
     return () => {
-      this.commands.delete(id)
+      const list = this.commands.get(id)
+      if (list) {
+        const index = list.findIndex(cmd => cmd.groupId === groupId)
+        if (index !== -1) {
+          list.splice(index, 1)
+        }
+        if (list.length === 0) {
+          this.commands.delete(id)
+        }
+      }
     }
   }
 
   executeCommand(id: string, ...args: unknown[]): Promise<void> {
-    const command = this.commands.get(id)
-    if (command) {
-      try {
-        const result = command.handler(...args)
-        return result instanceof Promise ? result : Promise.resolve()
-      } catch (error) {
-        console.error(`Command '${id}' failed:`, error)
-        return Promise.reject(error)
-      }
-    } else {
+    const commandList = this.commands.get(id)
+    if (!commandList || commandList.length === 0) {
       console.warn(`Command '${id}' not found`)
       return Promise.resolve()
+    }
+
+    // 如果有活动组，优先执行活动组的命令
+    if (this.activeGroupId) {
+      const activeCommand = commandList.find(cmd => cmd.groupId === this.activeGroupId)
+      if (activeCommand) {
+        try {
+          const result = activeCommand.handler(...args)
+          return result instanceof Promise ? result : Promise.resolve()
+        } catch (error) {
+          console.error(`Command '${id}' failed:`, error)
+          return Promise.reject(error)
+        }
+      }
+    }
+
+    // 如果没有活动组或活动组没有该命令，执行第一个可用的命令
+    const command = commandList[0]
+    try {
+      const result = command.handler(...args)
+      return result instanceof Promise ? result : Promise.resolve()
+    } catch (error) {
+      console.error(`Command '${id}' failed:`, error)
+      return Promise.reject(error)
     }
   }
 
   hasCommand(id: string): boolean {
-    return this.commands.has(id)
+    const list = this.commands.get(id)
+    return list !== undefined && list.length > 0
   }
 }
 

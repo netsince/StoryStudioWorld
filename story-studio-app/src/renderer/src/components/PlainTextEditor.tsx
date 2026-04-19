@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
-import { useStatusbar, StatusbarAlignment, type IStatusbarEntryAccessor } from '../contexts/StatusbarContext'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
@@ -14,6 +13,7 @@ interface PlainTextEditorProps {
   onSave?: () => void
   placeholder?: string
   tabId?: string
+  groupId?: string
 }
 
 // 全语言支持的字数统计
@@ -75,17 +75,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   onChange,
   onSave,
   placeholder = '开始写作...',
-  tabId
+  tabId,
+  groupId = 'default'
 }) => {
   const [text, setText] = useState(content || '')
-  const { addEntry } = useStatusbar()
-  const { goBack, goForward } = useEditorStore()
-  const charCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
-  const wordCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
-  const charsWithoutSpacesAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
-  const paragraphCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
-  const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
-  const autoSaveAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
+  const { goBack, goForward, updateGroupEditorState } = useEditorStore()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const pendingEnterAfterCompositionRef = useRef(false)
@@ -299,7 +293,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (!textarea) return
 
     // 编辑命令
-    const unregisterUndo = commandService.registerCommand(Commands.UNDO, () => {
+    const unregisterUndo = commandService.registerCommand(Commands.UNDO,() => {
       if (historyIndexRef.current > 0) {
         isUndoingRef.current = true
         historyIndexRef.current--
@@ -311,9 +305,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           isUndoingRef.current = false
         })
       }
-    })
+    }, groupId)
 
-    const unregisterRedo = commandService.registerCommand(Commands.REDO, () => {
+    const unregisterRedo = commandService.registerCommand(Commands.REDO,() => {
       if (historyIndexRef.current < historyRef.current.length - 1) {
         isUndoingRef.current = true
         historyIndexRef.current++
@@ -325,9 +319,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           isUndoingRef.current = false
         })
       }
-    })
+    }, groupId)
 
-    const unregisterCut = commandService.registerCommand(Commands.CUT, async () => {
+    const unregisterCut = commandService.registerCommand(Commands.CUT,async () => {
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
       const selectedText = textarea.value.substring(start, end)
@@ -346,9 +340,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           alert('剪切失败，请重试')
         }
       }
-    })
+    }, groupId)
 
-    const unregisterCopy = commandService.registerCommand(Commands.COPY, async () => {
+    const unregisterCopy = commandService.registerCommand(Commands.COPY,async () => {
       const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
       if (selectedText) {
         try {
@@ -357,9 +351,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           console.error('复制失败:', error)
         }
       }
-    })
+    }, groupId)
 
-    const unregisterPaste = commandService.registerCommand(Commands.PASTE, async () => {
+    const unregisterPaste = commandService.registerCommand(Commands.PASTE,async () => {
       try {
         const clipboardText = await navigator.clipboard.readText()
         const start = textarea.selectionStart
@@ -369,24 +363,24 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         onChange(newText)
         saveHistory(newText)
         requestAnimationFrame(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length
-        })
+            textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length
+          })
       } catch {
         // 剪贴板访问失败
       }
-    })
+    }, groupId)
 
-    const unregisterSelectAll = commandService.registerCommand(Commands.SELECT_ALL, () => {
+    const unregisterSelectAll = commandService.registerCommand(Commands.SELECT_ALL,() => {
       restoreFocusAndSelection()
       textarea.select()
-    })
+    }, groupId)
 
-    const unregisterFind = commandService.registerCommand(Commands.FIND, () => {
+    const unregisterFind = commandService.registerCommand(Commands.FIND,() => {
       setIsFindWidgetVisible(true)
-    })
+    }, groupId)
 
     // 选择命令
-    const unregisterExpandSelection = commandService.registerCommand(Commands.EXPAND_SELECTION, () => {
+    const unregisterExpandSelection = commandService.registerCommand(Commands.EXPAND_SELECTION,() => {
       restoreFocusAndSelection()
       // 扩大选区：选中当前词或整行
       const start = textarea.selectionStart
@@ -418,9 +412,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       textarea.setSelectionRange(newStart, newEnd)
       // 保存新的选区
       savedSelectionRef.current = { start: newStart, end: newEnd }
-    })
+    }, groupId)
 
-    const unregisterShrinkSelection = commandService.registerCommand(Commands.SHRINK_SELECTION, () => {
+    const unregisterShrinkSelection = commandService.registerCommand(Commands.SHRINK_SELECTION,() => {
       restoreFocusAndSelection()
       // 缩小选区：从两端各收缩一个字符
       const start = textarea.selectionStart
@@ -431,9 +425,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         textarea.setSelectionRange(newStart, newEnd)
         savedSelectionRef.current = { start: newStart, end: newEnd }
       }
-    })
+    }, groupId)
 
-    const unregisterSelectParagraph = commandService.registerCommand(Commands.SELECT_PARAGRAPH, () => {
+    const unregisterSelectParagraph = commandService.registerCommand(Commands.SELECT_PARAGRAPH,() => {
       restoreFocusAndSelection()
       const value = textarea.value
       const pos = textarea.selectionStart
@@ -461,9 +455,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       
       textarea.setSelectionRange(start, end)
       savedSelectionRef.current = { start, end }
-    })
+    }, groupId)
 
-    const unregisterCursorUp = commandService.registerCommand(Commands.CURSOR_UP, () => {
+    const unregisterCursorUp = commandService.registerCommand(Commands.CURSOR_UP,() => {
       restoreFocusAndSelection()
       const start = textarea.selectionStart
       const value = textarea.value
@@ -480,9 +474,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         textarea.setSelectionRange(newPos, newPos)
         savedSelectionRef.current = { start: newPos, end: newPos }
       }
-    })
+    }, groupId)
 
-    const unregisterCursorDown = commandService.registerCommand(Commands.CURSOR_DOWN, () => {
+    const unregisterCursorDown = commandService.registerCommand(Commands.CURSOR_DOWN,() => {
       restoreFocusAndSelection()
       const start = textarea.selectionStart
       const value = textarea.value
@@ -499,9 +493,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         textarea.setSelectionRange(newPos, newPos)
         savedSelectionRef.current = { start: newPos, end: newPos }
       }
-    })
+    }, groupId)
 
-    const unregisterCursorLeft = commandService.registerCommand(Commands.CURSOR_LEFT, () => {
+    const unregisterCursorLeft = commandService.registerCommand(Commands.CURSOR_LEFT,() => {
       restoreFocusAndSelection()
       const start = textarea.selectionStart
       if (start > 0) {
@@ -509,9 +503,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         textarea.setSelectionRange(newPos, newPos)
         savedSelectionRef.current = { start: newPos, end: newPos }
       }
-    })
+    }, groupId)
 
-    const unregisterCursorRight = commandService.registerCommand(Commands.CURSOR_RIGHT, () => {
+    const unregisterCursorRight = commandService.registerCommand(Commands.CURSOR_RIGHT,() => {
       restoreFocusAndSelection()
       const end = textarea.selectionEnd
       if (end < textarea.value.length) {
@@ -519,7 +513,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         textarea.setSelectionRange(newPos, newPos)
         savedSelectionRef.current = { start: newPos, end: newPos }
       }
-    })
+    }, groupId)
 
     // 保存命令
     const unregisterSave = commandService.registerCommand(Commands.SAVE, () => {
@@ -528,23 +522,23 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         lastSavedTextRef.current = textRef.current
         const now = new Date()
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        autoSaveAccessorRef.current?.update({ text: `${timeStr} 自动保存` })
+        updateGroupEditorState(groupId, { lastSavedAt: timeStr })
       }
-    })
+    }, groupId)
 
     // 导航历史命令
-    const unregisterNavBack = commandService.registerCommand(Commands.NAV_BACK, () => {
+    const unregisterNavBack = commandService.registerCommand(Commands.NAV_BACK,() => {
       goBack()
-    })
+    }, groupId)
 
-    const unregisterNavForward = commandService.registerCommand(Commands.NAV_FORWARD, () => {
+    const unregisterNavForward = commandService.registerCommand(Commands.NAV_FORWARD,() => {
       goForward()
-    })
+    }, groupId)
 
     // 禅模式命令
-    const unregisterZenMode = commandService.registerCommand(Commands.ZEN_MODE, () => {
+    const unregisterZenMode = commandService.registerCommand(Commands.ZEN_MODE,() => {
       useUiStore.getState().toggleZenMode()
-    })
+    }, groupId)
 
     return () => {
       unregisterUndo()
@@ -568,105 +562,14 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   }, [onChange, onSave, saveHistory, goBack, goForward])
 
-  // Register status bar entries on mount
-  useEffect(() => {
-    charCountAccessorRef.current = addEntry(
-      'editor-char-count',
-      {
-        name: '字符数',
-        text: '字符: 0',
-        ariaLabel: '字符统计'
-      },
-      StatusbarAlignment.RIGHT,
-      100
-    )
-
-    wordCountAccessorRef.current = addEntry(
-      'editor-word-count',
-      {
-        name: '字数',
-        text: '字数: 0',
-        ariaLabel: '字数统计'
-      },
-      StatusbarAlignment.RIGHT,
-      90
-    )
-
-    charsWithoutSpacesAccessorRef.current = addEntry(
-      'editor-chars-without-spaces',
-      {
-        name: '净字数',
-        text: '净字数: 0',
-        ariaLabel: '净字数统计'
-      },
-      StatusbarAlignment.RIGHT,
-      85
-    )
-
-    paragraphCountAccessorRef.current = addEntry(
-      'editor-paragraph-count',
-      {
-        name: '段落',
-        text: '段落: 0',
-        ariaLabel: '段落统计'
-      },
-      StatusbarAlignment.RIGHT,
-      75
-    )
-
-    readingTimeAccessorRef.current = addEntry(
-      'editor-reading-time',
-      {
-        name: '阅读时间',
-        text: '阅读: <1分钟',
-        ariaLabel: '预计阅读时间'
-      },
-      StatusbarAlignment.RIGHT,
-      80
-    )
-
-    const autoSaveSettings = getAutoSaveSettings()
-    if (autoSaveSettings.enabled) {
-      const formatTime = (): string => {
-        const now = new Date()
-        return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-      }
-      autoSaveAccessorRef.current = addEntry(
-        'editor-auto-save',
-        {
-          name: '自动保存',
-          text: `${formatTime()} 自动保存`,
-          ariaLabel: '自动保存状态'
-        },
-        StatusbarAlignment.RIGHT,
-        70
-      )
-    }
-
-    return () => {
-      charCountAccessorRef.current?.dispose()
-      wordCountAccessorRef.current?.dispose()
-      charsWithoutSpacesAccessorRef.current?.dispose()
-      paragraphCountAccessorRef.current?.dispose()
-      readingTimeAccessorRef.current?.dispose()
-      autoSaveAccessorRef.current?.dispose()
-    }
-  }, [addEntry])
-
-  // Update status bar when text changes
+  // Update editor store state when text changes
   useEffect(() => {
     const { chars, words, readingTime, charsWithoutSpaces, paragraphs } = countTextStats(text)
 
-    charCountAccessorRef.current?.update({ text: `字符: ${chars.toLocaleString()}` })
-    wordCountAccessorRef.current?.update({ text: `字数: ${words.toLocaleString()}` })
-    charsWithoutSpacesAccessorRef.current?.update({ text: `净字数: ${charsWithoutSpaces.toLocaleString()}` })
-    paragraphCountAccessorRef.current?.update({ text: `段落: ${paragraphs.toLocaleString()}` })
-
-    const timeText = readingTime < 60
-      ? `阅读: <1分钟`
-      : `阅读: ${Math.ceil(readingTime / 60)}分钟`
-    readingTimeAccessorRef.current?.update({ text: timeText })
-  }, [text])
+    updateGroupEditorState(groupId, {
+      stats: { chars, words, readingTime, charsWithoutSpaces, paragraphs }
+    })
+  }, [text, groupId, updateGroupEditorState])
 
   // 自动保存逻辑
   const scheduleAutoSave = useCallback(() => {
@@ -680,10 +583,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       if (onSave && textRef.current !== lastSavedTextRef.current) {
         lastSavedTextRef.current = textRef.current
         onSave()
-        
+
         const now = new Date()
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        autoSaveAccessorRef.current?.update({ text: `${timeStr} 自动保存` })
+        updateGroupEditorState(groupId, { lastSavedAt: timeStr })
       }
     }, autoSaveSettings.interval)
   }, [onSave])

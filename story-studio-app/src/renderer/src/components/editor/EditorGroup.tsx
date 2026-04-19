@@ -3,6 +3,7 @@ import type { Tab } from '../../models'
 import { findGroupNode } from '../../editor/editorTree'
 import { useEditorStore } from '../../stores/editorStore'
 import { useProjectStore } from '../../stores/projectStore'
+import { commandService } from '../../services/commandService'
 import ContextMenu from '../ContextMenu'
 import PlainTextEditor from '../PlainTextEditor'
 import CreateProjectForm from './CreateProjectForm'
@@ -27,6 +28,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
   const groupCount = useEditorStore((s) => s.groupCount())
   const setFocusedGroupId = useEditorStore((s) => s.setFocusedGroupId)
+  const setActiveGroup = useEditorStore((s) => s.setActiveGroup)
   const switchTab = useEditorStore((s) => s.switchTab)
   const closeTab = useEditorStore((s) => s.closeTab)
   const closeOtherTabs = useEditorStore((s) => s.closeOtherTabs)
@@ -129,6 +131,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
         onSave={handleSave}
         placeholder={`开始写作「${activeTab?.title}」...`}
         tabId={activeTab?.id}
+        groupId={groupId}
       />
     </div>
   )
@@ -166,9 +169,11 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const onTabClick = useCallback(
     (tabId: string): void => {
       setFocusedGroupId(groupId)
+      setActiveGroup(groupId)
+      commandService.setActiveGroup(groupId)
       switchTab(groupId, tabId)
     },
-    [groupId, setFocusedGroupId, switchTab]
+    [groupId, setFocusedGroupId, setActiveGroup, switchTab]
   )
 
   if (!group) {
@@ -179,7 +184,11 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
     <div
       ref={groupRootRef}
       className={`editor-group ${isFocused ? 'focused' : ''}`}
-      onMouseDown={() => setFocusedGroupId(groupId)}
+      onMouseDown={() => {
+        setFocusedGroupId(groupId)
+        setActiveGroup(groupId)
+        commandService.setActiveGroup(groupId)
+      }}
       onDragEnter={tabDrag.onGroupDragEnter}
       onDragOver={tabDrag.onGroupDragOver}
       onDragLeave={tabDrag.onGroupDragLeave}
