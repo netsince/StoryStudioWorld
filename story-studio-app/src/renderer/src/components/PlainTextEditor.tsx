@@ -17,7 +17,7 @@ interface PlainTextEditorProps {
 }
 
 // 全语言支持的字数统计
-function countTextStats(text: string): { chars: number; words: number; readingTime: number } {
+function countTextStats(text: string): { chars: number; words: number; readingTime: number; charsWithoutSpaces: number; paragraphs: number } {
   const trimmedText = text.trim()
 
   // 字符数：使用 Intl.Segmenter 支持所有语言（包括中文、日文、韩文等）
@@ -58,10 +58,16 @@ function countTextStats(text: string): { chars: number; words: number; readingTi
     }
   }
 
+  // 净字数（去除空格）
+  const charsWithoutSpaces = trimmedText.replace(/\s+/g, '').length
+
+  // 段落数（非空行）
+  const paragraphs = trimmedText.split(/\n/).filter(line => line.trim().length > 0).length
+
   // 阅读时间估算（假设中文阅读速度 300字/分钟，英文 200词/分钟）
   const readingTime = Math.max(1, Math.ceil(words / 300 * 60))
 
-  return { chars, words, readingTime }
+  return { chars, words, readingTime, charsWithoutSpaces, paragraphs }
 }
 
 const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
@@ -76,6 +82,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const { goBack, goForward } = useEditorStore()
   const charCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const wordCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
+  const charsWithoutSpacesAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
+  const paragraphCountAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const autoSaveAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -584,6 +592,28 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       90
     )
 
+    charsWithoutSpacesAccessorRef.current = addEntry(
+      'editor-chars-without-spaces',
+      {
+        name: '净字数',
+        text: '净字数: 0',
+        ariaLabel: '净字数统计'
+      },
+      StatusbarAlignment.RIGHT,
+      85
+    )
+
+    paragraphCountAccessorRef.current = addEntry(
+      'editor-paragraph-count',
+      {
+        name: '段落',
+        text: '段落: 0',
+        ariaLabel: '段落统计'
+      },
+      StatusbarAlignment.RIGHT,
+      75
+    )
+
     readingTimeAccessorRef.current = addEntry(
       'editor-reading-time',
       {
@@ -616,6 +646,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     return () => {
       charCountAccessorRef.current?.dispose()
       wordCountAccessorRef.current?.dispose()
+      charsWithoutSpacesAccessorRef.current?.dispose()
+      paragraphCountAccessorRef.current?.dispose()
       readingTimeAccessorRef.current?.dispose()
       autoSaveAccessorRef.current?.dispose()
     }
@@ -623,10 +655,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
   // Update status bar when text changes
   useEffect(() => {
-    const { chars, words, readingTime } = countTextStats(text)
+    const { chars, words, readingTime, charsWithoutSpaces, paragraphs } = countTextStats(text)
 
     charCountAccessorRef.current?.update({ text: `字符: ${chars.toLocaleString()}` })
     wordCountAccessorRef.current?.update({ text: `字数: ${words.toLocaleString()}` })
+    charsWithoutSpacesAccessorRef.current?.update({ text: `净字数: ${charsWithoutSpaces.toLocaleString()}` })
+    paragraphCountAccessorRef.current?.update({ text: `段落: ${paragraphs.toLocaleString()}` })
 
     const timeText = readingTime < 60
       ? `阅读: <1分钟`
