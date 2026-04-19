@@ -60,6 +60,9 @@ class CommandService {
           return Promise.reject(error)
         }
       }
+
+      // 活动组没有该命令，发出警告
+      console.warn(`Command '${id}' not found in active group '${this.activeGroupId}', falling back to first available`)
     }
 
     // 如果没有活动组或活动组没有该命令，执行第一个可用的命令
