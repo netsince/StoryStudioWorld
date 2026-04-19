@@ -4,6 +4,7 @@ import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
+import { useUiStore } from '../stores/uiStore'
 import { commandService, Commands } from '../services/commandService'
 import { getTabBehavior, getAutoSaveSettings } from './editor/PreferencesPage'
 
@@ -530,6 +531,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       goForward()
     })
 
+    // 禅模式命令
+    const unregisterZenMode = commandService.registerCommand(Commands.ZEN_MODE, () => {
+      useUiStore.getState().toggleZenMode()
+    })
+
     return () => {
       unregisterUndo()
       unregisterRedo()
@@ -548,6 +554,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterSave()
       unregisterNavBack()
       unregisterNavForward()
+      unregisterZenMode()
     }
   }, [onChange, onSave, saveHistory, goBack, goForward])
 
@@ -698,6 +705,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       return
     }
 
+    // Ctrl+Shift+E 禅模式
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+      e.preventDefault()
+      commandService.executeCommand(Commands.ZEN_MODE)
+      return
+    }
+
     // Tab 插入/删除缩进
     if (e.key === 'Tab') {
       e.preventDefault()
@@ -793,18 +807,24 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       }
       return
     }
+
+    // ESC 退出禅模式
+    if (e.key === 'Escape') {
+      useUiStore.getState().setZenMode(false)
+      return
+    }
   }
 
   // 右键菜单
   const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY })
   }
 
   // 长按显示中文标点工具栏
   const handleMouseDown = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     mousePositionRef.current = { x: e.clientX, y: e.clientY }
     if (e.button === 2) {
-      e.preventDefault()
       isLongPressRef.current = false
       longPressTimerRef.current = setTimeout(() => {
         isLongPressRef.current = true
@@ -823,9 +843,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       clearTimeout(longPressTimerRef.current)
       longPressTimerRef.current = null
     }
+    // 只有在非长按（显示标点工具栏）的情况下才显示右键菜单
     if (!isLongPressRef.current && e.button === 2) {
       setContextMenu({ x: e.clientX, y: e.clientY })
     }
+    isLongPressRef.current = false
   }
 
   const handleMouseLeave = () => {
@@ -911,6 +933,16 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       key: 'selectAll',
       label: '全选 (Ctrl+A)',
       onSelect: () => commandService.executeCommand(Commands.SELECT_ALL)
+    },
+    {
+      key: 'separator2',
+      label: '---',
+      onSelect: () => {}
+    },
+    {
+      key: 'zen-mode',
+      label: '禅',
+      onSelect: () => useUiStore.getState().toggleZenMode()
     }
   ]
 
@@ -951,7 +983,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   }
 
   return (
-    <div className="plain-text-editor">
+    <div className="plain-text-editor" onContextMenu={(e) => {
+      e.preventDefault()
+      setContextMenu({ x: e.clientX, y: e.clientY })
+    }}>
       <FindReplaceWidget
         isVisible={isFindWidgetVisible}
         onClose={handleCloseFindWidget}

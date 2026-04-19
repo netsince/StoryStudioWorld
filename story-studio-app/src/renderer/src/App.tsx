@@ -15,6 +15,7 @@ import { useUiStore } from './stores/uiStore'
 function App(): React.JSX.Element {
   const isExplorerOpen = useUiStore((s) => s.isExplorerOpen)
   const isRightSidebarOpen = useUiStore((s) => s.isRightSidebarOpen)
+  const isZenMode = useUiStore((s) => s.isZenMode)
 
   const layoutSize = useLayoutStore((s) => s.layoutSize)
   const isDragging = useLayoutStore((s) => s.isDragging)
@@ -51,12 +52,12 @@ function App(): React.JSX.Element {
 
       <StatusbarProvider>
         <div className={`app-container ${isDragging ? 'dragging' : ''} layout-${layoutSize}`}>
-          <TitleBar />
-          <div className="main-area">
-            <ActivityBar />
+          {!isZenMode && <TitleBar />}
+          <div className="main-area" style={isZenMode ? { marginLeft: 0 } : undefined}>
+            {!isZenMode && <ActivityBar />}
             <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-              <Explorer />
-              {isExplorerOpen && (
+              {!isZenMode && <Explorer />}
+              {isExplorerOpen && !isZenMode && (
                 <Sash side="left" onResize={handleExplorerResize} setIsDraggingGlobal={setIsDragging} />
               )}
             </div>
@@ -65,19 +66,19 @@ function App(): React.JSX.Element {
 
             <div style={{ display: 'flex', height: '100%' }}>
               <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
-                {isRightSidebarOpen && (
+                {isRightSidebarOpen && !isZenMode && (
                   <Sash
                     side="right"
                     onResize={handleRightPanelResize}
                     setIsDraggingGlobal={setIsDragging}
                   />
                 )}
-                <RightPanel />
+                {!isZenMode && <RightPanel />}
               </div>
-              <RightActivityBar />
+              {!isZenMode && <RightActivityBar />}
             </div>
           </div>
-          <StatusBar />
+          {!isZenMode && <StatusBar />}
         </div>
       </StatusbarProvider>
     </>

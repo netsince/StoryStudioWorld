@@ -57,6 +57,14 @@ function createWindow(): void {
     mainWindow.close()
   })
 
+  ipcMain.on('window-set-fullscreen', (_, fullScreen: boolean) => {
+    mainWindow.setFullScreen(fullScreen)
+  })
+
+  ipcMain.handle('window-is-fullscreen', () => {
+    return mainWindow.isFullScreen()
+  })
+
   ipcMain.handle('open-project-dialog', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
+import { useUiStore } from '../stores/uiStore'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import { commandService, Commands } from '../services/commandService'
 
@@ -285,6 +286,19 @@ const TitleBar: React.FC = () => {
 
   // 查看菜单
   const viewMenuItems: ContextMenuItem[] = [
+    {
+      key: 'zen-mode',
+      label: useUiStore.getState().isZenMode ? '退出禅模式' : '进入禅模式',
+      onSelect: () => {
+        useUiStore.getState().toggleZenMode()
+        setActiveMenu(null)
+      },
+    },
+    {
+      key: 'separator-zen',
+      label: '---',
+      onSelect: () => {},
+    },
     {
       key: 'dev-tools',
       label: '开发者工具',

@@ -29,6 +29,8 @@ declare global {
       }>
       toggleDevTools: () => void
       openNewWindow: () => void
+      setFullScreen: (fullScreen: boolean) => void
+      isFullScreen: () => Promise<boolean>
     }
   }
 }

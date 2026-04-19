@@ -68,4 +68,7 @@ export const Commands = {
   // 导航
   NAV_BACK: 'navigation.back',
   NAV_FORWARD: 'navigation.forward',
+
+  // 视图
+  ZEN_MODE: 'view.zenMode',
 } as const

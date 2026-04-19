@@ -6,9 +6,12 @@ interface UiState {
   activeRightActivity: RightActivityType
   isExplorerOpen: boolean
   isRightSidebarOpen: boolean
+  isZenMode: boolean
 
   setExplorerOpen: (isOpen: boolean) => void
   setRightSidebarOpen: (isOpen: boolean) => void
+  toggleZenMode: () => void
+  setZenMode: (isZen: boolean) => void
 
   handleActivityChange: (activity: ActivityType) => void
   handleRightActivityChange: (activity: RightActivityType) => void
@@ -19,9 +22,24 @@ export const useUiStore = create<UiState>((set, get) => ({
   activeRightActivity: 'proofread',
   isExplorerOpen: true,
   isRightSidebarOpen: false,
+  isZenMode: false,
 
   setExplorerOpen: (isOpen) => set({ isExplorerOpen: isOpen }),
   setRightSidebarOpen: (isOpen) => set({ isRightSidebarOpen: isOpen }),
+  
+  toggleZenMode: () => {
+    const newZenMode = !get().isZenMode
+    if (window.api.setFullScreen) {
+      window.api.setFullScreen(newZenMode)
+    }
+    set({ isZenMode: newZenMode })
+  },
+  setZenMode: (isZen) => {
+    if (window.api.setFullScreen) {
+      window.api.setFullScreen(isZen)
+    }
+    set({ isZenMode: isZen })
+  },
 
   handleActivityChange: (activity) => {
     const { activeActivity, isExplorerOpen } = get()
