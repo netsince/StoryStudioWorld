@@ -6,7 +6,7 @@ import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { useUiStore } from '../stores/uiStore'
 import { commandService, Commands } from '../services/commandService'
-import { getTabBehavior, getAutoSaveSettings } from './editor/PreferencesPage'
+import { getTabBehavior, getAutoSaveSettings, getAutoIndentSettings } from './editor/PreferencesPage'
 
 interface PlainTextEditorProps {
   content: string
@@ -79,6 +79,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const autoSaveAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isComposingRef = useRef(false)
+  const pendingEnterAfterCompositionRef = useRef(false)
 
   // 用 tabId 作为 key 保存每个文件的滚动位置
   const scrollPositionsRef = useRef<Map<string, { scrollTop: number; scrollLeft: number }>>(new Map())
@@ -661,12 +663,70 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   }, [])
 
+  // 常规输入/粘贴等由 onChange 处理；Enter 自动缩进在 onKeyDown 中处理（见下）。
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const newText = e.target.value
     setText(newText)
     onChange(newText)
     saveHistory(newText)
     scheduleAutoSave()
+  }
+
+  const insertNewlineWithIndent = useCallback((textarea: HTMLTextAreaElement, fallbackIndent: string) => {
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const value = textarea.value
+
+    // 获取缩进：优先继承“上一行/当前行”的行首缩进；没有则使用设置里的缩进策略。
+    const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
+    let sourceLineStart = currentLineStart
+    let sourceLineEnd = value.indexOf('\n', currentLineStart)
+    if (sourceLineEnd === -1) sourceLineEnd = value.length
+
+    // 若光标在行首，继承上一行缩进（更符合编辑器直觉）。
+    if (start === currentLineStart && currentLineStart > 0) {
+      const prevLineEnd = currentLineStart - 1 // '\n' 的位置
+      sourceLineStart = value.lastIndexOf('\n', prevLineEnd - 1) + 1
+      sourceLineEnd = prevLineEnd
+    }
+
+    const sourceLine = value.substring(sourceLineStart, sourceLineEnd)
+    const indentMatch = sourceLine.match(/^[\t ]+/)
+    const indent = (indentMatch?.[0] ?? '') || fallbackIndent
+
+    const insertion = `\n${indent}`
+    const newText = value.substring(0, start) + insertion + value.substring(end)
+
+    setText(newText)
+    onChange(newText)
+    saveHistory(newText)
+    scheduleAutoSave()
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const next = start + insertion.length
+      textarea.setSelectionRange(next, next)
+    })
+  }, [onChange, saveHistory, scheduleAutoSave])
+
+  const handleCompositionStart = (): void => {
+    isComposingRef.current = true
+  }
+
+  const handleCompositionEnd = (): void => {
+    isComposingRef.current = false
+
+    if (!pendingEnterAfterCompositionRef.current) return
+    pendingEnterAfterCompositionRef.current = false
+
+    const autoIndentSettings = getAutoIndentSettings()
+    if (!autoIndentSettings.enabled) return
+
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    // 等待本次上屏内容真正写入 textarea.value 后再插入换行
+    requestAnimationFrame(() => insertNewlineWithIndent(textarea, autoIndentSettings.indent))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -710,6 +770,22 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       e.preventDefault()
       commandService.executeCommand(Commands.ZEN_MODE)
       return
+    }
+
+    // Enter 换行时自动缩进
+    if (e.key === 'Enter') {
+      const autoIndentSettings = getAutoIndentSettings()
+      if (autoIndentSettings.enabled) {
+        // 输入法组合态下的 Enter 常用于上屏/选词；这里延后到 compositionend 再补换行。
+        if (isComposingRef.current || e.nativeEvent.isComposing) {
+          pendingEnterAfterCompositionRef.current = true
+          return
+        }
+
+        e.preventDefault()
+        insertNewlineWithIndent(e.currentTarget, autoIndentSettings.indent)
+        return
+      }
     }
 
     // Tab 插入/删除缩进
@@ -812,6 +888,15 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (e.key === 'Escape') {
       useUiStore.getState().setZenMode(false)
       return
+    }
+  }
+
+  const handleKeyDownCapture = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    handleKeyDown(e)
+
+    // 如果我们已经接管了按键行为（如 Tab / Enter / 快捷键），阻止它继续冒泡到全局监听器（例如查找面板）。
+    if (e.defaultPrevented) {
+      e.stopPropagation()
     }
   }
 
@@ -1011,7 +1096,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           className="plain-text-editor-textarea"
           value={text}
           onChange={handleChange}
-          onKeyDown={handleKeyDown}
+          onKeyDownCapture={handleKeyDownCapture}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           onContextMenu={handleContextMenu}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}

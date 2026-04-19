@@ -11,6 +11,7 @@ interface AppSettings {
   editorTabBehavior: TabBehavior
   autoSaveEnabled: boolean
   autoSaveInterval: number
+  autoIndentEnabled: boolean
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   editorTabBehavior: 'tab',
   autoSaveEnabled: true,
   autoSaveInterval: 30,
+  autoIndentEnabled: false,
 }
 
 const OPEN_SOURCE_FONTS = [
@@ -273,6 +275,27 @@ const PreferencesPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* 自动缩进 */}
+            <div style={{ marginTop: '24px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                自动缩进
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoIndentEnabled}
+                    onChange={e => applySettings({ autoIndentEnabled: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '13px' }}>换行时自动添加缩进</span>
+                </label>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                当前缩进策略: {TAB_BEHAVIOR_OPTIONS.find(o => o.value === settings.editorTabBehavior)?.label}
+              </div>
+            </div>
           </div>
         )
 
@@ -345,4 +368,17 @@ export const getTabBehavior = (): TabBehavior => {
 export const getAutoSaveSettings = (): { enabled: boolean; interval: number } => {
   const settings = loadSettings()
   return { enabled: settings.autoSaveEnabled, interval: settings.autoSaveInterval * 1000 }
+}
+
+export const getAutoIndentSettings = (): { enabled: boolean; indent: string } => {
+  try {
+    const saved = localStorage.getItem('ssw:app-settings')
+    const settings = saved ? JSON.parse(saved) : DEFAULT_SETTINGS
+    const indent = (settings.editorTabBehavior === '4spaces' ? '    '
+      : settings.editorTabBehavior === '2spaces' ? '  '
+      : '\t')
+    return { enabled: settings.autoIndentEnabled ?? false, indent }
+  } catch {
+    return { enabled: false, indent: '\t' }
+  }
 }
