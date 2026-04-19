@@ -29,15 +29,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   
   toggleZenMode: () => {
     const newZenMode = !get().isZenMode
-    if (window.api.setFullScreen) {
-      window.api.setFullScreen(newZenMode)
-    }
+    window.api?.setFullScreen?.(newZenMode)
     set({ isZenMode: newZenMode })
   },
   setZenMode: (isZen) => {
-    if (window.api.setFullScreen) {
-      window.api.setFullScreen(isZen)
-    }
+    window.api?.setFullScreen?.(isZen)
     set({ isZenMode: isZen })
   },
 
