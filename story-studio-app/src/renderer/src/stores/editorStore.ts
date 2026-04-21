@@ -49,6 +49,11 @@ export interface GroupEditorState {
   autoSaveEnabled: boolean
 }
 
+export interface TabScrollPosition {
+  scrollTop: number
+  scrollLeft: number
+}
+
 interface EditorState {
   editorTree: EditorNode
   focusedGroupId: string
@@ -63,6 +68,12 @@ interface EditorState {
   updateGroupEditorState: (groupId: string, state: Partial<GroupEditorState>) => void
   getGroupEditorState: (groupId: string) => GroupEditorState | undefined
   onGroupEditorStateChange: (callback: (groupId: string, state: GroupEditorState) => void) => () => void
+
+  // tab 视图状态
+  tabScrollPositions: Map<string, TabScrollPosition>
+  setTabScrollPosition: (tabId: string, position: TabScrollPosition) => void
+  getTabScrollPosition: (tabId: string) => TabScrollPosition | undefined
+  clearTabScrollPosition: (tabId: string) => void
 
   // 导航历史
   navHistory: NavigationHistoryEntry[]
@@ -161,6 +172,24 @@ export const useEditorStore = create<EditorState>((set, get) => {
     onGroupEditorStateChange: (_callback) => {
       // 返回一个 no-op 取消函数，实际监听通过订阅 store 实现
       return () => {}
+    },
+
+    tabScrollPositions: new Map(),
+    setTabScrollPosition: (tabId, position) => {
+      set((state) => {
+        const next = new Map(state.tabScrollPositions)
+        next.set(tabId, position)
+        return { tabScrollPositions: next }
+      })
+    },
+    getTabScrollPosition: (tabId) => get().tabScrollPositions.get(tabId),
+    clearTabScrollPosition: (tabId) => {
+      set((state) => {
+        if (!state.tabScrollPositions.has(tabId)) return state
+        const next = new Map(state.tabScrollPositions)
+        next.delete(tabId)
+        return { tabScrollPositions: next }
+      })
     },
 
     // 导航历史
@@ -350,9 +379,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
               })
               const collapsedTree = collapseEmptyGroups(nextTree)
               const nextFocused = ensureFocusedGroupValid(collapsedTree, state.focusedGroupId)
+              const nextTabScrollPositions = new Map(state.tabScrollPositions)
+              nextTabScrollPositions.delete(tabId)
               return state.focusedGroupId === nextFocused
-                ? { editorTree: collapsedTree }
-                : { editorTree: collapsedTree, focusedGroupId: nextFocused }
+                ? { editorTree: collapsedTree, tabScrollPositions: nextTabScrollPositions }
+                : { editorTree: collapsedTree, focusedGroupId: nextFocused, tabScrollPositions: nextTabScrollPositions }
             })
           } finally {
             pendingCloseKeys.delete(closeKey)
@@ -370,9 +401,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
         })
         const collapsedTree = collapseEmptyGroups(nextTree)
         const nextFocused = ensureFocusedGroupValid(collapsedTree, state.focusedGroupId)
+        const nextTabScrollPositions = new Map(state.tabScrollPositions)
+        nextTabScrollPositions.delete(tabId)
         return state.focusedGroupId === nextFocused
-          ? { editorTree: collapsedTree }
-          : { editorTree: collapsedTree, focusedGroupId: nextFocused }
+          ? { editorTree: collapsedTree, tabScrollPositions: nextTabScrollPositions }
+          : { editorTree: collapsedTree, focusedGroupId: nextFocused, tabScrollPositions: nextTabScrollPositions }
       })
     },
 

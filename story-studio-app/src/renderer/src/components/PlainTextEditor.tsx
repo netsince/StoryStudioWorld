@@ -79,13 +79,15 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   groupId = 'default'
 }) => {
   const [text, setText] = useState(content || '')
-  const { goBack, goForward, updateGroupEditorState } = useEditorStore()
+  const goBack = useEditorStore((s) => s.goBack)
+  const goForward = useEditorStore((s) => s.goForward)
+  const updateGroupEditorState = useEditorStore((s) => s.updateGroupEditorState)
+  const setTabScrollPosition = useEditorStore((s) => s.setTabScrollPosition)
+  const getTabScrollPosition = useEditorStore((s) => s.getTabScrollPosition)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const pendingEnterAfterCompositionRef = useRef(false)
 
-  // 用 tabId 作为 key 保存每个文件的滚动位置
-  const scrollPositionsRef = useRef<Map<string, { scrollTop: number; scrollLeft: number }>>(new Map())
   const pendingRestoreScrollRef = useRef(false)
   const lastRestoredTabIdRef = useRef<string | undefined>(undefined)
   const scrollDebugEnabledRef = useRef(false)
@@ -118,7 +120,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         overlayScrollLeft: overlay?.scrollLeft,
         pendingRestore: pendingRestoreScrollRef.current,
         lastRestoredTabId: lastRestoredTabIdRef.current,
-        saved: tabId ? scrollPositionsRef.current.get(tabId) : undefined,
+        saved: tabId ? getTabScrollPosition(tabId) : undefined,
         ...extra
       }
       // eslint-disable-next-line no-console
@@ -170,7 +172,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (tabId) {
       // content 同步触发的“被动滚动重置”不应覆盖原有的滚动记忆
       if (pendingRestoreScrollRef.current) return
-      scrollPositionsRef.current.set(tabId, {
+      setTabScrollPosition(tabId, {
         scrollTop: textarea.scrollTop,
         scrollLeft: textarea.scrollLeft
       })
@@ -179,7 +181,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         debugScroll('save', { seq: scrollEventSeqRef.current })
       }
     }
-  }, [tabId, debugScroll])
+  }, [tabId, debugScroll, setTabScrollPosition])
 
   // 历史记录用于撤销/重做
   const historyRef = useRef<string[]>([])
@@ -233,7 +235,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     const shouldRestore = pendingRestoreScrollRef.current || tabChanged
     if (!shouldRestore) return
 
-    const saved = scrollPositionsRef.current.get(tabId)
+    const saved = getTabScrollPosition(tabId)
     if (!saved) {
       pendingRestoreScrollRef.current = false
       lastRestoredTabIdRef.current = tabId
@@ -256,7 +258,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     pendingRestoreScrollRef.current = false
     lastRestoredTabIdRef.current = tabId
     debugScroll('restore done')
-  }, [tabId, text, debugScroll])
+  }, [tabId, text, debugScroll, getTabScrollPosition])
 
   // 保存历史记录
   const saveHistory = useCallback((newText: string) => {
