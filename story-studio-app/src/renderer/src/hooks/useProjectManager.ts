@@ -28,7 +28,11 @@ export interface UseProjectManagerValue {
   renameStoryNode: (nodeId: string, newName: string) => Promise<void>
   deleteStoryNode: (nodeId: string) => Promise<void>
   moveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
-  reorderStoryNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => Promise<void>
+  reorderStoryNode: (
+    nodeId: string,
+    targetNodeId: string,
+    position: 'before' | 'after'
+  ) => Promise<void>
 
   saveNodeContent: (nodeId: string, content: string) => Promise<void>
   clearLastProjectMarker: () => void
@@ -57,10 +61,15 @@ export const useProjectManager = (
 
   const updateRecentProjects = useCallback((project: ProjectData): void => {
     setRecentProjects((prev) => {
-      const next = [{ projectSettingsPath: project.projectSettingsPath, name: project.projectName }, ...prev]
+      const next = [
+        { projectSettingsPath: project.projectSettingsPath, name: project.projectName },
+        ...prev
+      ]
       const deduped = next.filter(
         (item, index) =>
-          next.findIndex((candidate) => candidate.projectSettingsPath === item.projectSettingsPath) === index
+          next.findIndex(
+            (candidate) => candidate.projectSettingsPath === item.projectSettingsPath
+          ) === index
       )
       return deduped.slice(0, 8)
     })

@@ -26,7 +26,7 @@ export const useUiStore = create<UiState>((set, get) => ({
 
   setExplorerOpen: (isOpen) => set({ isExplorerOpen: isOpen }),
   setRightSidebarOpen: (isOpen) => set({ isRightSidebarOpen: isOpen }),
-  
+
   toggleZenMode: () => {
     const newZenMode = !get().isZenMode
     window.api?.setFullScreen?.(newZenMode)
@@ -55,4 +55,3 @@ export const useUiStore = create<UiState>((set, get) => ({
     }
   }
 }))
-

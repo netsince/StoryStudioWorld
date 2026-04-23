@@ -213,7 +213,10 @@ export async function getProjectNodes(projectPathInput: string): Promise<StoryNo
   return nodes
 }
 
-export async function getChildNodesByParent(projectPathInput: string, parentId: string | null): Promise<StoryNode[]> {
+export async function getChildNodesByParent(
+  projectPathInput: string,
+  parentId: string | null
+): Promise<StoryNode[]> {
   const project = await loadProject(projectPathInput)
   const db = await loadDatabase(project.storyDbPath)
   const nodes = getChildNodes(db, parentId)
@@ -314,16 +317,16 @@ export async function reorderStoryNode(input: ReorderNodeInput): Promise<StoryNo
       throw new Error('只能同层级排序')
     }
 
-    const newSortOrder = input.position === 'before'
-      ? targetNode.sortOrder - 1
-      : targetNode.sortOrder + 1
+    const newSortOrder =
+      input.position === 'before' ? targetNode.sortOrder - 1 : targetNode.sortOrder + 1
 
     // 更新源节点的 sortOrder
     const now = new Date().toISOString()
-    db.run(
-      `UPDATE nodes SET sortOrder = ?, updatedAt = ? WHERE id = ?`,
-      [newSortOrder, now, input.nodeId]
-    )
+    db.run(`UPDATE nodes SET sortOrder = ?, updatedAt = ? WHERE id = ?`, [
+      newSortOrder,
+      now,
+      input.nodeId
+    ])
 
     await saveDatabase(db, project.storyDbPath)
     const nodes = getNodes(db)

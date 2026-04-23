@@ -63,7 +63,8 @@ export const useEditorTree = (): UseEditorTreeValue => {
   const groupCount = useMemo(() => countGroups(editorTree), [editorTree])
 
   const resolveTargetGroupId = useCallback(
-    (tree: EditorNode): string => (hasGroup(tree, focusedGroupId) ? focusedGroupId : findFirstGroupId(tree)),
+    (tree: EditorNode): string =>
+      hasGroup(tree, focusedGroupId) ? focusedGroupId : findFirstGroupId(tree),
     [focusedGroupId]
   )
 
@@ -105,7 +106,11 @@ export const useEditorTree = (): UseEditorTreeValue => {
   const pendingCloseRef = useRef<Set<string>>(new Set())
 
   const closeTab = useCallback(
-    async (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback): Promise<void> => {
+    async (
+      groupId: string,
+      tabId: string,
+      onConfirmClose?: OnConfirmCloseCallback
+    ): Promise<void> => {
       const closeKey = `${groupId}:${tabId}`
 
       // 如果该标签已经在关闭流程中，避免重复处理
@@ -126,13 +131,17 @@ export const useEditorTree = (): UseEditorTreeValue => {
               if (result.shouldClose) {
                 setEditorTree((current) => {
                   // 二次检查：确认标签仍然存在
-                  const tabStillExists = findGroupNode(current, groupId)?.tabs.find((t) => t.id === tabId)
+                  const tabStillExists = findGroupNode(current, groupId)?.tabs.find(
+                    (t) => t.id === tabId
+                  )
                   if (!tabStillExists) return current
 
                   const nextTree = updateGroup(current, groupId, (group) => {
                     const nextTabs = group.tabs.filter((item) => item.id !== tabId)
                     const nextActive =
-                      group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+                      group.activeTabId === tabId
+                        ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+                        : group.activeTabId
                     return { ...group, tabs: nextTabs, activeTabId: nextActive }
                   })
                   const collapsedTree = collapseEmptyGroups(nextTree)
@@ -152,7 +161,9 @@ export const useEditorTree = (): UseEditorTreeValue => {
         const nextTree = updateGroup(prev, groupId, (group) => {
           const nextTabs = group.tabs.filter((item) => item.id !== tabId)
           const nextActive =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActive }
         })
         const collapsedTree = collapseEmptyGroups(nextTree)
@@ -203,7 +214,9 @@ export const useEditorTree = (): UseEditorTreeValue => {
     setEditorTree((prev) =>
       updateGroup(prev, groupId, (group) => ({
         ...group,
-        tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab))
+        tabs: group.tabs.map((tab) =>
+          tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab
+        )
       }))
     )
   }, [])
@@ -244,7 +257,9 @@ export const useEditorTree = (): UseEditorTreeValue => {
           movedTab = tab
           const nextTabs = group.tabs.filter((t) => t.id !== tabId)
           const nextActiveTabId =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
         })
 
@@ -292,7 +307,9 @@ export const useEditorTree = (): UseEditorTreeValue => {
           movedTab = tab
           const nextTabs = group.tabs.filter((t) => t.id !== tabId)
           const nextActiveTabId =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
         })
 
@@ -317,23 +334,30 @@ export const useEditorTree = (): UseEditorTreeValue => {
   )
 
   const switchTab = useCallback((groupId: string, tabId: string): void => {
-    setEditorTree((prev) => updateGroup(prev, groupId, (group) => ({ ...group, activeTabId: tabId })))
+    setEditorTree((prev) =>
+      updateGroup(prev, groupId, (group) => ({ ...group, activeTabId: tabId }))
+    )
   }, [])
 
-  const splitGroup = useCallback((groupId: string, direction: 'row' | 'column', tabId?: string): void => {
-    setEditorTree((prev) => {
-      const sourceGroup = tabId ? findGroupNode(prev, groupId) : null
-      if (tabId && sourceGroup && sourceGroup.tabs.length <= 1) return prev
+  const splitGroup = useCallback(
+    (groupId: string, direction: 'row' | 'column', tabId?: string): void => {
+      setEditorTree((prev) => {
+        const sourceGroup = tabId ? findGroupNode(prev, groupId) : null
+        if (tabId && sourceGroup && sourceGroup.tabs.length <= 1) return prev
 
-      const tab = tabId ? sourceGroup?.tabs.find((t) => t.id === tabId) : undefined
-      const newGroup: EditorGroupNode = tab
-        ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
-        : createEmptyGroup()
-      const nextTree = collapseEmptyGroups(splitAtGroup(prev, groupId, direction, newGroup, 'second'))
-      setFocusedGroupId(newGroup.id)
-      return nextTree
-    })
-  }, [])
+        const tab = tabId ? sourceGroup?.tabs.find((t) => t.id === tabId) : undefined
+        const newGroup: EditorGroupNode = tab
+          ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
+          : createEmptyGroup()
+        const nextTree = collapseEmptyGroups(
+          splitAtGroup(prev, groupId, direction, newGroup, 'second')
+        )
+        setFocusedGroupId(newGroup.id)
+        return nextTree
+      })
+    },
+    []
+  )
 
   const closeGroup = useCallback(
     (groupId: string): void => {

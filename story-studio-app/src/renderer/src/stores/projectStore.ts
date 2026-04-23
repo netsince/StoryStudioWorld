@@ -27,7 +27,11 @@ interface ProjectState {
   renameStoryNode: (nodeId: string, newName: string) => Promise<void>
   deleteStoryNode: (nodeId: string) => Promise<void>
   moveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
-  reorderStoryNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => Promise<void>
+  reorderStoryNode: (
+    nodeId: string,
+    targetNodeId: string,
+    position: 'before' | 'after'
+  ) => Promise<void>
   refreshStoryNodes: () => Promise<void>
 
   saveNodeContent: (nodeId: string, content: string) => Promise<void>
@@ -50,9 +54,15 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
   const updateRecentProjects = (project: ProjectData): void => {
     set((state) => {
-      const next = [{ projectSettingsPath: project.projectSettingsPath, name: project.projectName }, ...state.recentProjects]
+      const next = [
+        { projectSettingsPath: project.projectSettingsPath, name: project.projectName },
+        ...state.recentProjects
+      ]
       const deduped = next.filter(
-        (item, index) => next.findIndex((candidate) => candidate.projectSettingsPath === item.projectSettingsPath) === index
+        (item, index) =>
+          next.findIndex(
+            (candidate) => candidate.projectSettingsPath === item.projectSettingsPath
+          ) === index
       )
       return { recentProjects: deduped.slice(0, 8) }
     })

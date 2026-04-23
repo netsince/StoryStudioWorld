@@ -17,7 +17,7 @@ const PUNCTUATIONS = [
   ['……', '——'],
   ['，', '。'],
   ['！', '？'],
-  ['：', '；'],
+  ['：', '；']
 ]
 
 const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
@@ -26,7 +26,9 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
   onClose,
   onInsert
 }) => {
-  const [showChoice, setShowChoice] = useState<{ x: number; y: number; symbol: string } | null>(null)
+  const [showChoice, setShowChoice] = useState<{ x: number; y: number; symbol: string } | null>(
+    null
+  )
   const barRef = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -45,11 +47,14 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isVisible, onClose])
 
-  const handleClick = useCallback((symbol: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    onInsert(symbol)
-    onClose()
-  }, [onInsert, onClose])
+  const handleClick = useCallback(
+    (symbol: string, e: React.MouseEvent) => {
+      e.stopPropagation()
+      onInsert(symbol)
+      onClose()
+    },
+    [onInsert, onClose]
+  )
 
   const handleLongPress = useCallback((symbol: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -63,13 +68,16 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
     }
   }, [])
 
-  const handleChoice = useCallback((char: string) => {
-    if (showChoice) {
-      onInsert(char)
-      setShowChoice(null)
-      onClose()
-    }
-  }, [showChoice, onInsert, onClose])
+  const handleChoice = useCallback(
+    (char: string) => {
+      if (showChoice) {
+        onInsert(char)
+        setShowChoice(null)
+        onClose()
+      }
+    },
+    [showChoice, onInsert, onClose]
+  )
 
   if (!isVisible) return null
 
@@ -78,16 +86,12 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
     left: Math.min(position.x, window.innerWidth - 280),
     top: Math.min(position.y + 20, window.innerHeight - 120),
     zIndex: 10000,
-    pointerEvents: 'auto',
+    pointerEvents: 'auto'
   }
 
   return (
     <>
-      <div
-        ref={barRef}
-        className="chinese-punctuation-bar"
-        style={barStyle}
-      >
+      <div ref={barRef} className="chinese-punctuation-bar" style={barStyle}>
         {PUNCTUATIONS.map((pair, index) => (
           <div key={index} className="punctuation-pair">
             {pair.map((symbol, i) => (
@@ -112,7 +116,7 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
             left: showChoice.x,
             top: showChoice.y,
             transform: 'translateX(-50%) translateY(-100%)',
-            zIndex: 10001,
+            zIndex: 10001
           }}
         >
           <button

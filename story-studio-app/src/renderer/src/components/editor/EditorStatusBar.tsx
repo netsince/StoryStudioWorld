@@ -25,37 +25,39 @@ export const EditorStatusBar: React.FC = () => {
   const lastSavedAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
 
   // 更新状态栏显示
-  const updateStatusBar = useCallback((groupId: string | null) => {
-    const state = groupId ? getGroupEditorState(groupId) : undefined
-    const stats = state?.stats ?? defaultStats
-    const lastSavedAt = state?.lastSavedAt
+  const updateStatusBar = useCallback(
+    (groupId: string | null) => {
+      const state = groupId ? getGroupEditorState(groupId) : undefined
+      const stats = state?.stats ?? defaultStats
+      const lastSavedAt = state?.lastSavedAt
 
-    charCountAccessorRef.current?.update({
-      text: `字符: ${stats.chars.toLocaleString()}`
-    })
-    wordCountAccessorRef.current?.update({
-      text: `字数: ${stats.words.toLocaleString()}`
-    })
-    charsWithoutSpacesAccessorRef.current?.update({
-      text: `净字数: ${stats.charsWithoutSpaces.toLocaleString()}`
-    })
-    paragraphCountAccessorRef.current?.update({
-      text: `段落: ${stats.paragraphs.toLocaleString()}`
-    })
-
-    const timeText = stats.readingTime < 60
-      ? `阅读: <1分钟`
-      : `阅读: ${Math.ceil(stats.readingTime / 60)}分钟`
-    readingTimeAccessorRef.current?.update({ text: timeText })
-
-    if (lastSavedAt) {
-      lastSavedAccessorRef.current?.update({
-        text: `${lastSavedAt} 自动保存`
+      charCountAccessorRef.current?.update({
+        text: `字符: ${stats.chars.toLocaleString()}`
       })
-    } else {
-      lastSavedAccessorRef.current?.update({ text: '' })
-    }
-  }, [getGroupEditorState])
+      wordCountAccessorRef.current?.update({
+        text: `字数: ${stats.words.toLocaleString()}`
+      })
+      charsWithoutSpacesAccessorRef.current?.update({
+        text: `净字数: ${stats.charsWithoutSpaces.toLocaleString()}`
+      })
+      paragraphCountAccessorRef.current?.update({
+        text: `段落: ${stats.paragraphs.toLocaleString()}`
+      })
+
+      const timeText =
+        stats.readingTime < 60 ? `阅读: <1分钟` : `阅读: ${Math.ceil(stats.readingTime / 60)}分钟`
+      readingTimeAccessorRef.current?.update({ text: timeText })
+
+      if (lastSavedAt) {
+        lastSavedAccessorRef.current?.update({
+          text: `${lastSavedAt} 自动保存`
+        })
+      } else {
+        lastSavedAccessorRef.current?.update({ text: '' })
+      }
+    },
+    [getGroupEditorState]
+  )
 
   // 注册状态栏条目
   useEffect(() => {

@@ -30,13 +30,17 @@ const Tree: React.FC<TreeProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [dropPosition, setDropPosition] = useState<DropPosition>(null)
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null)
-  const [renameDialog, setRenameDialog] = useState<{ nodeId: string; initialValue: string } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(
+    null
+  )
+  const [renameDialog, setRenameDialog] = useState<{ nodeId: string; initialValue: string } | null>(
+    null
+  )
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const treeRef = useRef<HTMLDivElement>(null)
 
   const toggleExpanded = useCallback((nodeId: string) => {
-    setExpandedNodes(prev => {
+    setExpandedNodes((prev) => {
       const next = new Set(prev)
       if (next.has(nodeId)) {
         next.delete(nodeId)
@@ -47,20 +51,24 @@ const Tree: React.FC<TreeProps> = ({
     })
   }, [])
 
-  const getNodeById = useCallback((nodeId: string) => {
-    return nodes.find(n => n.id === nodeId)
-  }, [nodes])
+  const getNodeById = useCallback(
+    (nodeId: string) => {
+      return nodes.find((n) => n.id === nodeId)
+    },
+    [nodes]
+  )
 
-  const getChildren = useCallback((parentId: string | null) => {
-    return nodes
-      .filter(n => n.parentId === parentId)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-  }, [nodes])
+  const getChildren = useCallback(
+    (parentId: string | null) => {
+      return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.sortOrder - b.sortOrder)
+    },
+    [nodes]
+  )
 
   // Build visible node list for virtual rendering
   const visibleNodes = useMemo(() => {
     const result: { node: StoryNode; depth: number }[] = []
-    
+
     const traverse = (parentId: string | null, depth: number) => {
       const children = getChildren(parentId)
       for (const child of children) {
@@ -70,7 +78,7 @@ const Tree: React.FC<TreeProps> = ({
         }
       }
     }
-    
+
     traverse(null, 0)
     return result
   }, [nodes, expandedNodes, getChildren])
@@ -80,82 +88,94 @@ const Tree: React.FC<TreeProps> = ({
     e.dataTransfer.effectAllowed = 'move'
   }, [])
 
-  const handleDragOver = useCallback((e: React.DragEvent, nodeId: string) => {
-    e.preventDefault()
-    if (!draggingNodeId || draggingNodeId === nodeId) return
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, nodeId: string) => {
+      e.preventDefault()
+      if (!draggingNodeId || draggingNodeId === nodeId) return
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const relativeY = e.clientY - rect.top
-    const height = rect.height
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const relativeY = e.clientY - rect.top
+      const height = rect.height
 
-    let position: 'before' | 'after' | 'inside'
-    const node = getNodeById(nodeId)
+      let position: 'before' | 'after' | 'inside'
+      const node = getNodeById(nodeId)
 
-    if (node?.type === 'folder') {
-      if (relativeY < height * 0.3) {
-        position = 'before'
-      } else if (relativeY > height * 0.7) {
-        position = 'after'
+      if (node?.type === 'folder') {
+        if (relativeY < height * 0.3) {
+          position = 'before'
+        } else if (relativeY > height * 0.7) {
+          position = 'after'
+        } else {
+          position = 'inside'
+        }
       } else {
-        position = 'inside'
+        position = relativeY < height / 2 ? 'before' : 'after'
       }
-    } else {
-      position = relativeY < height / 2 ? 'before' : 'after'
-    }
 
-    setDropPosition({ nodeId, position })
-  }, [draggingNodeId, getNodeById])
+      setDropPosition({ nodeId, position })
+    },
+    [draggingNodeId, getNodeById]
+  )
 
   const handleDragLeave = useCallback(() => {
     setDropPosition(null)
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent, targetNodeId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetNodeId: string) => {
+      e.preventDefault()
+      e.stopPropagation()
 
-    if (!draggingNodeId || draggingNodeId === targetNodeId) {
+      if (!draggingNodeId || draggingNodeId === targetNodeId) {
+        setDraggingNodeId(null)
+        setDropPosition(null)
+        return
+      }
+
+      const position = dropPosition?.position
+      if (!position) {
+        setDraggingNodeId(null)
+        setDropPosition(null)
+        return
+      }
+
+      const draggingNode = getNodeById(draggingNodeId)
+      const targetNode = getNodeById(targetNodeId)
+
+      if (!draggingNode || !targetNode) {
+        setDraggingNodeId(null)
+        setDropPosition(null)
+        return
+      }
+
+      if (position === 'inside' && targetNode.type === 'folder') {
+        onMoveNode(draggingNodeId, targetNodeId)
+      } else if (
+        draggingNode.parentId === targetNode.parentId &&
+        (position === 'before' || position === 'after')
+      ) {
+        onReorderNode(draggingNodeId, targetNodeId, position)
+      } else {
+        onMoveNode(draggingNodeId, targetNode.parentId)
+      }
+
       setDraggingNodeId(null)
       setDropPosition(null)
-      return
-    }
+    },
+    [draggingNodeId, dropPosition, getNodeById, onMoveNode, onReorderNode]
+  )
 
-    const position = dropPosition?.position
-    if (!position) {
+  const handleDropOnRoot = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      if (!draggingNodeId) return
+
+      onMoveNode(draggingNodeId, null)
       setDraggingNodeId(null)
       setDropPosition(null)
-      return
-    }
-
-    const draggingNode = getNodeById(draggingNodeId)
-    const targetNode = getNodeById(targetNodeId)
-
-    if (!draggingNode || !targetNode) {
-      setDraggingNodeId(null)
-      setDropPosition(null)
-      return
-    }
-
-    if (position === 'inside' && targetNode.type === 'folder') {
-      onMoveNode(draggingNodeId, targetNodeId)
-    } else if (draggingNode.parentId === targetNode.parentId && (position === 'before' || position === 'after')) {
-      onReorderNode(draggingNodeId, targetNodeId, position)
-    } else {
-      onMoveNode(draggingNodeId, targetNode.parentId)
-    }
-
-    setDraggingNodeId(null)
-    setDropPosition(null)
-  }, [draggingNodeId, dropPosition, getNodeById, onMoveNode, onReorderNode])
-
-  const handleDropOnRoot = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    if (!draggingNodeId) return
-
-    onMoveNode(draggingNodeId, null)
-    setDraggingNodeId(null)
-    setDropPosition(null)
-  }, [draggingNodeId, onMoveNode])
+    },
+    [draggingNodeId, onMoveNode]
+  )
 
   const handleContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault()
@@ -168,22 +188,38 @@ const Tree: React.FC<TreeProps> = ({
       return (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
           {isExpanded ? (
-            <path d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z" fill="#DCAD5A"/>
+            <path
+              d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
+              fill="#DCAD5A"
+            />
           ) : (
-            <path d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z" fill="#DCAD5A"/>
+            <path
+              d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
+              fill="#DCAD5A"
+            />
           )}
         </svg>
       )
     }
     return (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-        <path d="M3.5 1h5.79l3.21 3.21V14.5a1.5 1.5 0 0 1-1.5 1.5h-7.5a1.5 1.5 0 0 1-1.5-1.5v-12A1.5 1.5 0 0 1 3.5 1z" fill="#75BEFF" fillOpacity="0.6"/>
+        <path
+          d="M3.5 1h5.79l3.21 3.21V14.5a1.5 1.5 0 0 1-1.5 1.5h-7.5a1.5 1.5 0 0 1-1.5-1.5v-12A1.5 1.5 0 0 1 3.5 1z"
+          fill="#75BEFF"
+          fillOpacity="0.6"
+        />
       </svg>
     )
   }
 
   // VS Code style twistie (chevron)
-  const Twistie = ({ expanded, onClick }: { expanded: boolean; onClick: (e: React.MouseEvent) => void }) => (
+  const Twistie = ({
+    expanded,
+    onClick
+  }: {
+    expanded: boolean
+    onClick: (e: React.MouseEvent) => void
+  }) => (
     <span
       onClick={onClick}
       style={{
@@ -193,7 +229,7 @@ const Tree: React.FC<TreeProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        flexShrink: 0,
+        flexShrink: 0
       }}
     >
       <svg
@@ -203,13 +239,10 @@ const Tree: React.FC<TreeProps> = ({
         style={{
           transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
           transition: 'transform 0.1s ease',
-          opacity: 0.7,
+          opacity: 0.7
         }}
       >
-        <path
-          fill="currentColor"
-          d="M6 4l4 4-4 4V4z"
-        />
+        <path fill="currentColor" d="M6 4l4 4-4 4V4z" />
       </svg>
     </span>
   )
@@ -229,7 +262,7 @@ const Tree: React.FC<TreeProps> = ({
               bottom: 0,
               width: '1px',
               backgroundColor: 'var(--tree-indent-guide-color, rgba(128,128,128,0.2))',
-              pointerEvents: 'none',
+              pointerEvents: 'none'
             }}
           />
         ))}
@@ -262,7 +295,7 @@ const Tree: React.FC<TreeProps> = ({
               right: 0,
               height: '2px',
               backgroundColor: 'var(--list-active-selection-bg, #007acc)',
-              zIndex: 10,
+              zIndex: 10
             }}
           />
         )}
@@ -277,16 +310,14 @@ const Tree: React.FC<TreeProps> = ({
             backgroundColor: isSelected
               ? 'var(--list-active-selection-bg, #04395e)'
               : isHovered
-              ? 'var(--list-hover-background, #2a2d2e)'
-              : 'transparent',
-            color: isSelected
-              ? 'var(--list-active-selection-fg, #fff)'
-              : 'var(--foreground, #ccc)',
+                ? 'var(--list-hover-background, #2a2d2e)'
+                : 'transparent',
+            color: isSelected ? 'var(--list-active-selection-fg, #fff)' : 'var(--foreground, #ccc)',
             cursor: 'pointer',
             opacity: isDragging ? 0.5 : 1,
             outline: isDropInside ? '1px solid var(--accent-color, #007acc)' : 'none',
             outlineOffset: '-1px',
-            userSelect: 'none',
+            userSelect: 'none'
           }}
           draggable
           onClick={() => {
@@ -337,7 +368,7 @@ const Tree: React.FC<TreeProps> = ({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               fontSize: '13px',
-              lineHeight: `${ROW_HEIGHT}px`,
+              lineHeight: `${ROW_HEIGHT}px`
             }}
           >
             {node.name}
@@ -354,7 +385,7 @@ const Tree: React.FC<TreeProps> = ({
               right: 0,
               height: '2px',
               backgroundColor: 'var(--list-active-selection-bg, #007acc)',
-              zIndex: 10,
+              zIndex: 10
             }}
           />
         )}
@@ -369,7 +400,8 @@ const Tree: React.FC<TreeProps> = ({
       style={{
         height: '100%',
         overflow: 'auto',
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        fontFamily:
+          'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
       }}
       onDragOver={(e) => {
         e.preventDefault()
@@ -391,7 +423,7 @@ const Tree: React.FC<TreeProps> = ({
             padding: '4px 0',
             zIndex: 1000,
             minWidth: '120px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
           }}
         >
           <div
@@ -399,7 +431,7 @@ const Tree: React.FC<TreeProps> = ({
               padding: '6px 16px',
               cursor: 'pointer',
               fontSize: '13px',
-              color: 'var(--menu-fg, #ccc)',
+              color: 'var(--menu-fg, #ccc)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
@@ -422,7 +454,7 @@ const Tree: React.FC<TreeProps> = ({
               padding: '6px 16px',
               cursor: 'pointer',
               fontSize: '13px',
-              color: '#f85149',
+              color: '#f85149'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
@@ -448,7 +480,7 @@ const Tree: React.FC<TreeProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 999,
+            zIndex: 999
           }}
           onClick={() => setContextMenu(null)}
         />

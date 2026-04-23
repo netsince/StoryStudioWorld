@@ -62,7 +62,7 @@ export async function initDatabase(dbPath: string): Promise<Database> {
 }
 
 function migrateDatabase(db: Database): void {
-  const result = db.exec("PRAGMA table_info(nodes)")
+  const result = db.exec('PRAGMA table_info(nodes)')
   if (result.length === 0) return
 
   const columns = result[0].values.map((row) => row[1] as string)
@@ -180,10 +180,12 @@ export function renameNode(db: Database, nodeId: string, newName: string): Story
   const now = new Date().toISOString()
   const newFileName = node.type === 'file' ? `${newName}.md` : node.fileName
 
-  db.run(
-    `UPDATE nodes SET name = ?, fileName = ?, updatedAt = ? WHERE id = ?`,
-    [newName, newFileName, now, nodeId]
-  )
+  db.run(`UPDATE nodes SET name = ?, fileName = ?, updatedAt = ? WHERE id = ?`, [
+    newName,
+    newFileName,
+    now,
+    nodeId
+  ])
 
   return getNode(db, nodeId)
 }
@@ -227,10 +229,12 @@ export function moveNode(
   const now = new Date().toISOString()
   const sortOrder = getMaxSortOrder(db, newParentId) + 1
 
-  db.run(
-    `UPDATE nodes SET parentId = ?, sortOrder = ?, updatedAt = ? WHERE id = ?`,
-    [newParentId, sortOrder, now, nodeId]
-  )
+  db.run(`UPDATE nodes SET parentId = ?, sortOrder = ?, updatedAt = ? WHERE id = ?`, [
+    newParentId,
+    sortOrder,
+    now,
+    nodeId
+  ])
 
   return getNode(db, nodeId)
 }

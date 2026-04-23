@@ -76,7 +76,12 @@ const Editor: React.FC = () => {
         <div className="editor-split-child" style={{ flex: `${node.ratio} 1 0%` }}>
           {renderNode(node.first)}
         </div>
-        <SplitDivider direction={node.direction} splitId={node.id} ratio={node.ratio} onResize={onResizeSplit} />
+        <SplitDivider
+          direction={node.direction}
+          splitId={node.id}
+          ratio={node.ratio}
+          onResize={onResizeSplit}
+        />
         <div className="editor-split-child" style={{ flex: `${1 - node.ratio} 1 0%` }}>
           {renderNode(node.second)}
         </div>

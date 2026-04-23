@@ -45,53 +45,54 @@ export const StatusbarProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setEntries(newEntries)
   }, [])
 
-  const addEntry = useCallback((
-    id: string,
-    entry: Omit<IStatusbarEntry, 'id'>,
-    alignment: StatusbarAlignment,
-    priority?: number
-  ): IStatusbarEntryAccessor => {
-    // Create the entry
-    const newEntry: StoredEntry = {
-      id,
-      name: entry.name,
-      text: entry.text,
-      ariaLabel: entry.ariaLabel,
-      tooltip: entry.tooltip,
-      command: entry.command,
-      priority: priority ?? 0,
-      alignment
-    }
+  const addEntry = useCallback(
+    (
+      id: string,
+      entry: Omit<IStatusbarEntry, 'id'>,
+      alignment: StatusbarAlignment,
+      priority?: number
+    ): IStatusbarEntryAccessor => {
+      // Create the entry
+      const newEntry: StoredEntry = {
+        id,
+        name: entry.name,
+        text: entry.text,
+        ariaLabel: entry.ariaLabel,
+        tooltip: entry.tooltip,
+        command: entry.command,
+        priority: priority ?? 0,
+        alignment
+      }
 
-    // Add to entries
-    const newEntries = new Map(entriesRef.current)
-    newEntries.set(id, newEntry)
-    updateEntriesRef(newEntries)
+      // Add to entries
+      const newEntries = new Map(entriesRef.current)
+      newEntries.set(id, newEntry)
+      updateEntriesRef(newEntries)
 
-    const accessor: IStatusbarEntryAccessor = {
-      update: (entryUpdate: Partial<Omit<IStatusbarEntry, 'id'>>) => {
-        const current = entriesRef.current.get(id)
-        if (current) {
-          const updated = { ...current, ...entryUpdate }
+      const accessor: IStatusbarEntryAccessor = {
+        update: (entryUpdate: Partial<Omit<IStatusbarEntry, 'id'>>) => {
+          const current = entriesRef.current.get(id)
+          if (current) {
+            const updated = { ...current, ...entryUpdate }
+            const updatedEntries = new Map(entriesRef.current)
+            updatedEntries.set(id, updated)
+            updateEntriesRef(updatedEntries)
+          }
+        },
+        dispose: () => {
           const updatedEntries = new Map(entriesRef.current)
-          updatedEntries.set(id, updated)
+          updatedEntries.delete(id)
           updateEntriesRef(updatedEntries)
         }
-      },
-      dispose: () => {
-        const updatedEntries = new Map(entriesRef.current)
-        updatedEntries.delete(id)
-        updateEntriesRef(updatedEntries)
       }
-    }
 
-    return accessor
-  }, [updateEntriesRef])
+      return accessor
+    },
+    [updateEntriesRef]
+  )
 
   return (
-    <StatusbarContext.Provider value={{ entries, addEntry }}>
-      {children}
-    </StatusbarContext.Provider>
+    <StatusbarContext.Provider value={{ entries, addEntry }}>{children}</StatusbarContext.Provider>
   )
 }
 

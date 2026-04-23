@@ -30,7 +30,7 @@ class CommandService {
     return () => {
       const list = this.commands.get(id)
       if (list) {
-        const index = list.findIndex(cmd => cmd.groupId === groupId)
+        const index = list.findIndex((cmd) => cmd.groupId === groupId)
         if (index !== -1) {
           list.splice(index, 1)
         }
@@ -50,7 +50,7 @@ class CommandService {
 
     // 如果有活动组，优先执行活动组的命令
     if (this.activeGroupId) {
-      const activeCommand = commandList.find(cmd => cmd.groupId === this.activeGroupId)
+      const activeCommand = commandList.find((cmd) => cmd.groupId === this.activeGroupId)
       if (activeCommand) {
         try {
           const result = activeCommand.handler(...args)
@@ -62,7 +62,9 @@ class CommandService {
       }
 
       // 活动组没有该命令，发出警告
-      console.warn(`Command '${id}' not found in active group '${this.activeGroupId}', falling back to first available`)
+      console.warn(
+        `Command '${id}' not found in active group '${this.activeGroupId}', falling back to first available`
+      )
     }
 
     // 如果没有活动组或活动组没有该命令，执行第一个可用的命令
@@ -114,5 +116,5 @@ export const Commands = {
   NAV_FORWARD: 'navigation.forward',
 
   // 视图
-  ZEN_MODE: 'view.zenMode',
+  ZEN_MODE: 'view.zenMode'
 } as const

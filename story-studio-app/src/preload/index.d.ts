@@ -18,7 +18,11 @@ declare global {
       moveStoryNode: (input: MoveNodeInput) => Promise<StoryNode[]>
       reorderStoryNode: (input: ReorderNodeInput) => Promise<StoryNode[]>
       readNodeContent: (projectSettingsPath: string, nodeId: string) => Promise<string | null>
-      writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string) => Promise<void>
+      writeNodeContent: (
+        projectSettingsPath: string,
+        nodeId: string,
+        content: string
+      ) => Promise<void>
       getAppVersion: () => Promise<{
         version: string
         electron: string

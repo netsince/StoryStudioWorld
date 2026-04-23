@@ -285,7 +285,12 @@ export const useTabDrag = (args: {
         hideDropOverlay()
         return
       }
-      const operation = computeDropOperation(event.clientX, event.clientY, rect, overlayOffsetHeight)
+      const operation = computeDropOperation(
+        event.clientX,
+        event.clientY,
+        rect,
+        overlayOffsetHeight
+      )
       if (lastOverlaySideRef.current !== operation.side || !dropOverlay.visible) {
         lastOverlaySideRef.current = operation.side
         setDropOverlay({ visible: true, side: operation.side, overlay: operation.overlay })
@@ -348,4 +353,3 @@ export const useTabDrag = (args: {
     onGroupDrop
   }
 }
-

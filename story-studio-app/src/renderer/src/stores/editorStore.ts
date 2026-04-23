@@ -67,7 +67,9 @@ interface EditorState {
   groupEditorStates: Map<string, GroupEditorState>
   updateGroupEditorState: (groupId: string, state: Partial<GroupEditorState>) => void
   getGroupEditorState: (groupId: string) => GroupEditorState | undefined
-  onGroupEditorStateChange: (callback: (groupId: string, state: GroupEditorState) => void) => () => void
+  onGroupEditorStateChange: (
+    callback: (groupId: string, state: GroupEditorState) => void
+  ) => () => void
 
   // tab 视图状态
   tabScrollPositions: Map<string, TabScrollPosition>
@@ -138,7 +140,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (current !== groupId) {
         set({ activeGroupId: groupId })
         // 通知所有监听器
-        activeGroupListeners.forEach(cb => cb(groupId))
+        activeGroupListeners.forEach((cb) => cb(groupId))
       }
     },
     onActiveGroupChange: (callback: ActiveGroupChangeCallback) => {
@@ -156,7 +158,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set((s) => {
         const newStates = new Map(s.groupEditorStates)
         const current = newStates.get(groupId)
-        const mergedStats = { ...(current?.stats ?? { chars: 0, words: 0, charsWithoutSpaces: 0, paragraphs: 0, readingTime: 0 }), ...(state.stats ?? {}) }
+        const mergedStats = {
+          ...(current?.stats ?? {
+            chars: 0,
+            words: 0,
+            charsWithoutSpaces: 0,
+            paragraphs: 0,
+            readingTime: 0
+          }),
+          ...(state.stats ?? {})
+        }
         const newState: GroupEditorState = {
           stats: mergedStats,
           autoSaveEnabled: state.autoSaveEnabled ?? current?.autoSaveEnabled ?? false,
@@ -204,13 +215,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const entry = state.navHistory[newIndex]
       if (entry) {
         const group = findGroupNode(state.editorTree, entry.groupId)
-        if (group && group.tabs.some(t => t.id === entry.tabId)) {
+        if (group && group.tabs.some((t) => t.id === entry.tabId)) {
           set({
             navHistoryIndex: newIndex,
             focusedGroupId: entry.groupId
           })
           set((s) => ({
-            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({ ...g, activeTabId: entry.tabId }))
+            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({
+              ...g,
+              activeTabId: entry.tabId
+            }))
           }))
         }
       }
@@ -222,13 +236,16 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const entry = state.navHistory[newIndex]
       if (entry) {
         const group = findGroupNode(state.editorTree, entry.groupId)
-        if (group && group.tabs.some(t => t.id === entry.tabId)) {
+        if (group && group.tabs.some((t) => t.id === entry.tabId)) {
           set({
             navHistoryIndex: newIndex,
             focusedGroupId: entry.groupId
           })
           set((s) => ({
-            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({ ...g, activeTabId: entry.tabId }))
+            editorTree: updateGroup(s.editorTree, entry.groupId, (g) => ({
+              ...g,
+              activeTabId: entry.tabId
+            }))
           }))
         }
       }
@@ -256,7 +273,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const newHistory = state.navHistory.slice(0, state.navHistoryIndex + 1)
         // 避免连续重复记录相同位置
         const lastEntry = newHistory[newHistory.length - 1]
-        if (!lastEntry || lastEntry.groupId !== newEntry.groupId || lastEntry.tabId !== newEntry.tabId) {
+        if (
+          !lastEntry ||
+          lastEntry.groupId !== newEntry.groupId ||
+          lastEntry.tabId !== newEntry.tabId
+        ) {
           newHistory.push(newEntry)
           // 限制历史记录长度
           if (newHistory.length > 50) {
@@ -322,7 +343,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     switchTab: (groupId, tabId) => {
       set((state) => {
         const group = findGroupNode(state.editorTree, groupId)
-        const tab = group?.tabs.find(t => t.id === tabId)
+        const tab = group?.tabs.find((t) => t.id === tabId)
 
         // 记录导航历史
         if (tab) {
@@ -334,7 +355,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
           }
           const newHistory = state.navHistory.slice(0, state.navHistoryIndex + 1)
           const lastEntry = newHistory[newHistory.length - 1]
-          if (!lastEntry || lastEntry.groupId !== newEntry.groupId || lastEntry.tabId !== newEntry.tabId) {
+          if (
+            !lastEntry ||
+            lastEntry.groupId !== newEntry.groupId ||
+            lastEntry.tabId !== newEntry.tabId
+          ) {
             newHistory.push(newEntry)
             if (newHistory.length > 50) {
               newHistory.shift()
@@ -342,14 +367,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
           }
 
           return {
-            editorTree: updateGroup(state.editorTree, groupId, (g) => ({ ...g, activeTabId: tabId })),
+            editorTree: updateGroup(state.editorTree, groupId, (g) => ({
+              ...g,
+              activeTabId: tabId
+            })),
             navHistory: newHistory,
             navHistoryIndex: newHistory.length - 1
           }
         }
 
         return {
-          editorTree: updateGroup(state.editorTree, groupId, (group) => ({ ...group, activeTabId: tabId }))
+          editorTree: updateGroup(state.editorTree, groupId, (group) => ({
+            ...group,
+            activeTabId: tabId
+          }))
         }
       })
     },
@@ -368,13 +399,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
             if (!result.shouldClose) return
 
             set((state) => {
-              const tabStillExists = findGroupNode(state.editorTree, groupId)?.tabs.find((t) => t.id === tabId)
+              const tabStillExists = findGroupNode(state.editorTree, groupId)?.tabs.find(
+                (t) => t.id === tabId
+              )
               if (!tabStillExists) return state
 
               const nextTree = updateGroup(state.editorTree, groupId, (group) => {
                 const nextTabs = group.tabs.filter((item) => item.id !== tabId)
                 const nextActive =
-                  group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+                  group.activeTabId === tabId
+                    ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+                    : group.activeTabId
                 return { ...group, tabs: nextTabs, activeTabId: nextActive }
               })
               const collapsedTree = collapseEmptyGroups(nextTree)
@@ -383,7 +418,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
               nextTabScrollPositions.delete(tabId)
               return state.focusedGroupId === nextFocused
                 ? { editorTree: collapsedTree, tabScrollPositions: nextTabScrollPositions }
-                : { editorTree: collapsedTree, focusedGroupId: nextFocused, tabScrollPositions: nextTabScrollPositions }
+                : {
+                    editorTree: collapsedTree,
+                    focusedGroupId: nextFocused,
+                    tabScrollPositions: nextTabScrollPositions
+                  }
             })
           } finally {
             pendingCloseKeys.delete(closeKey)
@@ -396,7 +435,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const nextTree = updateGroup(state.editorTree, groupId, (group) => {
           const nextTabs = group.tabs.filter((item) => item.id !== tabId)
           const nextActive =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActive }
         })
         const collapsedTree = collapseEmptyGroups(nextTree)
@@ -405,7 +446,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
         nextTabScrollPositions.delete(tabId)
         return state.focusedGroupId === nextFocused
           ? { editorTree: collapsedTree, tabScrollPositions: nextTabScrollPositions }
-          : { editorTree: collapsedTree, focusedGroupId: nextFocused, tabScrollPositions: nextTabScrollPositions }
+          : {
+              editorTree: collapsedTree,
+              focusedGroupId: nextFocused,
+              tabScrollPositions: nextTabScrollPositions
+            }
       })
     },
 
@@ -441,7 +486,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set((state) => ({
         editorTree: updateGroup(state.editorTree, groupId, (group) => ({
           ...group,
-          tabs: group.tabs.map((tab) => (tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab))
+          tabs: group.tabs.map((tab) =>
+            tab.id === tabId ? { ...tab, isPinned: !tab.isPinned } : tab
+          )
         }))
       }))
     },
@@ -485,7 +532,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
           movedTab = tab
           const nextTabs = group.tabs.filter((t) => t.id !== tabId)
           const nextActiveTabId =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
         })
 
@@ -524,7 +573,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
           movedTab = tab
           const nextTabs = group.tabs.filter((t) => t.id !== tabId)
           const nextActiveTabId =
-            group.activeTabId === tabId ? (nextTabs[nextTabs.length - 1]?.id ?? '') : group.activeTabId
+            group.activeTabId === tabId
+              ? (nextTabs[nextTabs.length - 1]?.id ?? '')
+              : group.activeTabId
           return { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
         })
 
@@ -554,7 +605,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const newGroup: EditorGroupNode = tab
           ? { kind: 'group', id: createId('group'), tabs: [tab], activeTabId: tab.id }
           : createEmptyGroup()
-        const nextTree = collapseEmptyGroups(splitAtGroup(state.editorTree, groupId, direction, newGroup, 'second'))
+        const nextTree = collapseEmptyGroups(
+          splitAtGroup(state.editorTree, groupId, direction, newGroup, 'second')
+        )
         return { editorTree: nextTree, focusedGroupId: newGroup.id }
       })
     },

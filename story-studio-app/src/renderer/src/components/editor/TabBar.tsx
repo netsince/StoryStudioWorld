@@ -96,4 +96,3 @@ const TabBar: React.FC<TabBarProps> = ({
 }
 
 export default TabBar
-

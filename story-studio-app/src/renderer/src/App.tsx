@@ -59,7 +59,11 @@ function App(): React.JSX.Element {
             <div style={{ position: 'relative', display: 'flex', height: '100%' }}>
               {!isZenMode && <Explorer />}
               {isExplorerOpen && !isZenMode && (
-                <Sash side="left" onResize={handleExplorerResize} setIsDraggingGlobal={setIsDragging} />
+                <Sash
+                  side="left"
+                  onResize={handleExplorerResize}
+                  setIsDraggingGlobal={setIsDragging}
+                />
               )}
             </div>
 

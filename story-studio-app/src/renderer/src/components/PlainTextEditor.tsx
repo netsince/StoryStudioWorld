@@ -5,7 +5,11 @@ import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { useUiStore } from '../stores/uiStore'
 import { commandService, Commands } from '../services/commandService'
-import { getTabBehavior, getAutoSaveSettings, getAutoIndentSettings } from './editor/PreferencesPage'
+import {
+  getTabBehavior,
+  getAutoSaveSettings,
+  getAutoIndentSettings
+} from './editor/PreferencesPage'
 
 interface PlainTextEditorProps {
   content: string
@@ -17,7 +21,13 @@ interface PlainTextEditorProps {
 }
 
 // 全语言支持的字数统计
-function countTextStats(text: string): { chars: number; words: number; readingTime: number; charsWithoutSpaces: number; paragraphs: number } {
+function countTextStats(text: string): {
+  chars: number
+  words: number
+  readingTime: number
+  charsWithoutSpaces: number
+  paragraphs: number
+} {
   const trimmedText = text.trim()
 
   // 字符数：使用 Intl.Segmenter 支持所有语言（包括中文、日文、韩文等）
@@ -35,7 +45,7 @@ function countTextStats(text: string): { chars: number; words: number; readingTi
 
     // 统计词数（对于中文，每个字算一个词；对于英文，按空格分隔）
     const wordSegments = Array.from(wordSegmenter.segment(trimmedText))
-    words = wordSegments.filter(s => s.isWordLike).length
+    words = wordSegments.filter((s) => s.isWordLike).length
   } else {
     // 降级方案
     chars = trimmedText.length
@@ -46,15 +56,20 @@ function countTextStats(text: string): { chars: number; words: number; readingTi
 
     if (isMainlyCJK) {
       // CJK 语言：字符数约等于词数
-      words = trimmedText.split(/\s+/).filter(s => s.length > 0).reduce((acc, segment) => {
-        // 计算每个 segment 中的 CJK 字符数 + 英文单词数
-        const cjkChars = (segment.match(cjkPattern) || []).length
-        const englishWords = segment.split(/[^\w\u4e00-\u9fa5]+/).filter(s => /^[a-zA-Z]+$/.test(s)).length
-        return acc + cjkChars + englishWords
-      }, 0)
+      words = trimmedText
+        .split(/\s+/)
+        .filter((s) => s.length > 0)
+        .reduce((acc, segment) => {
+          // 计算每个 segment 中的 CJK 字符数 + 英文单词数
+          const cjkChars = (segment.match(cjkPattern) || []).length
+          const englishWords = segment
+            .split(/[^\w\u4e00-\u9fa5]+/)
+            .filter((s) => /^[a-zA-Z]+$/.test(s)).length
+          return acc + cjkChars + englishWords
+        }, 0)
     } else {
       // 其他语言：按空格分隔
-      words = trimmedText.split(/\s+/).filter(s => s.length > 0).length
+      words = trimmedText.split(/\s+/).filter((s) => s.length > 0).length
     }
   }
 
@@ -62,10 +77,10 @@ function countTextStats(text: string): { chars: number; words: number; readingTi
   const charsWithoutSpaces = trimmedText.replace(/\s+/g, '').length
 
   // 段落数（非空行）
-  const paragraphs = trimmedText.split(/\n/).filter(line => line.trim().length > 0).length
+  const paragraphs = trimmedText.split(/\n/).filter((line) => line.trim().length > 0).length
 
   // 阅读时间估算（假设中文阅读速度 300字/分钟，英文 200词/分钟）
-  const readingTime = Math.max(1, Math.ceil(words / 300 * 60))
+  const readingTime = Math.max(1, Math.ceil((words / 300) * 60))
 
   return { chars, words, readingTime, charsWithoutSpaces, paragraphs }
 }
@@ -123,7 +138,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         saved: tabId ? getTabScrollPosition(tabId) : undefined,
         ...extra
       }
-      // eslint-disable-next-line no-console
+
       console.debug(`[PlainTextEditor][scroll] ${message}`, payload)
     },
     [tabId, text.length]
@@ -167,7 +182,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       overlay.scrollTop = textarea.scrollTop
       overlay.scrollLeft = textarea.scrollLeft
     }
-    
+
     // 用 tabId 保存滚动位置
     if (tabId) {
       // content 同步触发的“被动滚动重置”不应覆盖原有的滚动记忆
@@ -222,7 +237,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (content !== text && !isUndoingRef.current) {
       // value 更新会导致浏览器把 textarea 滚动重置到顶部；等下一次 commit 后再恢复滚动位置
       pendingRestoreScrollRef.current = true
-      debugScroll('content->text sync (mark pending restore)', { contentLength: (content || '').length })
+      debugScroll('content->text sync (mark pending restore)', {
+        contentLength: (content || '').length
+      })
       setText(content || '')
     }
   }, [content, text, debugScroll])
@@ -245,9 +262,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
     const textarea = textareaRef.current
     const overlay = highlightOverlayRef.current
-    
+
     // 立即应用滚动位置
-    debugScroll('restore start', { reason: pendingRestoreScrollRef.current ? 'pending' : 'tabChanged' })
+    debugScroll('restore start', {
+      reason: pendingRestoreScrollRef.current ? 'pending' : 'tabChanged'
+    })
     textarea.scrollTop = saved.scrollTop
     textarea.scrollLeft = saved.scrollLeft
     if (overlay) {
@@ -263,14 +282,14 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   // 保存历史记录
   const saveHistory = useCallback((newText: string) => {
     if (isUndoingRef.current) return
-    
+
     // 如果新文本与当前历史记录相同，不保存
     if (historyRef.current[historyIndexRef.current] === newText) return
-    
+
     historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1)
     historyRef.current.push(newText)
     historyIndexRef.current = historyRef.current.length - 1
-    
+
     // 限制历史记录数量
     if (historyRef.current.length > 50) {
       historyRef.current.shift()
@@ -282,7 +301,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   useEffect(() => {
     if (isInitializedRef.current) return
     isInitializedRef.current = true
-    
+
     const initialContent = content || ''
     historyRef.current = [initialContent]
     historyIndexRef.current = 0
@@ -295,252 +314,329 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (!textarea) return
 
     // 编辑命令
-    const unregisterUndo = commandService.registerCommand(Commands.UNDO,() => {
-      if (historyIndexRef.current > 0) {
-        isUndoingRef.current = true
-        historyIndexRef.current--
-        const prevText = historyRef.current[historyIndexRef.current]
-        setText(prevText)
-        onChange(prevText)
-        requestAnimationFrame(() => {
-          textarea.focus()
-          isUndoingRef.current = false
-        })
-      }
-    }, groupId)
+    const unregisterUndo = commandService.registerCommand(
+      Commands.UNDO,
+      () => {
+        if (historyIndexRef.current > 0) {
+          isUndoingRef.current = true
+          historyIndexRef.current--
+          const prevText = historyRef.current[historyIndexRef.current]
+          setText(prevText)
+          onChange(prevText)
+          requestAnimationFrame(() => {
+            textarea.focus()
+            isUndoingRef.current = false
+          })
+        }
+      },
+      groupId
+    )
 
-    const unregisterRedo = commandService.registerCommand(Commands.REDO,() => {
-      if (historyIndexRef.current < historyRef.current.length - 1) {
-        isUndoingRef.current = true
-        historyIndexRef.current++
-        const nextText = historyRef.current[historyIndexRef.current]
-        setText(nextText)
-        onChange(nextText)
-        requestAnimationFrame(() => {
-          textarea.focus()
-          isUndoingRef.current = false
-        })
-      }
-    }, groupId)
+    const unregisterRedo = commandService.registerCommand(
+      Commands.REDO,
+      () => {
+        if (historyIndexRef.current < historyRef.current.length - 1) {
+          isUndoingRef.current = true
+          historyIndexRef.current++
+          const nextText = historyRef.current[historyIndexRef.current]
+          setText(nextText)
+          onChange(nextText)
+          requestAnimationFrame(() => {
+            textarea.focus()
+            isUndoingRef.current = false
+          })
+        }
+      },
+      groupId
+    )
 
-    const unregisterCut = commandService.registerCommand(Commands.CUT,async () => {
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const selectedText = textarea.value.substring(start, end)
-      if (selectedText) {
+    const unregisterCut = commandService.registerCommand(
+      Commands.CUT,
+      async () => {
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const selectedText = textarea.value.substring(start, end)
+        if (selectedText) {
+          try {
+            await navigator.clipboard.writeText(selectedText)
+            const newText = textarea.value.substring(0, start) + textarea.value.substring(end)
+            setText(newText)
+            onChange(newText)
+            saveHistory(newText)
+            requestAnimationFrame(() => {
+              textarea.selectionStart = textarea.selectionEnd = start
+            })
+          } catch (error) {
+            console.error('剪切失败:', error)
+            alert('剪切失败，请重试')
+          }
+        }
+      },
+      groupId
+    )
+
+    const unregisterCopy = commandService.registerCommand(
+      Commands.COPY,
+      async () => {
+        const selectedText = textarea.value.substring(
+          textarea.selectionStart,
+          textarea.selectionEnd
+        )
+        if (selectedText) {
+          try {
+            await navigator.clipboard.writeText(selectedText)
+          } catch (error) {
+            console.error('复制失败:', error)
+          }
+        }
+      },
+      groupId
+    )
+
+    const unregisterPaste = commandService.registerCommand(
+      Commands.PASTE,
+      async () => {
         try {
-          await navigator.clipboard.writeText(selectedText)
-          const newText = textarea.value.substring(0, start) + textarea.value.substring(end)
+          const clipboardText = await navigator.clipboard.readText()
+          const start = textarea.selectionStart
+          const end = textarea.selectionEnd
+          const newText =
+            textarea.value.substring(0, start) + clipboardText + textarea.value.substring(end)
           setText(newText)
           onChange(newText)
           saveHistory(newText)
           requestAnimationFrame(() => {
-            textarea.selectionStart = textarea.selectionEnd = start
-          })
-        } catch (error) {
-          console.error('剪切失败:', error)
-          alert('剪切失败，请重试')
-        }
-      }
-    }, groupId)
-
-    const unregisterCopy = commandService.registerCommand(Commands.COPY,async () => {
-      const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd)
-      if (selectedText) {
-        try {
-          await navigator.clipboard.writeText(selectedText)
-        } catch (error) {
-          console.error('复制失败:', error)
-        }
-      }
-    }, groupId)
-
-    const unregisterPaste = commandService.registerCommand(Commands.PASTE,async () => {
-      try {
-        const clipboardText = await navigator.clipboard.readText()
-        const start = textarea.selectionStart
-        const end = textarea.selectionEnd
-        const newText = textarea.value.substring(0, start) + clipboardText + textarea.value.substring(end)
-        setText(newText)
-        onChange(newText)
-        saveHistory(newText)
-        requestAnimationFrame(() => {
             textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length
           })
-      } catch {
-        // 剪贴板访问失败
-      }
-    }, groupId)
+        } catch {
+          // 剪贴板访问失败
+        }
+      },
+      groupId
+    )
 
-    const unregisterSelectAll = commandService.registerCommand(Commands.SELECT_ALL,() => {
-      restoreFocusAndSelection()
-      textarea.select()
-    }, groupId)
+    const unregisterSelectAll = commandService.registerCommand(
+      Commands.SELECT_ALL,
+      () => {
+        restoreFocusAndSelection()
+        textarea.select()
+      },
+      groupId
+    )
 
-    const unregisterFind = commandService.registerCommand(Commands.FIND,() => {
-      setIsFindWidgetVisible(true)
-    }, groupId)
+    const unregisterFind = commandService.registerCommand(
+      Commands.FIND,
+      () => {
+        setIsFindWidgetVisible(true)
+      },
+      groupId
+    )
 
     // 选择命令
-    const unregisterExpandSelection = commandService.registerCommand(Commands.EXPAND_SELECTION,() => {
-      restoreFocusAndSelection()
-      // 扩大选区：选中当前词或整行
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const value = textarea.value
-      
-      // 查找单词边界
-      let newStart = start
-      let newEnd = end
-      
-      // 向前找
-      while (newStart > 0 && /\S/.test(value[newStart - 1])) {
-        newStart--
-      }
-      
-      // 向后找
-      while (newEnd < value.length && /\S/.test(value[newEnd])) {
-        newEnd++
-      }
-      
-      if (newStart === start && newEnd === end && start !== end) {
-        // 如果已经是单词，扩展到整行
-        const lineStart = value.lastIndexOf('\n', start - 1) + 1
-        const lineEnd = value.indexOf('\n', end)
-        newStart = lineStart
-        newEnd = lineEnd === -1 ? value.length : lineEnd
-      }
-      
-      textarea.setSelectionRange(newStart, newEnd)
-      // 保存新的选区
-      savedSelectionRef.current = { start: newStart, end: newEnd }
-    }, groupId)
+    const unregisterExpandSelection = commandService.registerCommand(
+      Commands.EXPAND_SELECTION,
+      () => {
+        restoreFocusAndSelection()
+        // 扩大选区：选中当前词或整行
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const value = textarea.value
 
-    const unregisterShrinkSelection = commandService.registerCommand(Commands.SHRINK_SELECTION,() => {
-      restoreFocusAndSelection()
-      // 缩小选区：从两端各收缩一个字符
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      if (end > start) {
-        const newStart = start + 1
-        const newEnd = end - 1
-        textarea.setSelectionRange(newStart, newEnd)
-        savedSelectionRef.current = { start: newStart, end: newEnd }
-      }
-    }, groupId)
+        // 查找单词边界
+        let newStart = start
+        let newEnd = end
 
-    const unregisterSelectParagraph = commandService.registerCommand(Commands.SELECT_PARAGRAPH,() => {
-      restoreFocusAndSelection()
-      const value = textarea.value
-      const pos = textarea.selectionStart
-      
-      // 查找段落边界（空行或文档边界）
-      let start = pos
-      let end = pos
-      
-      // 向前找段落开始
-      while (start > 0) {
-        const char = value[start - 1]
-        if (char === '\n' && (start === 1 || value[start - 2] === '\n')) break
-        start--
-      }
-      
-      // 向后找段落结束
-      while (end < value.length) {
-        const char = value[end]
-        if (char === '\n' && (end === value.length - 1 || value[end + 1] === '\n')) {
-          end++
-          break
+        // 向前找
+        while (newStart > 0 && /\S/.test(value[newStart - 1])) {
+          newStart--
         }
-        end++
-      }
-      
-      textarea.setSelectionRange(start, end)
-      savedSelectionRef.current = { start, end }
-    }, groupId)
 
-    const unregisterCursorUp = commandService.registerCommand(Commands.CURSOR_UP,() => {
-      restoreFocusAndSelection()
-      const start = textarea.selectionStart
-      const value = textarea.value
-      const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
-      const currentLineOffset = start - currentLineStart
+        // 向后找
+        while (newEnd < value.length && /\S/.test(value[newEnd])) {
+          newEnd++
+        }
 
-      // 找到上一行
-      if (currentLineStart > 0) {
-        const prevLineEnd = currentLineStart - 1
-        const prevLineStart = value.lastIndexOf('\n', prevLineEnd - 1) + 1
-        const prevLineLength = prevLineEnd - prevLineStart
-        const newOffset = Math.min(currentLineOffset, prevLineLength)
-        const newPos = prevLineStart + newOffset
-        textarea.setSelectionRange(newPos, newPos)
-        savedSelectionRef.current = { start: newPos, end: newPos }
-      }
-    }, groupId)
+        if (newStart === start && newEnd === end && start !== end) {
+          // 如果已经是单词，扩展到整行
+          const lineStart = value.lastIndexOf('\n', start - 1) + 1
+          const lineEnd = value.indexOf('\n', end)
+          newStart = lineStart
+          newEnd = lineEnd === -1 ? value.length : lineEnd
+        }
 
-    const unregisterCursorDown = commandService.registerCommand(Commands.CURSOR_DOWN,() => {
-      restoreFocusAndSelection()
-      const start = textarea.selectionStart
-      const value = textarea.value
-      const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
-      const currentLineOffset = start - currentLineStart
-      const nextLineStart = value.indexOf('\n', start) + 1
+        textarea.setSelectionRange(newStart, newEnd)
+        // 保存新的选区
+        savedSelectionRef.current = { start: newStart, end: newEnd }
+      },
+      groupId
+    )
 
-      // 找到下一行
-      if (nextLineStart > 0 && nextLineStart < value.length) {
-        const nextLineEnd = value.indexOf('\n', nextLineStart)
-        const nextLineLength = nextLineEnd === -1 ? value.length - nextLineStart : nextLineEnd - nextLineStart
-        const newOffset = Math.min(currentLineOffset, nextLineLength)
-        const newPos = nextLineStart + newOffset
-        textarea.setSelectionRange(newPos, newPos)
-        savedSelectionRef.current = { start: newPos, end: newPos }
-      }
-    }, groupId)
+    const unregisterShrinkSelection = commandService.registerCommand(
+      Commands.SHRINK_SELECTION,
+      () => {
+        restoreFocusAndSelection()
+        // 缩小选区：从两端各收缩一个字符
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        if (end > start) {
+          const newStart = start + 1
+          const newEnd = end - 1
+          textarea.setSelectionRange(newStart, newEnd)
+          savedSelectionRef.current = { start: newStart, end: newEnd }
+        }
+      },
+      groupId
+    )
 
-    const unregisterCursorLeft = commandService.registerCommand(Commands.CURSOR_LEFT,() => {
-      restoreFocusAndSelection()
-      const start = textarea.selectionStart
-      if (start > 0) {
-        const newPos = start - 1
-        textarea.setSelectionRange(newPos, newPos)
-        savedSelectionRef.current = { start: newPos, end: newPos }
-      }
-    }, groupId)
+    const unregisterSelectParagraph = commandService.registerCommand(
+      Commands.SELECT_PARAGRAPH,
+      () => {
+        restoreFocusAndSelection()
+        const value = textarea.value
+        const pos = textarea.selectionStart
 
-    const unregisterCursorRight = commandService.registerCommand(Commands.CURSOR_RIGHT,() => {
-      restoreFocusAndSelection()
-      const end = textarea.selectionEnd
-      if (end < textarea.value.length) {
-        const newPos = end + 1
-        textarea.setSelectionRange(newPos, newPos)
-        savedSelectionRef.current = { start: newPos, end: newPos }
-      }
-    }, groupId)
+        // 查找段落边界（空行或文档边界）
+        let start = pos
+        let end = pos
+
+        // 向前找段落开始
+        while (start > 0) {
+          const char = value[start - 1]
+          if (char === '\n' && (start === 1 || value[start - 2] === '\n')) break
+          start--
+        }
+
+        // 向后找段落结束
+        while (end < value.length) {
+          const char = value[end]
+          if (char === '\n' && (end === value.length - 1 || value[end + 1] === '\n')) {
+            end++
+            break
+          }
+          end++
+        }
+
+        textarea.setSelectionRange(start, end)
+        savedSelectionRef.current = { start, end }
+      },
+      groupId
+    )
+
+    const unregisterCursorUp = commandService.registerCommand(
+      Commands.CURSOR_UP,
+      () => {
+        restoreFocusAndSelection()
+        const start = textarea.selectionStart
+        const value = textarea.value
+        const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
+        const currentLineOffset = start - currentLineStart
+
+        // 找到上一行
+        if (currentLineStart > 0) {
+          const prevLineEnd = currentLineStart - 1
+          const prevLineStart = value.lastIndexOf('\n', prevLineEnd - 1) + 1
+          const prevLineLength = prevLineEnd - prevLineStart
+          const newOffset = Math.min(currentLineOffset, prevLineLength)
+          const newPos = prevLineStart + newOffset
+          textarea.setSelectionRange(newPos, newPos)
+          savedSelectionRef.current = { start: newPos, end: newPos }
+        }
+      },
+      groupId
+    )
+
+    const unregisterCursorDown = commandService.registerCommand(
+      Commands.CURSOR_DOWN,
+      () => {
+        restoreFocusAndSelection()
+        const start = textarea.selectionStart
+        const value = textarea.value
+        const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
+        const currentLineOffset = start - currentLineStart
+        const nextLineStart = value.indexOf('\n', start) + 1
+
+        // 找到下一行
+        if (nextLineStart > 0 && nextLineStart < value.length) {
+          const nextLineEnd = value.indexOf('\n', nextLineStart)
+          const nextLineLength =
+            nextLineEnd === -1 ? value.length - nextLineStart : nextLineEnd - nextLineStart
+          const newOffset = Math.min(currentLineOffset, nextLineLength)
+          const newPos = nextLineStart + newOffset
+          textarea.setSelectionRange(newPos, newPos)
+          savedSelectionRef.current = { start: newPos, end: newPos }
+        }
+      },
+      groupId
+    )
+
+    const unregisterCursorLeft = commandService.registerCommand(
+      Commands.CURSOR_LEFT,
+      () => {
+        restoreFocusAndSelection()
+        const start = textarea.selectionStart
+        if (start > 0) {
+          const newPos = start - 1
+          textarea.setSelectionRange(newPos, newPos)
+          savedSelectionRef.current = { start: newPos, end: newPos }
+        }
+      },
+      groupId
+    )
+
+    const unregisterCursorRight = commandService.registerCommand(
+      Commands.CURSOR_RIGHT,
+      () => {
+        restoreFocusAndSelection()
+        const end = textarea.selectionEnd
+        if (end < textarea.value.length) {
+          const newPos = end + 1
+          textarea.setSelectionRange(newPos, newPos)
+          savedSelectionRef.current = { start: newPos, end: newPos }
+        }
+      },
+      groupId
+    )
 
     // 保存命令
-    const unregisterSave = commandService.registerCommand(Commands.SAVE, () => {
-      if (onSave) {
-        onSave()
-        lastSavedTextRef.current = textRef.current
-        const now = new Date()
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        updateGroupEditorState(groupId, { lastSavedAt: timeStr })
-      }
-    }, groupId)
+    const unregisterSave = commandService.registerCommand(
+      Commands.SAVE,
+      () => {
+        if (onSave) {
+          onSave()
+          lastSavedTextRef.current = textRef.current
+          const now = new Date()
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+          updateGroupEditorState(groupId, { lastSavedAt: timeStr })
+        }
+      },
+      groupId
+    )
 
     // 导航历史命令
-    const unregisterNavBack = commandService.registerCommand(Commands.NAV_BACK,() => {
-      goBack()
-    }, groupId)
+    const unregisterNavBack = commandService.registerCommand(
+      Commands.NAV_BACK,
+      () => {
+        goBack()
+      },
+      groupId
+    )
 
-    const unregisterNavForward = commandService.registerCommand(Commands.NAV_FORWARD,() => {
-      goForward()
-    }, groupId)
+    const unregisterNavForward = commandService.registerCommand(
+      Commands.NAV_FORWARD,
+      () => {
+        goForward()
+      },
+      groupId
+    )
 
     // 禅模式命令
-    const unregisterZenMode = commandService.registerCommand(Commands.ZEN_MODE,() => {
-      useUiStore.getState().toggleZenMode()
-    }, groupId)
+    const unregisterZenMode = commandService.registerCommand(
+      Commands.ZEN_MODE,
+      () => {
+        useUiStore.getState().toggleZenMode()
+      },
+      groupId
+    )
 
     return () => {
       unregisterUndo()
@@ -611,42 +707,45 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     scheduleAutoSave()
   }
 
-  const insertNewlineWithIndent = useCallback((textarea: HTMLTextAreaElement, fallbackIndent: string) => {
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const value = textarea.value
+  const insertNewlineWithIndent = useCallback(
+    (textarea: HTMLTextAreaElement, fallbackIndent: string) => {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const value = textarea.value
 
-    // 获取缩进：优先继承“上一行/当前行”的行首缩进；没有则使用设置里的缩进策略。
-    const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
-    let sourceLineStart = currentLineStart
-    let sourceLineEnd = value.indexOf('\n', currentLineStart)
-    if (sourceLineEnd === -1) sourceLineEnd = value.length
+      // 获取缩进：优先继承“上一行/当前行”的行首缩进；没有则使用设置里的缩进策略。
+      const currentLineStart = value.lastIndexOf('\n', start - 1) + 1
+      let sourceLineStart = currentLineStart
+      let sourceLineEnd = value.indexOf('\n', currentLineStart)
+      if (sourceLineEnd === -1) sourceLineEnd = value.length
 
-    // 若光标在行首，继承上一行缩进（更符合编辑器直觉）。
-    if (start === currentLineStart && currentLineStart > 0) {
-      const prevLineEnd = currentLineStart - 1 // '\n' 的位置
-      sourceLineStart = value.lastIndexOf('\n', prevLineEnd - 1) + 1
-      sourceLineEnd = prevLineEnd
-    }
+      // 若光标在行首，继承上一行缩进（更符合编辑器直觉）。
+      if (start === currentLineStart && currentLineStart > 0) {
+        const prevLineEnd = currentLineStart - 1 // '\n' 的位置
+        sourceLineStart = value.lastIndexOf('\n', prevLineEnd - 1) + 1
+        sourceLineEnd = prevLineEnd
+      }
 
-    const sourceLine = value.substring(sourceLineStart, sourceLineEnd)
-    const indentMatch = sourceLine.match(/^[\t ]+/)
-    const indent = (indentMatch?.[0] ?? '') || fallbackIndent
+      const sourceLine = value.substring(sourceLineStart, sourceLineEnd)
+      const indentMatch = sourceLine.match(/^[\t ]+/)
+      const indent = (indentMatch?.[0] ?? '') || fallbackIndent
 
-    const insertion = `\n${indent}`
-    const newText = value.substring(0, start) + insertion + value.substring(end)
+      const insertion = `\n${indent}`
+      const newText = value.substring(0, start) + insertion + value.substring(end)
 
-    setText(newText)
-    onChange(newText)
-    saveHistory(newText)
-    scheduleAutoSave()
+      setText(newText)
+      onChange(newText)
+      saveHistory(newText)
+      scheduleAutoSave()
 
-    requestAnimationFrame(() => {
-      textarea.focus()
-      const next = start + insertion.length
-      textarea.setSelectionRange(next, next)
-    })
-  }, [onChange, saveHistory, scheduleAutoSave])
+      requestAnimationFrame(() => {
+        textarea.focus()
+        const next = start + insertion.length
+        textarea.setSelectionRange(next, next)
+      })
+    },
+    [onChange, saveHistory, scheduleAutoSave]
+  )
 
   const handleCompositionStart = (): void => {
     isComposingRef.current = true
@@ -731,9 +830,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     if (e.key === 'Tab') {
       e.preventDefault()
       const tabBehavior = getTabBehavior()
-      const insertChars = tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
-      const removeChars = tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
-      
+      const insertChars =
+        tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
+      const removeChars =
+        tabBehavior === '4spaces' ? '    ' : tabBehavior === '2spaces' ? '  ' : '\t'
+
       const textarea = e.currentTarget
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
@@ -882,31 +983,34 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   }
 
   // 插入标点符号
-  const handleInsertPunctuation = useCallback((symbol: string) => {
-    const textarea = textareaRef.current
-    if (!textarea) return
+  const handleInsertPunctuation = useCallback(
+    (symbol: string) => {
+      const textarea = textareaRef.current
+      if (!textarea) return
 
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const value = textarea.value
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const value = textarea.value
 
-    let newOffset: number
-    if (symbol.length === 2 && ['「」', '『』', '""', '（）', '【】', '《》'].includes(symbol)) {
-      newOffset = start + 1
-    } else {
-      newOffset = start + symbol.length
-    }
+      let newOffset: number
+      if (symbol.length === 2 && ['「」', '『』', '""', '（）', '【】', '《》'].includes(symbol)) {
+        newOffset = start + 1
+      } else {
+        newOffset = start + symbol.length
+      }
 
-    const newText = value.substring(0, start) + symbol + value.substring(end)
-    setText(newText)
-    onChange(newText)
-    saveHistory(newText)
+      const newText = value.substring(0, start) + symbol + value.substring(end)
+      setText(newText)
+      onChange(newText)
+      saveHistory(newText)
 
-    requestAnimationFrame(() => {
-      textarea.focus()
-      textarea.setSelectionRange(newOffset, newOffset)
-    })
-  }, [onChange, saveHistory])
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(newOffset, newOffset)
+      })
+    },
+    [onChange, saveHistory]
+  )
 
   // 关闭标点工具栏
   const handleClosePunctuationBar = useCallback(() => {
@@ -980,11 +1084,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     highlightMatches.forEach((match, index) => {
       // 添加匹配前的文本
       if (match.start > lastIndex) {
-        parts.push(
-          <span key={`text-${index}`}>
-            {text.substring(lastIndex, match.start)}
-          </span>
-        )
+        parts.push(<span key={`text-${index}`}>{text.substring(lastIndex, match.start)}</span>)
       }
       // 添加高亮的匹配文本
       parts.push(
@@ -1007,10 +1107,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   }
 
   return (
-    <div className="plain-text-editor" onContextMenu={(e) => {
-      e.preventDefault()
-      setContextMenu({ x: e.clientX, y: e.clientY })
-    }}>
+    <div
+      className="plain-text-editor"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setContextMenu({ x: e.clientX, y: e.clientY })
+      }}
+    >
       <FindReplaceWidget
         isVisible={isFindWidgetVisible}
         onClose={handleCloseFindWidget}

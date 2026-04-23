@@ -96,7 +96,10 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
           return
         }
 
-        const content = await window.api.readNodeContent(currentProject.projectSettingsPath, activeTab.nodeId)
+        const content = await window.api.readNodeContent(
+          currentProject.projectSettingsPath,
+          activeTab.nodeId
+        )
         setEditorContent(content || '')
       } else {
         setEditorContent('')
@@ -152,7 +155,12 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
     }
 
     if (activeTab.type === 'create-project') {
-      return <CreateProjectForm onCreateProject={createProject} onPickProjectPath={() => window.api.pickProjectPath()} />
+      return (
+        <CreateProjectForm
+          onCreateProject={createProject}
+          onPickProjectPath={() => window.api.pickProjectPath()}
+        />
+      )
     }
 
     if (activeTab.type === 'about') {
@@ -251,7 +259,9 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
             },
             {
               key: 'pin',
-              label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned ? '取消固定' : '固定',
+              label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned
+                ? '取消固定'
+                : '固定',
               onSelect: () => togglePinTab(contextMenu.groupId, contextMenu.tabId)
             },
             {

@@ -96,7 +96,8 @@ const api = {
   }> => ipcRenderer.invoke('get-app-version'),
   toggleDevTools: (): void => ipcRenderer.send('toggle-devtools'),
   openNewWindow: (): void => ipcRenderer.send('open-new-window'),
-  setFullScreen: (fullScreen: boolean): void => ipcRenderer.send('window-set-fullscreen', fullScreen),
+  setFullScreen: (fullScreen: boolean): void =>
+    ipcRenderer.send('window-set-fullscreen', fullScreen),
   isFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window-is-fullscreen')
 }
 

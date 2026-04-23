@@ -14,7 +14,11 @@ interface CreateMenuPortalProps {
   onCreateFile: () => void
 }
 
-const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFolder, onCreateFile }) => {
+const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({
+  onClose,
+  onCreateFolder,
+  onCreateFile
+}) => {
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -49,7 +53,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFo
         border: '1px solid var(--border-color, #454545)',
         borderRadius: '4px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-        minWidth: '120px',
+        minWidth: '120px'
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -59,7 +63,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFo
           cursor: 'pointer',
           fontSize: '13px',
           color: 'var(--foreground, #ccc)',
-          whiteSpace: 'nowrap',
+          whiteSpace: 'nowrap'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
@@ -80,7 +84,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({ onClose, onCreateFo
           cursor: 'pointer',
           fontSize: '13px',
           color: 'var(--foreground, #ccc)',
-          whiteSpace: 'nowrap',
+          whiteSpace: 'nowrap'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
@@ -171,17 +175,41 @@ const Explorer: React.FC = () => {
     }
 
     return (
-      <div className="explorer-story" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div className="story-toolbar-panel" style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div className="story-toolbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px' }}>
-            <div className="story-toolbar-actions" style={{ position: 'relative', display: 'flex', gap: '2px' }}>
+      <div
+        className="explorer-story"
+        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+      >
+        <div
+          className="story-toolbar-panel"
+          style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}
+        >
+          <div
+            className="story-toolbar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '2px'
+            }}
+          >
+            <div
+              className="story-toolbar-actions"
+              style={{ position: 'relative', display: 'flex', gap: '2px' }}
+            >
               <button
                 className="story-toolbar-btn"
                 title="刷新"
                 disabled={isBusy}
                 onClick={() => void onRefreshStoryNodes()}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <polyline points="23 4 23 10 17 10"></polyline>
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                 </svg>
@@ -195,7 +223,14 @@ const Explorer: React.FC = () => {
                   setIsCreateMenuOpen((prev) => !prev)
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
@@ -229,47 +264,46 @@ const Explorer: React.FC = () => {
     <Sidebar isOpen={isOpen} width={width} side="left" className="explorer-panel">
       <div className="explorer-header">{activityTitle}</div>
 
-        <div className="explorer-body" style={{ height: 'calc(100% - 40px)' }}>
-          {activeActivity === 'chapter' ? (
-            <>
-              <div className="explorer-static-section" style={{ height: '100%' }}>
-                {renderStoryTree()}
+      <div className="explorer-body" style={{ height: 'calc(100% - 40px)' }}>
+        {activeActivity === 'chapter' ? (
+          <>
+            <div className="explorer-static-section" style={{ height: '100%' }}>
+              {renderStoryTree()}
 
-                {errorMessage && <div className="explorer-inline-error">{errorMessage}</div>}
+              {errorMessage && <div className="explorer-inline-error">{errorMessage}</div>}
 
-                {!currentProject && (
-                  <div className="explorer-recent-section">
-                    <div className="explorer-header" style={{ padding: '0 15px 10px 15px' }}>
-                      最近的项目
-                    </div>
-                    {recentProjects.length === 0 ? (
-                      <div className="explorer-list-item muted">暂无最近项目</div>
-                    ) : (
-                      recentProjects.map((project) => (
-                        <div
-                          key={project.projectSettingsPath}
-                          className="explorer-list-item"
-                          onClick={() => void onOpenRecentProject(project.projectSettingsPath)}
-                        >
-                          <svg className="icon icon-sm" viewBox="0 0 24 24">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                          </svg>
-                          {project.name}
-                        </div>
-                      ))
-                    )}
+              {!currentProject && (
+                <div className="explorer-recent-section">
+                  <div className="explorer-header" style={{ padding: '0 15px 10px 15px' }}>
+                    最近的项目
                   </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="explorer-content">
-              <div className="dev-placeholder-title">{activityTitle}</div>
-              <div className="dev-placeholder-text">功能开发中...</div>
+                  {recentProjects.length === 0 ? (
+                    <div className="explorer-list-item muted">暂无最近项目</div>
+                  ) : (
+                    recentProjects.map((project) => (
+                      <div
+                        key={project.projectSettingsPath}
+                        className="explorer-list-item"
+                        onClick={() => void onOpenRecentProject(project.projectSettingsPath)}
+                      >
+                        <svg className="icon icon-sm" viewBox="0 0 24 24">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        {project.name}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
+          </>
+        ) : (
+          <div className="explorer-content">
+            <div className="dev-placeholder-title">{activityTitle}</div>
+            <div className="dev-placeholder-text">功能开发中...</div>
+          </div>
+        )}
+      </div>
     </Sidebar>
   )
 }

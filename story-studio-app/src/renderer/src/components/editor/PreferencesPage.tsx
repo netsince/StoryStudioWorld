@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   editorTabBehavior: 'tab',
   autoSaveEnabled: true,
   autoSaveInterval: 30,
-  autoIndentEnabled: false,
+  autoIndentEnabled: false
 }
 
 const OPEN_SOURCE_FONTS = [
@@ -35,13 +35,13 @@ const OPEN_SOURCE_FONTS = [
   { name: 'Merriweather', value: 'Merriweather, serif' },
   { name: 'Source Serif Pro', value: '"Source Serif Pro", serif' },
   { name: 'IBM Plex Serif', value: '"IBM Plex Serif", serif' },
-  { name: 'Roboto Slab', value: '"Roboto Slab", serif' },
+  { name: 'Roboto Slab', value: '"Roboto Slab", serif' }
 ]
 
 const TAB_BEHAVIOR_OPTIONS: { value: TabBehavior; label: string }[] = [
   { value: 'tab', label: '插入制表符' },
   { value: '4spaces', label: '插入四个空格' },
-  { value: '2spaces', label: '插入两个空格' },
+  { value: '2spaces', label: '插入两个空格' }
 ]
 
 const loadSettings = (): AppSettings => {
@@ -69,41 +69,66 @@ const PreferencesPage: React.FC = () => {
   useEffect(() => {
     const ctx = document.createElement('canvas').getContext('2d')
     if (!ctx) return
-    
+
     const baseWidth = ctx.measureText('M').width
     const testFonts = [
-      'Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana',
-      'Courier New', 'Comic Sans MS', 'Trebuchet MS', 'Palatino Linotype',
-      'Lucida Console', 'Microsoft YaHei', 'SimSun', 'SimHei', 'KaiTi',
-      'FangSong', 'PingFang SC', 'Microsoft JhengHei', 'Apple Symbols',
+      'Arial',
+      'Helvetica',
+      'Times New Roman',
+      'Georgia',
+      'Verdana',
+      'Courier New',
+      'Comic Sans MS',
+      'Trebuchet MS',
+      'Palatino Linotype',
+      'Lucida Console',
+      'Microsoft YaHei',
+      'SimSun',
+      'SimHei',
+      'KaiTi',
+      'FangSong',
+      'PingFang SC',
+      'Microsoft JhengHei',
+      'Apple Symbols'
     ]
     const availableFonts: string[] = []
-    testFonts.forEach(font => {
+    testFonts.forEach((font) => {
       ctx.font = `72px ${font}, sans-serif`
       const width = ctx.measureText('M').width
       if (width !== baseWidth && !availableFonts.includes(font)) {
         availableFonts.push(font)
       }
     })
-    setSystemFonts(availableFonts.map(name => ({
-      name,
-      value: `"${name}", sans-serif`
-    })))
+    setSystemFonts(
+      availableFonts.map((name) => ({
+        name,
+        value: `"${name}", sans-serif`
+      }))
+    )
   }, [])
 
   const applySettings = (newSettings: Partial<AppSettings>) => {
     const updated = { ...settings, ...newSettings }
     setSettings(updated)
     saveSettings(updated)
-    
+
     if (newSettings.editorFontFamily !== undefined) {
-      document.documentElement.style.setProperty('--editor-font-family', newSettings.editorFontFamily)
+      document.documentElement.style.setProperty(
+        '--editor-font-family',
+        newSettings.editorFontFamily
+      )
     }
     if (newSettings.editorFontSize !== undefined) {
-      document.documentElement.style.setProperty('--editor-font-size', `${newSettings.editorFontSize}px`)
+      document.documentElement.style.setProperty(
+        '--editor-font-size',
+        `${newSettings.editorFontSize}px`
+      )
     }
     if (newSettings.editorLineHeight !== undefined) {
-      document.documentElement.style.setProperty('--editor-line-height', newSettings.editorLineHeight.toString())
+      document.documentElement.style.setProperty(
+        '--editor-line-height',
+        newSettings.editorLineHeight.toString()
+      )
     }
   }
 
@@ -115,37 +140,57 @@ const PreferencesPage: React.FC = () => {
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>编辑器</h3>
-            
+
             {/* 预览 */}
-            <div style={{ 
-              marginBottom: '24px',
-              backgroundColor: 'var(--panel-bg)',
-              borderRadius: '8px',
-              padding: '20px',
-              border: '1px solid var(--border-color)',
-            }}>
-              <div style={{ 
-                fontFamily: settings.editorFontFamily,
-                fontSize: `${settings.editorFontSize}px`,
-                lineHeight: settings.editorLineHeight,
-                color: 'var(--text-color)',
-              }}>
+            <div
+              style={{
+                marginBottom: '24px',
+                backgroundColor: 'var(--panel-bg)',
+                borderRadius: '8px',
+                padding: '20px',
+                border: '1px solid var(--border-color)'
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: settings.editorFontFamily,
+                  fontSize: `${settings.editorFontSize}px`,
+                  lineHeight: settings.editorLineHeight,
+                  color: 'var(--text-color)'
+                }}
+              >
                 <div style={{ marginBottom: '8px' }}>{PREVIEW_TEXT_CN}</div>
-                <div style={{ fontSize: `${settings.editorFontSize - 2}px`, color: 'var(--text-muted)' }}>{PREVIEW_TEXT_EN}</div>
+                <div
+                  style={{
+                    fontSize: `${settings.editorFontSize - 2}px`,
+                    color: 'var(--text-muted)'
+                  }}
+                >
+                  {PREVIEW_TEXT_EN}
+                </div>
               </div>
             </div>
 
             {/* 字体 */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 字体
               </label>
-              <div style={{ 
-                maxHeight: '180px', 
-                overflow: 'auto', 
-                border: '1px solid var(--border-color)',
-                borderRadius: '6px',
-              }}>
+              <div
+                style={{
+                  maxHeight: '180px',
+                  overflow: 'auto',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px'
+                }}
+              >
                 {allFonts.map((font, idx) => (
                   <div
                     key={idx}
@@ -153,15 +198,25 @@ const PreferencesPage: React.FC = () => {
                     style={{
                       padding: '10px 12px',
                       cursor: 'pointer',
-                      backgroundColor: settings.editorFontFamily === font.value ? 'var(--bg-hover)' : 'transparent',
-                      borderBottom: idx < allFonts.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                      backgroundColor:
+                        settings.editorFontFamily === font.value
+                          ? 'var(--bg-hover)'
+                          : 'transparent',
+                      borderBottom:
+                        idx < allFonts.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
+                      alignItems: 'center'
                     }}
                   >
                     <span style={{ fontSize: '13px' }}>{font.name}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: font.value }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--text-muted)',
+                        fontFamily: font.value
+                      }}
+                    >
                       Aa
                     </span>
                   </div>
@@ -171,7 +226,14 @@ const PreferencesPage: React.FC = () => {
 
             {/* 字号 */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 字号: {settings.editorFontSize}px
               </label>
               <input
@@ -180,10 +242,17 @@ const PreferencesPage: React.FC = () => {
                 max="32"
                 step="1"
                 value={settings.editorFontSize}
-                onChange={e => applySettings({ editorFontSize: parseInt(e.target.value) })}
+                onChange={(e) => applySettings({ editorFontSize: parseInt(e.target.value) })}
                 style={{ width: '100%' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)'
+                }}
+              >
                 <span>12px</span>
                 <span>32px</span>
               </div>
@@ -191,7 +260,14 @@ const PreferencesPage: React.FC = () => {
 
             {/* 行高 */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 行高: {settings.editorLineHeight}
               </label>
               <input
@@ -200,10 +276,17 @@ const PreferencesPage: React.FC = () => {
                 max="3.0"
                 step="0.1"
                 value={settings.editorLineHeight}
-                onChange={e => applySettings({ editorLineHeight: parseFloat(e.target.value) })}
+                onChange={(e) => applySettings({ editorLineHeight: parseFloat(e.target.value) })}
                 style={{ width: '100%' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)'
+                }}
+              >
                 <span>紧凑</span>
                 <span>宽松</span>
               </div>
@@ -211,11 +294,18 @@ const PreferencesPage: React.FC = () => {
 
             {/* 按下 Tab 时 */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 按下 Tab 时
               </label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {TAB_BEHAVIOR_OPTIONS.map(option => (
+                {TAB_BEHAVIOR_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => applySettings({ editorTabBehavior: option.value })}
@@ -223,10 +313,14 @@ const PreferencesPage: React.FC = () => {
                       padding: '8px 14px',
                       border: '1px solid var(--border-color)',
                       borderRadius: '6px',
-                      background: settings.editorTabBehavior === option.value ? 'var(--accent-color)' : 'transparent',
-                      color: settings.editorTabBehavior === option.value ? '#fff' : 'var(--text-color)',
+                      background:
+                        settings.editorTabBehavior === option.value
+                          ? 'var(--accent-color)'
+                          : 'transparent',
+                      color:
+                        settings.editorTabBehavior === option.value ? '#fff' : 'var(--text-color)',
                       cursor: 'pointer',
-                      fontSize: '13px',
+                      fontSize: '13px'
                     }}
                   >
                     {option.label}
@@ -237,15 +331,26 @@ const PreferencesPage: React.FC = () => {
 
             {/* 自动保存 */}
             <div>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 自动保存
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}
+              >
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
                   <input
                     type="checkbox"
                     checked={settings.autoSaveEnabled}
-                    onChange={e => applySettings({ autoSaveEnabled: e.target.checked })}
+                    onChange={(e) => applySettings({ autoSaveEnabled: e.target.checked })}
                     style={{ width: '16px', height: '16px' }}
                   />
                   <span style={{ fontSize: '13px' }}>启用自动保存</span>
@@ -256,14 +361,14 @@ const PreferencesPage: React.FC = () => {
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>保存间隔:</span>
                   <select
                     value={settings.autoSaveInterval}
-                    onChange={e => applySettings({ autoSaveInterval: parseInt(e.target.value) })}
+                    onChange={(e) => applySettings({ autoSaveInterval: parseInt(e.target.value) })}
                     style={{
                       padding: '6px 10px',
                       border: '1px solid var(--border-color)',
                       borderRadius: '6px',
                       background: 'var(--bg-color)',
                       color: 'var(--text-color)',
-                      fontSize: '13px',
+                      fontSize: '13px'
                     }}
                   >
                     <option value={10}>10 秒</option>
@@ -278,22 +383,32 @@ const PreferencesPage: React.FC = () => {
 
             {/* 自动缩进 */}
             <div style={{ marginTop: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
                 自动缩进
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
                   <input
                     type="checkbox"
                     checked={settings.autoIndentEnabled}
-                    onChange={e => applySettings({ autoIndentEnabled: e.target.checked })}
+                    onChange={(e) => applySettings({ autoIndentEnabled: e.target.checked })}
                     style={{ width: '16px', height: '16px' }}
                   />
                   <span style={{ fontSize: '13px' }}>换行时自动添加缩进</span>
                 </label>
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                当前缩进策略: {TAB_BEHAVIOR_OPTIONS.find(o => o.value === settings.editorTabBehavior)?.label}
+                当前缩进策略:{' '}
+                {TAB_BEHAVIOR_OPTIONS.find((o) => o.value === settings.editorTabBehavior)?.label}
               </div>
             </div>
           </div>
@@ -307,14 +422,14 @@ const PreferencesPage: React.FC = () => {
   return (
     <div style={{ height: '100%', display: 'flex', backgroundColor: 'var(--bg-color)' }}>
       {/* 侧边栏 */}
-      <div style={{ 
-        width: '180px', 
-        borderRight: '1px solid var(--border-color)',
-        padding: '12px 0',
-      }}>
-        {[
-          { id: 'editor', label: '编辑器', icon: '📝' },
-        ].map(section => (
+      <div
+        style={{
+          width: '180px',
+          borderRight: '1px solid var(--border-color)',
+          padding: '12px 0'
+        }}
+      >
+        {[{ id: 'editor', label: '编辑器', icon: '📝' }].map((section) => (
           <div
             key={section.id}
             onClick={() => setActiveSection(section.id)}
@@ -322,11 +437,14 @@ const PreferencesPage: React.FC = () => {
               padding: '10px 16px',
               cursor: 'pointer',
               backgroundColor: activeSection === section.id ? 'var(--bg-hover)' : 'transparent',
-              borderLeft: activeSection === section.id ? '2px solid var(--accent-color)' : '2px solid transparent',
+              borderLeft:
+                activeSection === section.id
+                  ? '2px solid var(--accent-color)'
+                  : '2px solid transparent',
               fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '8px'
             }}
           >
             <span>{section.icon}</span>
@@ -336,9 +454,7 @@ const PreferencesPage: React.FC = () => {
       </div>
 
       {/* 主内容 */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {renderSection()}
-      </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>{renderSection()}</div>
     </div>
   )
 }
@@ -356,7 +472,10 @@ export const applyAppSettings = (settings: AppSettings): void => {
     document.documentElement.style.setProperty('--editor-font-size', `${settings.editorFontSize}px`)
   }
   if (settings.editorLineHeight) {
-    document.documentElement.style.setProperty('--editor-line-height', settings.editorLineHeight.toString())
+    document.documentElement.style.setProperty(
+      '--editor-line-height',
+      settings.editorLineHeight.toString()
+    )
   }
 }
 
@@ -374,9 +493,12 @@ export const getAutoIndentSettings = (): { enabled: boolean; indent: string } =>
   try {
     const saved = localStorage.getItem('ssw:app-settings')
     const settings = saved ? JSON.parse(saved) : DEFAULT_SETTINGS
-    const indent = (settings.editorTabBehavior === '4spaces' ? '    '
-      : settings.editorTabBehavior === '2spaces' ? '  '
-      : '\t')
+    const indent =
+      settings.editorTabBehavior === '4spaces'
+        ? '    '
+        : settings.editorTabBehavior === '2spaces'
+          ? '  '
+          : '\t'
     return { enabled: settings.autoIndentEnabled ?? false, indent }
   } catch {
     return { enabled: false, indent: '\t' }

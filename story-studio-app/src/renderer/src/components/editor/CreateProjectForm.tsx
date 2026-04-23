@@ -35,8 +35,8 @@ const CreateProjectForm: React.FC<{
       <div className="create-project-shell">
         <div className="create-project-title">新建项目</div>
         <div className="create-project-subtitle">
-          填写项目名、简介和项目路径。创建后会自动生成 <code>storystudioworld.sswprojectsetting</code>{' '}
-          项目文件。
+          填写项目名、简介和项目路径。创建后会自动生成{' '}
+          <code>storystudioworld.sswprojectsetting</code> 项目文件。
         </div>
 
         <form className="create-project-form" onSubmit={(event) => void handleSubmit(event)}>
@@ -44,7 +44,9 @@ const CreateProjectForm: React.FC<{
             <span>项目名</span>
             <input
               value={form.projectName}
-              onChange={(event) => setForm((prev) => ({ ...prev, projectName: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, projectName: event.target.value }))
+              }
               placeholder="例如：长夜群星"
             />
           </label>
@@ -53,7 +55,9 @@ const CreateProjectForm: React.FC<{
             <span>项目简介</span>
             <textarea
               value={form.description}
-              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, description: event.target.value }))
+              }
               placeholder="简单描述这个故事项目。"
               rows={5}
             />
@@ -64,7 +68,9 @@ const CreateProjectForm: React.FC<{
             <div className="path-picker-row">
               <input
                 value={form.projectPath}
-                onChange={(event) => setForm((prev) => ({ ...prev, projectPath: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, projectPath: event.target.value }))
+                }
                 placeholder="选择一个空文件夹路径"
               />
               <button
@@ -94,4 +100,3 @@ const CreateProjectForm: React.FC<{
 }
 
 export default CreateProjectForm
-

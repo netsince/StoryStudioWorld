@@ -35,16 +35,19 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
   // 查找所有匹配
-  const findAllMatches = useCallback((searchText: string): { start: number; end: number }[] => {
-    if (!searchText) return []
-    const result: { start: number; end: number }[] = []
-    let index = text.toLowerCase().indexOf(searchText.toLowerCase())
-    while (index !== -1) {
-      result.push({ start: index, end: index + searchText.length })
-      index = text.toLowerCase().indexOf(searchText.toLowerCase(), index + 1)
-    }
-    return result
-  }, [text])
+  const findAllMatches = useCallback(
+    (searchText: string): { start: number; end: number }[] => {
+      if (!searchText) return []
+      const result: { start: number; end: number }[] = []
+      let index = text.toLowerCase().indexOf(searchText.toLowerCase())
+      while (index !== -1) {
+        result.push({ start: index, end: index + searchText.length })
+        index = text.toLowerCase().indexOf(searchText.toLowerCase(), index + 1)
+      }
+      return result
+    },
+    [text]
+  )
 
   // 更新匹配结果
   useEffect(() => {
@@ -71,15 +74,18 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   }, [matches, currentMatchIndex, onMatchesChange])
 
   // 高亮匹配（shouldFocus 控制是否夺取焦点）
-  const highlightMatch = useCallback((match: { start: number; end: number } | null, shouldFocus = false) => {
-    const textarea = textareaRef.current
-    if (!textarea || !match) return
+  const highlightMatch = useCallback(
+    (match: { start: number; end: number } | null, shouldFocus = false) => {
+      const textarea = textareaRef.current
+      if (!textarea || !match) return
 
-    if (shouldFocus) {
-      textarea.focus()
-    }
-    textarea.setSelectionRange(match.start, match.end)
-  }, [textareaRef])
+      if (shouldFocus) {
+        textarea.focus()
+      }
+      textarea.setSelectionRange(match.start, match.end)
+    },
+    [textareaRef]
+  )
 
   // 上一个匹配
   const handlePrevMatch = useCallback(() => {
@@ -123,7 +129,17 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
         highlightMatch(newMatches[newIndex], true)
       }
     }, 0)
-  }, [matches, currentMatchIndex, text, replaceText, findText, textareaRef, onTextChange, findAllMatches, highlightMatch])
+  }, [
+    matches,
+    currentMatchIndex,
+    text,
+    replaceText,
+    findText,
+    textareaRef,
+    onTextChange,
+    findAllMatches,
+    highlightMatch
+  ])
 
   // 替换所有匹配
   const handleReplaceAll = useCallback(() => {
@@ -274,11 +290,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
             </>
           )}
 
-          <button
-            className="find-replace-btn close-btn"
-            onClick={onClose}
-            title="关闭 (Esc)"
-          >
+          <button className="find-replace-btn close-btn" onClick={onClose} title="关闭 (Esc)">
             ✕
           </button>
         </div>

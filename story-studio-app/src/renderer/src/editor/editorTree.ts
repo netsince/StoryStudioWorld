@@ -135,11 +135,9 @@ export const collapseEmptyGroups = (node: EditorNode): EditorNode => {
 export const removeTabsByType = (node: EditorNode, tabType: Tab['type']): EditorNode =>
   mapGroups(node, (group) => {
     const nextTabs = group.tabs.filter((tab) => tab.type !== tabType)
-    const nextActiveTabId = group.activeTabId && nextTabs.some((t) => t.id === group.activeTabId)
-      ? group.activeTabId
-      : ''
+    const nextActiveTabId =
+      group.activeTabId && nextTabs.some((t) => t.id === group.activeTabId) ? group.activeTabId : ''
     return group.tabs === nextTabs && group.activeTabId === nextActiveTabId
       ? group
       : { ...group, tabs: nextTabs, activeTabId: nextActiveTabId }
   })
-

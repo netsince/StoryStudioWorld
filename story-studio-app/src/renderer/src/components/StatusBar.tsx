@@ -5,20 +5,24 @@ const StatusBar: React.FC = () => {
   const { entries } = useStatusbar()
 
   const leftEntries = useMemo(() => {
-    return Array.from(entries.values())
-      .filter(e => e.alignment === StatusbarAlignment.LEFT)
-      // priority 数值越大优先级越高，排在前面（靠外侧）
-      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    return (
+      Array.from(entries.values())
+        .filter((e) => e.alignment === StatusbarAlignment.LEFT)
+        // priority 数值越大优先级越高，排在前面（靠外侧）
+        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    )
   }, [entries])
 
   const rightEntries = useMemo(() => {
-    return Array.from(entries.values())
-      .filter(e => e.alignment === StatusbarAlignment.RIGHT)
-      // priority 数值越大优先级越高，排在前面（靠外侧）
-      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    return (
+      Array.from(entries.values())
+        .filter((e) => e.alignment === StatusbarAlignment.RIGHT)
+        // priority 数值越大优先级越高，排在前面（靠外侧）
+        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    )
   }, [entries])
 
-  const renderEntry = (entry: typeof leftEntries[0]) => (
+  const renderEntry = (entry: (typeof leftEntries)[0]) => (
     <div
       key={entry.id}
       className="status-item"
@@ -32,12 +36,8 @@ const StatusBar: React.FC = () => {
 
   return (
     <div className="status-bar">
-      <div className="status-left">
-        {leftEntries.map(renderEntry)}
-      </div>
-      <div className="status-right">
-        {rightEntries.map(renderEntry)}
-      </div>
+      <div className="status-left">{leftEntries.map(renderEntry)}</div>
+      <div className="status-right">{rightEntries.map(renderEntry)}</div>
     </div>
   )
 }

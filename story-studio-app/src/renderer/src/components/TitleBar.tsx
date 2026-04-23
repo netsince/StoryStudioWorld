@@ -10,19 +10,10 @@ const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 type MenuId = 'file' | 'edit' | 'select' | 'view' | 'goto' | 'help' | null
 
 const TitleBar: React.FC = () => {
-  const {
-    openWelcomeTab,
-    openCreateProjectTab,
-    openAboutTab,
-    openPreferencesTab,
-  } = useEditorStore()
+  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab } =
+    useEditorStore()
 
-  const {
-    currentProject,
-    openProject,
-    createStoryNode,
-    storyNodes,
-  } = useProjectStore()
+  const { currentProject, openProject, createStoryNode, storyNodes } = useProjectStore()
 
   const handleMinimize = (): void => window.api.minimize()
   const handleMaximize = (): void => window.api.maximize()
@@ -37,7 +28,7 @@ const TitleBar: React.FC = () => {
     select: useRef<HTMLSpanElement>(null),
     view: useRef<HTMLSpanElement>(null),
     goto: useRef<HTMLSpanElement>(null),
-    help: useRef<HTMLSpanElement>(null),
+    help: useRef<HTMLSpanElement>(null)
   }
 
   // 点击外部关闭菜单
@@ -75,7 +66,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         void openProject()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'new-project',
@@ -83,12 +74,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         openCreateProjectTab()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator1',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'new-folder',
@@ -100,7 +91,7 @@ const TitleBar: React.FC = () => {
         } else {
           alert('请先打开一个项目')
         }
-      },
+      }
     },
     {
       key: 'new-chapter',
@@ -115,12 +106,12 @@ const TitleBar: React.FC = () => {
         } else {
           alert('请先打开一个项目')
         }
-      },
+      }
     },
     {
       key: 'separator2',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'save',
@@ -128,20 +119,20 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.SAVE)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator3',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'close-window',
       label: '关闭窗口',
       onSelect: () => {
         handleClose()
-      },
-    },
+      }
+    }
   ]
 
   // 编辑菜单
@@ -152,7 +143,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.UNDO)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'redo',
@@ -160,12 +151,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.REDO)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator1',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'cut',
@@ -173,7 +164,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.CUT)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'copy',
@@ -181,7 +172,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.COPY)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'paste',
@@ -189,12 +180,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.PASTE)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator2',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'find',
@@ -202,8 +193,8 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.FIND)
         setActiveMenu(null)
-      },
-    },
+      }
+    }
   ]
 
   // 选择菜单
@@ -214,7 +205,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.SELECT_ALL)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'expand-selection',
@@ -222,7 +213,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.EXPAND_SELECTION)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'shrink-selection',
@@ -230,12 +221,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.SHRINK_SELECTION)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator1',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'select-paragraph',
@@ -243,12 +234,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.SELECT_PARAGRAPH)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator2',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'cursor-up',
@@ -256,7 +247,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_UP)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'cursor-down',
@@ -264,7 +255,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_DOWN)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'cursor-left',
@@ -272,7 +263,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_LEFT)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'cursor-right',
@@ -280,8 +271,8 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_RIGHT)
         setActiveMenu(null)
-      },
-    },
+      }
+    }
   ]
 
   // 查看菜单
@@ -292,12 +283,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         useUiStore.getState().toggleZenMode()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator-zen',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'dev-tools',
@@ -305,8 +296,8 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         window.api.toggleDevTools()
         setActiveMenu(null)
-      },
-    },
+      }
+    }
   ]
 
   // 转到菜单
@@ -317,7 +308,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         openWelcomeTab()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'preferences',
@@ -325,12 +316,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         openPreferencesTab()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator1',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'back',
@@ -338,7 +329,7 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.NAV_BACK)
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'forward',
@@ -346,8 +337,8 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         commandService.executeCommand(Commands.NAV_FORWARD)
         setActiveMenu(null)
-      },
-    },
+      }
+    }
   ]
 
   // 帮助菜单
@@ -358,12 +349,12 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         window.api.toggleDevTools()
         setActiveMenu(null)
-      },
+      }
     },
     {
       key: 'separator1',
       label: '---',
-      onSelect: () => {},
+      onSelect: () => {}
     },
     {
       key: 'about',
@@ -371,8 +362,8 @@ const TitleBar: React.FC = () => {
       onSelect: () => {
         openAboutTab()
         setActiveMenu(null)
-      },
-    },
+      }
+    }
   ]
 
   const menuItemsMap: Record<Exclude<MenuId, null>, ContextMenuItem[]> = {
@@ -381,7 +372,7 @@ const TitleBar: React.FC = () => {
     select: selectMenuItems,
     view: viewMenuItems,
     goto: gotoMenuItems,
-    help: helpMenuItems,
+    help: helpMenuItems
   }
 
   return (

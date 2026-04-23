@@ -21,21 +21,27 @@ const AboutPage: React.FC = () => {
   // 解析操作系统信息
   const getOSInfo = (platform: string): string => {
     switch (platform) {
-      case 'win32': return 'Windows'
-      case 'darwin': return 'macOS'
-      case 'linux': return 'Linux'
-      default: return platform
+      case 'win32':
+        return 'Windows'
+      case 'darwin':
+        return 'macOS'
+      case 'linux':
+        return 'Linux'
+      default:
+        return platform
     }
   }
 
-  const infoItems = versionInfo ? [
-    { label: '版本', value: versionInfo.version },
-    { label: 'Electron', value: versionInfo.electron },
-    { label: 'Chromium', value: versionInfo.chrome },
-    { label: 'Node.js', value: versionInfo.node },
-    { label: 'V8', value: versionInfo.v8 },
-    { label: '操作系统', value: getOSInfo(versionInfo.platform) },
-  ] : []
+  const infoItems = versionInfo
+    ? [
+        { label: '版本', value: versionInfo.version },
+        { label: 'Electron', value: versionInfo.electron },
+        { label: 'Chromium', value: versionInfo.chrome },
+        { label: 'Node.js', value: versionInfo.node },
+        { label: 'V8', value: versionInfo.v8 },
+        { label: '操作系统', value: getOSInfo(versionInfo.platform) }
+      ]
+    : []
 
   return (
     <div
@@ -49,7 +55,7 @@ const AboutPage: React.FC = () => {
         padding: '40px',
         backgroundColor: 'var(--bg-color, #1e1e1e)',
         color: 'var(--text-color, #cccccc)',
-        overflow: 'auto',
+        overflow: 'auto'
       }}
     >
       {/* Logo */}
@@ -58,7 +64,7 @@ const AboutPage: React.FC = () => {
         style={{
           width: '120px',
           height: '120px',
-          marginBottom: '24px',
+          marginBottom: '24px'
         }}
       >
         <img
@@ -67,7 +73,7 @@ const AboutPage: React.FC = () => {
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
+            objectFit: 'contain'
           }}
         />
       </div>
@@ -78,7 +84,7 @@ const AboutPage: React.FC = () => {
           fontSize: '28px',
           fontWeight: 600,
           marginBottom: '32px',
-          color: 'var(--text-color, #ffffff)',
+          color: 'var(--text-color, #ffffff)'
         }}
       >
         Story Studio World
@@ -91,7 +97,7 @@ const AboutPage: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
-          minWidth: '280px',
+          minWidth: '280px'
         }}
       >
         {infoItems.map((item) => (
@@ -100,13 +106,13 @@ const AboutPage: React.FC = () => {
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '13px',
+              fontSize: '13px'
             }}
           >
             <span
               style={{
                 color: 'var(--text-muted, #858585)',
-                marginRight: '24px',
+                marginRight: '24px'
               }}
             >
               {item.label}
@@ -114,7 +120,7 @@ const AboutPage: React.FC = () => {
             <span
               style={{
                 color: 'var(--text-color, #cccccc)',
-                fontFamily: 'var(--mono-font, monospace)',
+                fontFamily: 'var(--mono-font, monospace)'
               }}
             >
               {item.value}
@@ -129,7 +135,7 @@ const AboutPage: React.FC = () => {
           marginTop: '48px',
           fontSize: '12px',
           color: 'var(--text-muted, #858585)',
-          textAlign: 'center',
+          textAlign: 'center'
         }}
       >
         Copyright © {new Date().getFullYear()} netSince.com. Licensed under MIT.
