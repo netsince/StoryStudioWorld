@@ -25,19 +25,6 @@ const ActivityBar: React.FC = () => {
         <span>编写</span>
       </div>
       <div
-        className={`activity-item ${isOpen && activeActivity === 'character' ? 'active' : ''}`}
-        title="角色"
-        onClick={() => onActivityChange('character')}
-      >
-        <div className="activity-icon">
-          <svg className="icon icon-lg" viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </div>
-        <span>角色</span>
-      </div>
-      <div
         className={`activity-item ${isOpen && activeActivity === 'setting' ? 'active' : ''}`}
         title="设定"
         onClick={() => onActivityChange('setting')}

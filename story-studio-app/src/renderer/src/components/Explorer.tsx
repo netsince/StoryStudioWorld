@@ -127,8 +127,6 @@ const Explorer: React.FC = () => {
     switch (activeActivity) {
       case 'chapter':
         return '编写'
-      case 'character':
-        return '角色管理'
       case 'setting':
         return '世界设定'
       case 'plugin':
