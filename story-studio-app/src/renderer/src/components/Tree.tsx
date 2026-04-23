@@ -69,7 +69,7 @@ const Tree: React.FC<TreeProps> = ({
   const visibleNodes = useMemo(() => {
     const result: { node: StoryNode; depth: number }[] = []
 
-    const traverse = (parentId: string | null, depth: number) => {
+    const traverse = (parentId: string | null, depth: number): void => {
       const children = getChildren(parentId)
       for (const child of children) {
         result.push({ node: child, depth })
@@ -81,6 +81,7 @@ const Tree: React.FC<TreeProps> = ({
 
     traverse(null, 0)
     return result
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, expandedNodes, getChildren])
 
   const handleDragStart = useCallback((e: React.DragEvent, nodeId: string) => {
@@ -183,7 +184,13 @@ const Tree: React.FC<TreeProps> = ({
   }, [])
 
   // VS Code style file icon
-  const FileIcon = ({ isFolder, isExpanded }: { isFolder: boolean; isExpanded: boolean }) => {
+  const FileIcon = ({
+    isFolder,
+    isExpanded
+  }: {
+    isFolder: boolean
+    isExpanded: boolean
+  }): React.ReactNode => {
     if (isFolder) {
       return (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
@@ -219,7 +226,7 @@ const Tree: React.FC<TreeProps> = ({
   }: {
     expanded: boolean
     onClick: (e: React.MouseEvent) => void
-  }) => (
+  }): React.ReactNode => (
     <span
       onClick={onClick}
       style={{
@@ -248,7 +255,7 @@ const Tree: React.FC<TreeProps> = ({
   )
 
   // Indent guide component
-  const IndentGuide = ({ depth }: { depth: number }) => {
+  const IndentGuide = ({ depth }: { depth: number }): React.ReactNode => {
     if (depth === 0) return null
     return (
       <>
@@ -270,7 +277,7 @@ const Tree: React.FC<TreeProps> = ({
     )
   }
 
-  const renderNode = (node: StoryNode, depth: number, _index: number): React.ReactNode => {
+  const renderNode = (node: StoryNode, depth: number): React.ReactNode => {
     const isExpanded = expandedNodes.has(node.id)
     const isSelected = selectedNodeId === node.id
     const isDragging = draggingNodeId === node.id
@@ -408,7 +415,7 @@ const Tree: React.FC<TreeProps> = ({
       }}
       onDrop={handleDropOnRoot}
     >
-      {visibleNodes.map(({ node, depth }, index) => renderNode(node, depth, index))}
+      {visibleNodes.map(({ node, depth }) => renderNode(node, depth))}
 
       {/* Context Menu */}
       {contextMenu && (

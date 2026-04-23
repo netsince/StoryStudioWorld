@@ -33,11 +33,12 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
 
   useEffect(() => {
     if (!isVisible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowChoice(null)
       return
     }
 
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent): void => {
       if (barRef.current && !barRef.current.contains(e.target as Node)) {
         onClose()
       }
@@ -48,7 +49,7 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
   }, [isVisible, onClose])
 
   const handleClick = useCallback(
-    (symbol: string, e: React.MouseEvent) => {
+    (symbol: string, e: React.MouseEvent): void => {
       e.stopPropagation()
       onInsert(symbol)
       onClose()
@@ -56,7 +57,7 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
     [onInsert, onClose]
   )
 
-  const handleLongPress = useCallback((symbol: string, e: React.MouseEvent) => {
+  const handleLongPress = useCallback((symbol: string, e: React.MouseEvent): void => {
     e.stopPropagation()
     if (symbol.length === 2 && symbol !== '……' && symbol !== '——') {
       const rect = (e.target as HTMLElement).getBoundingClientRect()

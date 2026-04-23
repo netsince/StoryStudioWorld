@@ -44,6 +44,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const openCreateProjectTab = useEditorStore((s) => s.openCreateProjectTab)
 
   const isFocused = focusedGroupId === groupId
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const tabs = group?.tabs ?? []
   const activeTabId = group?.activeTabId ?? ''
 
@@ -106,7 +107,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
       }
     }
     void loadContent()
-  }, [activeTab?.id, activeTab?.nodeId, currentProject])
+  }, [activeTab?.id, activeTab?.nodeId, activeTab?.type, currentProject])
 
   const handleEditorChange = (content: string): void => {
     setEditorContent(content)

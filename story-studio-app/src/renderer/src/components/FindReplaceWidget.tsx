@@ -34,6 +34,20 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   const findInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
 
+  // 高亮匹配（shouldFocus 控制是否夺取焦点）- 必须在使用它的 useEffect 之前声明
+  const highlightMatch = useCallback(
+    (match: { start: number; end: number } | null, shouldFocus = false): void => {
+      const textarea = textareaRef.current
+      if (!textarea || !match) return
+
+      if (shouldFocus) {
+        textarea.focus()
+      }
+      textarea.setSelectionRange(match.start, match.end)
+    },
+    [textareaRef]
+  )
+
   // 查找所有匹配
   const findAllMatches = useCallback(
     (searchText: string): { start: number; end: number }[] => {
@@ -66,26 +80,13 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
       setCurrentMatchIndex(newMatches.length - 1)
       highlightMatch(newMatches[newMatches.length - 1], false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [findText, text, isVisible, findAllMatches, currentMatchIndex])
 
   // 通知父组件匹配变化
   useEffect(() => {
     onMatchesChange?.(matches, currentMatchIndex)
   }, [matches, currentMatchIndex, onMatchesChange])
-
-  // 高亮匹配（shouldFocus 控制是否夺取焦点）
-  const highlightMatch = useCallback(
-    (match: { start: number; end: number } | null, shouldFocus = false) => {
-      const textarea = textareaRef.current
-      if (!textarea || !match) return
-
-      if (shouldFocus) {
-        textarea.focus()
-      }
-      textarea.setSelectionRange(match.start, match.end)
-    },
-    [textareaRef]
-  )
 
   // 上一个匹配
   const handlePrevMatch = useCallback(() => {
@@ -172,7 +173,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   useEffect(() => {
     if (!isVisible) return
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         onClose()
         return

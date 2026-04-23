@@ -22,7 +22,7 @@ const StatusBar: React.FC = () => {
     )
   }, [entries])
 
-  const renderEntry = (entry: (typeof leftEntries)[0]) => (
+  const renderEntry = (entry: (typeof leftEntries)[0]): React.ReactNode => (
     <div
       key={entry.id}
       className="status-item"

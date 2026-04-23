@@ -180,7 +180,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     getGroupEditorState: (groupId: string) => {
       return get().groupEditorStates.get(groupId)
     },
-    onGroupEditorStateChange: (_callback) => {
+    onGroupEditorStateChange: () => {
       // 返回一个 no-op 取消函数，实际监听通过订阅 store 实现
       return () => {}
     },

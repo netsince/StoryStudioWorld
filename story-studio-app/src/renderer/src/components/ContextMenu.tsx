@@ -27,7 +27,7 @@ const parseLabel = (label: string): { text: string; shortcut?: string } => {
 const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }) => {
   // 监听 Escape 键关闭菜单
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         onClose?.()
       }

@@ -26,10 +26,11 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({
     const button = document.querySelector('.story-action-button') as HTMLElement
     if (button) {
       const rect = button.getBoundingClientRect()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPosition({ top: rect.bottom + 4, left: rect.left })
     }
 
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent): void => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
       }

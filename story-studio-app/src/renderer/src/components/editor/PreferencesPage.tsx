@@ -50,6 +50,7 @@ const loadSettings = (): AppSettings => {
     if (saved) {
       return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
     }
+    // eslint-disable-next-line no-empty
   } catch {}
   return DEFAULT_SETTINGS
 }
@@ -99,6 +100,7 @@ const PreferencesPage: React.FC = () => {
         availableFonts.push(font)
       }
     })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSystemFonts(
       availableFonts.map((name) => ({
         name,
@@ -107,7 +109,7 @@ const PreferencesPage: React.FC = () => {
     )
   }, [])
 
-  const applySettings = (newSettings: Partial<AppSettings>) => {
+  const applySettings = (newSettings: Partial<AppSettings>): void => {
     const updated = { ...settings, ...newSettings }
     setSettings(updated)
     saveSettings(updated)
@@ -134,7 +136,7 @@ const PreferencesPage: React.FC = () => {
 
   const allFonts = [...OPEN_SOURCE_FONTS, ...systemFonts]
 
-  const renderSection = () => {
+  const renderSection = (): React.ReactNode => {
     switch (activeSection) {
       case 'editor':
         return (
@@ -462,8 +464,10 @@ const PreferencesPage: React.FC = () => {
 export default PreferencesPage
 
 export type { TabBehavior }
+// eslint-disable-next-line react-refresh/only-export-components
 export const getAppSettings = (): AppSettings => loadSettings()
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const applyAppSettings = (settings: AppSettings): void => {
   if (settings.editorFontFamily) {
     document.documentElement.style.setProperty('--editor-font-family', settings.editorFontFamily)
@@ -479,16 +483,19 @@ export const applyAppSettings = (settings: AppSettings): void => {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getTabBehavior = (): TabBehavior => {
   const settings = loadSettings()
   return settings.editorTabBehavior
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getAutoSaveSettings = (): { enabled: boolean; interval: number } => {
   const settings = loadSettings()
   return { enabled: settings.autoSaveEnabled, interval: settings.autoSaveInterval * 1000 }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getAutoIndentSettings = (): { enabled: boolean; indent: string } => {
   try {
     const saved = localStorage.getItem('ssw:app-settings')

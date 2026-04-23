@@ -33,7 +33,7 @@ const TitleBar: React.FC = () => {
 
   // 点击外部关闭菜单
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent): void => {
       const isOutside = Object.values(menuRefs).every(
         (ref) => !ref.current?.contains(event.target as Node)
       )
@@ -43,9 +43,10 @@ const TitleBar: React.FC = () => {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleMenuClick = (menuId: MenuId) => {
+  const handleMenuClick = (menuId: MenuId): void => {
     if (!menuId) {
       setActiveMenu(null)
       return

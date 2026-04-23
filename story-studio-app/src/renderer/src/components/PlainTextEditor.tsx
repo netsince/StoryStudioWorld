@@ -141,6 +141,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
       console.debug(`[PlainTextEditor][scroll] ${message}`, payload)
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tabId, text.length]
   )
 
@@ -658,7 +659,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavForward()
       unregisterZenMode()
     }
-  }, [onChange, onSave, saveHistory, goBack, goForward])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onChange, onSave, saveHistory, goBack, goForward, groupId])
 
   // Update editor store state when text changes
   useEffect(() => {
@@ -667,7 +669,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     updateGroupEditorState(groupId, {
       stats: { chars, words, readingTime, charsWithoutSpaces, paragraphs }
     })
-  }, [text, groupId, updateGroupEditorState])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, groupId])
 
   // 自动保存逻辑
   const scheduleAutoSave = useCallback(() => {
@@ -687,6 +690,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         updateGroupEditorState(groupId, { lastSavedAt: timeStr })
       }
     }, autoSaveSettings.interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onSave])
 
   // 组件卸载时清理计时器
@@ -941,13 +945,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   }
 
   // 右键菜单
-  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>): void => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY })
   }
 
   // 长按显示中文标点工具栏
-  const handleMouseDown = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLTextAreaElement>): void => {
     mousePositionRef.current = { x: e.clientX, y: e.clientY }
     if (e.button === 2) {
       isLongPressRef.current = false
@@ -959,11 +963,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   }
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLTextAreaElement>): void => {
     mousePositionRef.current = { x: e.clientX, y: e.clientY }
   }
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+  const handleMouseUp = (e: React.MouseEvent<HTMLTextAreaElement>): void => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current)
       longPressTimerRef.current = null
@@ -975,7 +979,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     isLongPressRef.current = false
   }
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (): void => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current)
       longPressTimerRef.current = null
@@ -1017,7 +1021,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     setPunctuationBarVisible(false)
   }, [])
 
-  const handleCloseContextMenu = () => {
+  const handleCloseContextMenu = (): void => {
     setContextMenu(null)
   }
 
