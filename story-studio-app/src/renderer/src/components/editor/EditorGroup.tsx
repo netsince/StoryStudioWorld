@@ -3,7 +3,9 @@ import type { Tab } from '../../models'
 import { findGroupNode } from '../../editor/editorTree'
 import { useEditorStore } from '../../stores/editorStore'
 import { useProjectStore } from '../../stores/projectStore'
+import { useUiStore } from '../../stores/uiStore'
 import { commandService } from '../../services/commandService'
+import ArchiveView from './ArchiveView'
 import ContextMenu from '../ContextMenu'
 import PlainTextEditor from '../PlainTextEditor'
 import CreateProjectForm from './CreateProjectForm'
@@ -18,11 +20,14 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const [editorContent, setEditorContent] = useState<string>('')
 
   const currentProject = useProjectStore((s) => s.currentProject)
+  const storyNodes = useProjectStore((s) => s.storyNodes)
   const openProject = useProjectStore((s) => s.openProject)
   const createProject = useProjectStore((s) => s.createProject)
   const saveNodeContent = useProjectStore((s) => s.saveNodeContent)
   const setDraft = useProjectStore((s) => s.setDraft)
   const clearDraft = useProjectStore((s) => s.clearDraft)
+
+  const setExpandNodePath = useUiStore((s) => s.setExpandNodePath)
 
   const group = useEditorStore(useCallback((s) => findGroupNode(s.editorTree, groupId), [groupId]))
   const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
@@ -172,6 +177,12 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
       return <PreferencesPage />
     }
 
+    if (activeTab.type === 'archive') {
+      return (
+        <ArchiveView />
+      )
+    }
+
     return renderFile()
   }
 
@@ -181,8 +192,25 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
       setActiveGroup(groupId)
       commandService.setActiveGroup(groupId)
       switchTab(groupId, tabId)
+      
+      const currentGroup = useEditorStore.getState().editorTree
+        ? findGroupNode(useEditorStore.getState().editorTree, groupId)
+        : null
+      const tab = currentGroup?.tabs.find((t) => t.id === tabId)
+      if (tab && tab.nodeId && storyNodes.length > 0) {
+        const nodeId = tab.nodeId
+        const parentIds: string[] = []
+        let current = storyNodes.find(n => n.id === nodeId)
+        while (current?.parentId) {
+          parentIds.unshift(current.parentId)
+          current = storyNodes.find(n => n.id === current!.parentId)
+        }
+        if (parentIds.length > 0) {
+          setExpandNodePath(parentIds)
+        }
+      }
     },
-    [groupId, setFocusedGroupId, setActiveGroup, switchTab]
+    [groupId, setFocusedGroupId, setActiveGroup, switchTab, storyNodes, setExpandNodePath]
   )
 
   if (!group) {

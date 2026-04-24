@@ -13,7 +13,10 @@ import {
   moveStoryNode,
   reorderStoryNode,
   readNodeContent,
-  writeNodeContent
+  writeNodeContent,
+  getArchivedNodesProject,
+  restoreArchivedNode,
+  permanentlyDeleteProjectNode
 } from './project'
 
 function createWindow(): void {
@@ -180,6 +183,27 @@ function createWindow(): void {
     'write-node-content',
     async (_, projectSettingsPath: string, nodeId: string, content: string) => {
       return writeNodeContent({ projectSettingsPath, nodeId, content })
+    }
+  )
+
+  ipcMain.handle('get-archived-nodes', async (_, projectSettingsPath: string) => {
+    return getArchivedNodesProject(projectSettingsPath)
+  })
+
+  ipcMain.handle('restore-archived-node', async (_, projectSettingsPath: string, nodeId: string, newParentId: string | null = null) => {
+    return restoreArchivedNode(projectSettingsPath, nodeId, newParentId)
+  })
+
+  ipcMain.handle(
+    'permanently-delete-node',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        nodeId: string
+      }
+    ) => {
+      return permanentlyDeleteProjectNode(input)
     }
   )
 

@@ -1,4 +1,4 @@
-export type ActivityType = 'chapter' | 'setting' | 'plugin'
+export type ActivityType = 'chapter' | 'setting' | 'plugin' | 'archive'
 export type RightActivityType = 'proofread' | 'memo' | 'archive'
 
 export interface StoryNode {
@@ -30,7 +30,7 @@ export interface RecentProject {
 export interface Tab {
   id: string
   title: string
-  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences'
+  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences' | 'archive'
   path?: string
   nodeId?: string
   isDirty?: boolean

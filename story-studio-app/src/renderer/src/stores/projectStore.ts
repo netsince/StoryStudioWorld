@@ -12,6 +12,7 @@ export interface CreateProjectInput {
 interface ProjectState {
   currentProject: ProjectData | null
   storyNodes: StoryNode[]
+  archivedNodes: StoryNode[]
   recentProjects: RecentProject[]
   errorMessage: string | null
   isProjectBusy: boolean
@@ -33,6 +34,9 @@ interface ProjectState {
     position: 'before' | 'after'
   ) => Promise<void>
   refreshStoryNodes: () => Promise<void>
+  refreshArchivedNodes: () => Promise<void>
+  restoreArchivedNode: (nodeId: string, newParentId: string | null) => Promise<void>
+  permanentlyDeleteNode: (nodeId: string) => Promise<void>
 
   saveNodeContent: (nodeId: string, content: string) => Promise<void>
   setDraft: (nodeId: string, content: string) => void
@@ -79,6 +83,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   return {
     currentProject: null,
     storyNodes: [],
+    archivedNodes: [],
     recentProjects: [],
     errorMessage: null,
     isProjectBusy: false,
@@ -256,6 +261,62 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         await loadStoryNodes(currentProject.projectSettingsPath)
       } catch (error) {
         const message = error instanceof Error ? error.message : '刷新失败。'
+        set({ errorMessage: message })
+        window.alert(message)
+      } finally {
+        set({ isProjectBusy: false })
+      }
+    },
+
+    refreshArchivedNodes: async () => {
+      const currentProject = get().currentProject
+      if (!currentProject) return
+
+      try {
+        set({ isProjectBusy: true })
+        const nodes = await window.api.getArchivedNodes(currentProject.projectSettingsPath)
+        set({ archivedNodes: nodes })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '获取归档失败。'
+        set({ errorMessage: message })
+        window.alert(message)
+      } finally {
+        set({ isProjectBusy: false })
+      }
+    },
+
+    restoreArchivedNode: async (nodeId, newParentId) => {
+      const currentProject = get().currentProject
+      if (!currentProject) return
+
+      try {
+        set({ isProjectBusy: true })
+        const nodes = await window.api.restoreArchivedNode(currentProject.projectSettingsPath, nodeId, newParentId)
+        set({ storyNodes: nodes })
+        await get().refreshArchivedNodes()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '恢复归档失败。'
+        set({ errorMessage: message })
+        window.alert(message)
+      } finally {
+        set({ isProjectBusy: false })
+      }
+    },
+
+    permanentlyDeleteNode: async (nodeId) => {
+      const currentProject = get().currentProject
+      if (!currentProject) return
+
+      try {
+        set({ isProjectBusy: true })
+        const nodes = await window.api.permanentlyDeleteNode({
+          projectSettingsPath: currentProject.projectSettingsPath,
+          nodeId
+        })
+        set({ storyNodes: nodes })
+        await get().refreshArchivedNodes()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '彻底删除失败。'
         set({ errorMessage: message })
         window.alert(message)
       } finally {

@@ -6,11 +6,15 @@ import {
   saveDatabase,
   loadDatabase,
   getNodes,
+  getArchivedNodes,
   getChildNodes,
   createNode,
   renameNode,
   deleteNode,
   deleteNodeRecursively,
+  permanentlyDeleteNode,
+  permanentlyDeleteNodeRecursively,
+  restoreNode,
   moveNode,
   getNodeContent,
   updateNodeContent,
@@ -354,6 +358,51 @@ export async function writeNodeContent(input: WriteNodeContentInput): Promise<vo
   updateNodeContent(db, input.nodeId, input.content)
   await saveDatabase(db, project.storyDbPath)
   db.close()
+}
+
+export async function getArchivedNodesProject(projectSettingsPath: string): Promise<StoryNode[]> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const nodes = getArchivedNodes(db)
+  db.close()
+  return nodes
+}
+
+export async function restoreArchivedNode(projectSettingsPath: string, nodeId: string, newParentId: string | null = null): Promise<StoryNode[]> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  
+  restoreNode(db, nodeId, newParentId)
+  
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
+}
+
+export async function permanentlyDeleteProjectNode(input: DeleteNodeInput): Promise<StoryNode[]> {
+  const project = await loadProject(input.projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+
+  const stmt = db.prepare(`SELECT type FROM nodes WHERE id = ?`)
+  stmt.bind([input.nodeId])
+  let type: string | null = null
+  if (stmt.step()) {
+    type = (stmt.getAsObject() as { type: string }).type
+  }
+  stmt.free()
+  if (type !== null) {
+    if (type === 'folder') {
+      permanentlyDeleteNodeRecursively(db, input.nodeId)
+    } else {
+      permanentlyDeleteNode(db, input.nodeId)
+    }
+  }
+
+  await saveDatabase(db, project.storyDbPath)
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
 }
 
 export async function clearProjectDirectory(projectPath: string): Promise<void> {

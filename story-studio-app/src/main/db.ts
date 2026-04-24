@@ -104,6 +104,41 @@ export function getNodes(db: Database): StoryNode[] {
   return nodes
 }
 
+export function getArchivedNodes(db: Database): StoryNode[] {
+  const stmt = db.prepare(`
+    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    FROM nodes
+    WHERE deletedAt IS NOT NULL
+    ORDER BY deletedAt DESC
+  `)
+
+  const nodes: StoryNode[] = []
+  while (stmt.step()) {
+    const row = stmt.getAsObject() as StoryNode
+    nodes.push(row)
+  }
+  stmt.free()
+  return nodes
+}
+
+export function restoreNode(db: Database, nodeId: string, newParentId: string | null | undefined = undefined): void {
+  const node = getNode(db, nodeId)
+  if (!node) return
+
+  const now = new Date().toISOString()
+  
+  if (newParentId !== undefined) {
+    db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ?, parentId = ? WHERE id = ?`, [now, newParentId, nodeId])
+  } else {
+    db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ? WHERE id = ?`, [now, nodeId])
+  }
+  
+  const children = getChildNodes(db, nodeId)
+  for (const child of children) {
+    restoreNode(db, child.id, newParentId)
+  }
+}
+
 export function getNode(db: Database, nodeId: string): StoryNode | null {
   const stmt = db.prepare(`
     SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
@@ -209,6 +244,24 @@ export function deleteNodeRecursively(db: Database, nodeId: string): void {
     const now = new Date().toISOString()
     db.run(`UPDATE nodes SET deletedAt = ? WHERE id = ?`, [now, nodeId])
   }
+}
+
+export function permanentlyDeleteNode(db: Database, nodeId: string): void {
+  const children = getChildNodes(db, nodeId)
+  for (const child of children) {
+    permanentlyDeleteNode(db, child.id)
+  }
+
+  db.run(`DELETE FROM nodes WHERE id = ?`, [nodeId])
+}
+
+export function permanentlyDeleteNodeRecursively(db: Database, nodeId: string): void {
+  const children = getChildNodes(db, nodeId)
+  for (const child of children) {
+    permanentlyDeleteNodeRecursively(db, child.id)
+  }
+
+  db.run(`DELETE FROM nodes WHERE id = ?`, [nodeId])
 }
 
 export function moveNode(

@@ -7,11 +7,13 @@ interface UiState {
   isExplorerOpen: boolean
   isRightSidebarOpen: boolean
   isZenMode: boolean
+  expandNodePath: string[]
 
   setExplorerOpen: (isOpen: boolean) => void
   setRightSidebarOpen: (isOpen: boolean) => void
   toggleZenMode: () => void
   setZenMode: (isZen: boolean) => void
+  setExpandNodePath: (path: string[]) => void
 
   handleActivityChange: (activity: ActivityType) => void
   handleRightActivityChange: (activity: RightActivityType) => void
@@ -23,9 +25,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   isExplorerOpen: true,
   isRightSidebarOpen: false,
   isZenMode: false,
+  expandNodePath: [],
 
   setExplorerOpen: (isOpen) => set({ isExplorerOpen: isOpen }),
   setRightSidebarOpen: (isOpen) => set({ isRightSidebarOpen: isOpen }),
+  setExpandNodePath: (path) => set({ expandNodePath: path }),
 
   toggleZenMode: () => {
     const newZenMode = !get().isZenMode

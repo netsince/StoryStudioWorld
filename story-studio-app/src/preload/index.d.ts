@@ -17,6 +17,9 @@ declare global {
       deleteStoryNode: (input: DeleteNodeInput) => Promise<StoryNode[]>
       moveStoryNode: (input: MoveNodeInput) => Promise<StoryNode[]>
       reorderStoryNode: (input: ReorderNodeInput) => Promise<StoryNode[]>
+      getArchivedNodes: (projectSettingsPath: string) => Promise<StoryNode[]>
+      restoreArchivedNode: (projectSettingsPath: string, nodeId: string, newParentId: string | null) => Promise<StoryNode[]>
+      permanentlyDeleteNode: (input: DeleteNodeInput) => Promise<StoryNode[]>
       readNodeContent: (projectSettingsPath: string, nodeId: string) => Promise<string | null>
       writeNodeContent: (
         projectSettingsPath: string,

@@ -9,6 +9,11 @@ interface TreeProps {
   onReorderNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => void
   onRenameNode: (nodeId: string, newName: string) => void
   onDeleteNode: (nodeId: string) => void
+  selectedNodeIds?: string[]
+  expandedNodeIds?: string[]
+  onSelectionChange?: (nodeIds: string[]) => void
+  onExpandedChange?: (nodeIds: Set<string>) => void
+  getNodeDescendants?: (nodeId: string) => { folders: number; files: number; fileNames: string[] }
 }
 
 type DropPosition = { nodeId: string; position: 'before' | 'after' | 'inside' } | null
@@ -24,10 +29,15 @@ const Tree: React.FC<TreeProps> = ({
   onMoveNode,
   onReorderNode,
   onRenameNode,
-  onDeleteNode
+  onDeleteNode,
+  selectedNodeIds: externalSelectedNodeIds,
+  expandedNodeIds: externalExpandedNodeIds,
+  onSelectionChange,
+  onExpandedChange,
+  getNodeDescendants
 }) => {
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(new Set())
+  const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(new Set())
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [dropPosition, setDropPosition] = useState<DropPosition>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(
@@ -38,18 +48,45 @@ const Tree: React.FC<TreeProps> = ({
   )
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const treeRef = useRef<HTMLDivElement>(null)
+  const lastClickedNodeIdRef = useRef<string | null>(null)
+
+  const selectedNodeIds = externalSelectedNodeIds !== undefined 
+    ? new Set(externalSelectedNodeIds) 
+    : internalSelectedNodeIds
+    
+  const expandedNodes = externalExpandedNodeIds !== undefined 
+    ? new Set(externalExpandedNodeIds) 
+    : internalExpandedNodes
+
+  const setSelectedNodes = (nodes: Set<string>) => {
+    if (externalSelectedNodeIds !== undefined) {
+      onSelectionChange?.(Array.from(nodes))
+    } else {
+      setInternalSelectedNodeIds(nodes)
+    }
+  }
 
   const toggleExpanded = useCallback((nodeId: string) => {
-    setExpandedNodes((prev) => {
-      const next = new Set(prev)
-      if (next.has(nodeId)) {
-        next.delete(nodeId)
+    if (externalExpandedNodeIds !== undefined) {
+      const newSet = new Set(externalExpandedNodeIds)
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId)
       } else {
-        next.add(nodeId)
+        newSet.add(nodeId)
       }
-      return next
-    })
-  }, [])
+      onExpandedChange?.(newSet)
+    } else {
+      setInternalExpandedNodes((prev) => {
+        const next = new Set(prev)
+        if (next.has(nodeId)) {
+          next.delete(nodeId)
+        } else {
+          next.add(nodeId)
+        }
+        return next
+      })
+    }
+  }, [externalExpandedNodeIds, onExpandedChange])
 
   const getNodeById = useCallback(
     (nodeId: string) => {
@@ -83,6 +120,10 @@ const Tree: React.FC<TreeProps> = ({
     return result
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, expandedNodes, getChildren])
+
+  const getAllVisibleNodeIds = useCallback((): string[] => {
+    return visibleNodes.map(({ node }) => node.id)
+  }, [visibleNodes])
 
   const handleDragStart = useCallback((e: React.DragEvent, nodeId: string) => {
     setDraggingNodeId(nodeId)
@@ -279,7 +320,7 @@ const Tree: React.FC<TreeProps> = ({
 
   const renderNode = (node: StoryNode, depth: number): React.ReactNode => {
     const isExpanded = expandedNodes.has(node.id)
-    const isSelected = selectedNodeId === node.id
+    const isSelected = selectedNodeIds.has(node.id)
     const isDragging = draggingNodeId === node.id
     const isHovered = hoveredNodeId === node.id
     const isFolder = node.type === 'folder'
@@ -289,6 +330,37 @@ const Tree: React.FC<TreeProps> = ({
     const isDropInside = isDropTarget && dropPosition?.position === 'inside'
     const isDropBefore = isDropTarget && dropPosition?.position === 'before'
     const isDropAfter = isDropTarget && dropPosition?.position === 'after'
+
+    const handleClick = (e: React.MouseEvent): void => {
+      if (e.ctrlKey || e.metaKey) {
+        const newSelection = new Set(selectedNodeIds)
+        if (newSelection.has(node.id)) {
+          newSelection.delete(node.id)
+        } else {
+          newSelection.add(node.id)
+        }
+        setSelectedNodes(newSelection)
+      } else if (e.shiftKey && lastClickedNodeIdRef.current) {
+        const allVisibleIds = getAllVisibleNodeIds()
+        const lastIndex = allVisibleIds.indexOf(lastClickedNodeIdRef.current)
+        const currentIndex = allVisibleIds.indexOf(node.id)
+        if (lastIndex !== -1 && currentIndex !== -1) {
+          const start = Math.min(lastIndex, currentIndex)
+          const end = Math.max(lastIndex, currentIndex)
+          const rangeIds = allVisibleIds.slice(start, end + 1)
+          setSelectedNodes(new Set(rangeIds))
+        }
+      } else {
+        setSelectedNodes(new Set([node.id]))
+      }
+      lastClickedNodeIdRef.current = node.id
+
+      if (isFolder) {
+        toggleExpanded(node.id)
+      } else {
+        onOpenChapter(node)
+      }
+    }
 
     return (
       <div key={node.id} style={{ position: 'relative' }}>
@@ -327,14 +399,7 @@ const Tree: React.FC<TreeProps> = ({
             userSelect: 'none'
           }}
           draggable
-          onClick={() => {
-            setSelectedNodeId(node.id)
-            if (isFolder) {
-              toggleExpanded(node.id)
-            } else {
-              onOpenChapter(node)
-            }
-          }}
+          onClick={handleClick}
           onMouseEnter={() => setHoveredNodeId(node.id)}
           onMouseLeave={() => setHoveredNodeId(null)}
           onDragStart={(e) => handleDragStart(e, node.id)}
@@ -436,9 +501,10 @@ const Tree: React.FC<TreeProps> = ({
           <div
             style={{
               padding: '6px 16px',
-              cursor: 'pointer',
+              cursor: selectedNodeIds.size > 1 ? 'not-allowed' : 'pointer',
               fontSize: '13px',
-              color: 'var(--menu-fg, #ccc)'
+              color: 'var(--menu-fg, #ccc)',
+              opacity: selectedNodeIds.size > 1 ? 0.5 : 1
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
@@ -447,6 +513,10 @@ const Tree: React.FC<TreeProps> = ({
               e.currentTarget.style.backgroundColor = 'transparent'
             }}
             onClick={() => {
+              const isMultiSelected = selectedNodeIds.size > 1
+              if (isMultiSelected) {
+                return
+              }
               const node = getNodeById(contextMenu.nodeId)
               if (node) {
                 setRenameDialog({ nodeId: node.id, initialValue: node.name })
@@ -470,8 +540,49 @@ const Tree: React.FC<TreeProps> = ({
               e.currentTarget.style.backgroundColor = 'transparent'
             }}
             onClick={() => {
-              if (confirm('确定要删除吗？')) {
-                onDeleteNode(contextMenu.nodeId)
+              const nodeToDelete = getNodeById(contextMenu.nodeId)
+              if (!nodeToDelete) {
+                setContextMenu(null)
+                return
+              }
+              
+              if (nodeToDelete.type === 'folder' && getNodeDescendants) {
+                const descendants = getNodeDescendants(contextMenu.nodeId)
+                
+                if (descendants.files > 0) {
+                  const sortedByLength = [...descendants.fileNames].sort((a, b) => b.length - a.length)
+                  const top5ByLength = sortedByLength.slice(0, 5)
+                  const fileList = top5ByLength.join(', ')
+                  const moreText = descendants.fileNames.length > 5 ? `等${descendants.fileNames.length}个文件` : ''
+                  
+                  const confirmMessages = [
+                    `您正在删除文件夹「${nodeToDelete.name}」，该文件夹包含 ${descendants.files} 个章文件。\n\n包含的文件：${fileList}${moreText}\n\n确定要删除吗？`,
+                    `注意：「${nodeToDelete.name}」文件夹中有 ${descendants.files} 个章！\n\n文件列表：${fileList}${moreText}\n\n这将是第二次确认，继续吗？`,
+                    `最后一次确认：您确定要将「${nodeToDelete.name}」移至归档吗？\n\n该操作将删除 ${descendants.files} 个章文件和 ${descendants.folders} 个子文件夹。\n\n此操作可以恢复，请确认。`
+                  ]
+                  
+                  let confirmed = false
+                  for (let i = 0; i < confirmMessages.length; i++) {
+                    if (i === 0) {
+                      confirmed = confirm(confirmMessages[i])
+                    } else {
+                      confirmed = confirm(confirmMessages[i])
+                    }
+                    if (!confirmed) break
+                  }
+                  
+                  if (confirmed) {
+                    onDeleteNode(contextMenu.nodeId)
+                  }
+                } else {
+                  if (confirm(`确定要将「${nodeToDelete.name}」移至归档吗？`)) {
+                    onDeleteNode(contextMenu.nodeId)
+                  }
+                }
+              } else {
+                if (confirm(`确定要将「${nodeToDelete?.name}」移至归档吗？`)) {
+                  onDeleteNode(contextMenu.nodeId)
+                }
               }
               setContextMenu(null)
             }}

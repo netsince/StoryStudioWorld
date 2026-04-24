@@ -108,6 +108,8 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({
 const Explorer: React.FC = () => {
   const activeActivity = useUiStore((s) => s.activeActivity)
   const isOpen = useUiStore((s) => s.isExplorerOpen)
+  const expandNodePath = useUiStore((s) => s.expandNodePath)
+  const setExpandNodePath = useUiStore((s) => s.setExpandNodePath)
   const width = useLayoutStore((s) => s.explorerWidth)
 
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -127,6 +129,8 @@ const Explorer: React.FC = () => {
   const openTab = useEditorStore((s) => s.openTab)
 
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
+  const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>([])
 
   const activityTitle = useMemo(() => {
     switch (activeActivity) {
@@ -141,15 +145,67 @@ const Explorer: React.FC = () => {
     }
   }, [activeActivity])
 
+  useEffect(() => {
+    if (expandNodePath.length > 0) {
+      setExpandedNodeIds((prev) => {
+        const newSet = new Set(prev)
+        expandNodePath.forEach((id) => newSet.add(id))
+        return Array.from(newSet)
+      })
+      setExpandNodePath([])
+    }
+  }, [expandNodePath, setExpandNodePath])
+
+  const getSelectedFolderId = (): string | null => {
+    if (selectedNodeIds.length === 1) {
+      const selectedNode = storyNodes.find(n => n.id === selectedNodeIds[0])
+      if (selectedNode?.type === 'folder') {
+        return selectedNode.id
+      }
+    }
+    return null
+  }
+
+  const getNodeChildren = (parentId: string | null): StoryNode[] => {
+    return storyNodes.filter(n => n.parentId === parentId).sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  const getNodeDescendants = (nodeId: string): { folders: number; files: number; fileNames: string[] } => {
+    let folders = 0
+    let files = 0
+    const fileNames: string[] = []
+    const queue = [nodeId]
+    while (queue.length > 0) {
+      const currentId = queue.shift()!
+      const children = getNodeChildren(currentId)
+      for (const child of children) {
+        if (child.type === 'folder') {
+          folders++
+          queue.push(child.id)
+        } else {
+          files++
+          fileNames.push(child.name)
+        }
+      }
+    }
+    return { folders, files, fileNames }
+  }
+
   const handleCreateNode = async (type: 'folder' | 'file'): Promise<void> => {
     let name: string
     if (type === 'folder') {
       name = '新文件夹'
     } else {
-      const fileCount = storyNodes.filter((n) => n.type === 'file').length
+      const parentId = getSelectedFolderId()
+      const siblings = getNodeChildren(parentId)
+      const fileCount = siblings.filter(n => n.type === 'file').length
       name = `第${fileCount + 1}章`
     }
-    await onCreateStoryNode(null, name, type)
+    const parentId = getSelectedFolderId()
+    await onCreateStoryNode(parentId, name, type)
+    if (parentId && !expandedNodeIds.includes(parentId)) {
+      setExpandedNodeIds(prev => [...prev, parentId])
+    }
     setIsCreateMenuOpen(false)
   }
 
@@ -243,6 +299,27 @@ const Explorer: React.FC = () => {
                   onCreateFile={() => void handleCreateNode('file')}
                 />
               )}
+              <button
+                className="story-toolbar-btn"
+                title="归档"
+                disabled={isBusy}
+                onClick={() => {
+                  openTab({ id: 'archive', title: '归档空间', type: 'archive' })
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                  <rect x="1" y="3" width="22" height="5"></rect>
+                  <line x1="10" y1="12" x2="14" y2="12"></line>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -255,6 +332,11 @@ const Explorer: React.FC = () => {
             onReorderNode={onReorderStoryNode}
             onRenameNode={onRenameStoryNode}
             onDeleteNode={onDeleteStoryNode}
+            selectedNodeIds={selectedNodeIds}
+            expandedNodeIds={expandedNodeIds}
+            onSelectionChange={setSelectedNodeIds}
+            onExpandedChange={(ids) => setExpandedNodeIds(Array.from(ids))}
+            getNodeDescendants={getNodeDescendants}
           />
         </div>
       </div>

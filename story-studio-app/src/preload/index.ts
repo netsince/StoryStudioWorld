@@ -82,6 +82,12 @@ const api = {
     ipcRenderer.invoke('move-story-node', input),
   reorderStoryNode: (input: ReorderNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('reorder-story-node', input),
+  getArchivedNodes: (projectSettingsPath: string): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('get-archived-nodes', projectSettingsPath),
+  restoreArchivedNode: (projectSettingsPath: string, nodeId: string, newParentId: string | null = null): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('restore-archived-node', projectSettingsPath, nodeId, newParentId),
+  permanentlyDeleteNode: (input: DeleteNodeInput): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('permanently-delete-node', input),
   readNodeContent: (projectSettingsPath: string, nodeId: string): Promise<string | null> =>
     ipcRenderer.invoke('read-node-content', projectSettingsPath, nodeId),
   writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string): Promise<void> =>
