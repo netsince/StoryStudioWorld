@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { StoryNode } from '../../models'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
+import { getAppSettings } from './PreferencesPage'
 
 interface SettingEditorProps {
   nodeId: string
@@ -36,6 +37,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [isEditing, setIsEditing] = useState(false)
   const [data, setData] = useState<SettingData>({})
   const [loading, setLoading] = useState(true)
+  const [appSettings, setAppSettings] = useState(getAppSettings())
   
   const currentProject = useProjectStore((s) => s.currentProject)
   const storyNodes = useProjectStore((s) => s.storyNodes)
@@ -80,6 +82,13 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     }
     loadContent()
   }, [nodeId, currentProject, node?.updatedAt])
+
+  useEffect(() => {
+    // 每次切换回查看模式或组件加载时刷新设置
+    if (!isEditing) {
+      setAppSettings(getAppSettings())
+    }
+  }, [isEditing])
 
   const handleSave = async (newData: SettingData) => {
     if (!currentProject || !nodeId) return
@@ -164,8 +173,8 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
           </button>
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'row-reverse', gap: '24px', alignItems: 'flex-start' }}>
-           {/* Infobox (Wikipedia style) */}
+        <div style={{ position: 'relative', display: 'block' }}>
+           {/* Infobox (Wikipedia style) - Use float to allow text wrapping */}
            {config.single.length > 0 && (
              <aside className="wiki-infobox" style={{ 
                width: '280px', 
@@ -173,7 +182,8 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                border: '1px solid #54595d', 
                padding: '8px',
                fontSize: '13px',
-               flexShrink: 0,
+               float: 'right',
+               marginLeft: '24px',
                marginBottom: '20px'
              }}>
                <div style={{ 
@@ -225,126 +235,126 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                </table>
              </aside>
            )}
- 
-           {/* Wiki Article Body */}
-           <div className="wiki-content" style={{ flex: 1 }}>
-             {/* Table of Contents */}
-             {config.multi.length >= 3 && !isEditing && (
-               <nav className="wiki-toc" style={{ 
-                 backgroundColor: '#2a2a2e', 
-                 border: '1px solid #54595d', 
-                 padding: '12px 20px', 
-                 marginBottom: '24px',
-                 display: 'inline-block',
-                 minWidth: '200px'
-               }}>
-                 <div style={{ 
-                   fontWeight: 'bold', 
-                   textAlign: 'center', 
-                   marginBottom: '10px',
-                   fontSize: '14px'
-                 }}>
-                   目录
-                 </div>
-                 <ul style={{ 
-                   listStyle: 'none', 
-                   padding: 0, 
-                   margin: 0,
-                   fontSize: '13px',
-                   color: '#3498db'
-                 }}>
-                   {config.multi.map((field: string, index: number) => (
-                     <li key={field} style={{ marginBottom: '4px' }}>
-                       <a 
-                         href={`#${field}`} 
-                         onClick={(e) => {
-                           e.preventDefault();
-                           document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' });
-                         }}
-                         style={{ color: 'inherit', textDecoration: 'none' }}
-                         onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                         onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                       >
-                         <span style={{ color: '#ccc', marginRight: '8px' }}>{index + 1}</span>
-                         {field}
-                       </a>
-                     </li>
-                   ))}
-                 </ul>
-               </nav>
-             )}
-
-             {config.multi.map((field: string) => (
-               <section key={field} id={field} style={{ marginBottom: '24px' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'baseline',
-                  borderBottom: '1px solid #54595d',
-                  marginBottom: '12px',
-                  paddingBottom: '2px'
+  
+            {/* Wiki Article Body */}
+            <div className="wiki-content">
+              {/* Table of Contents */}
+              {config.multi.length >= 3 && !isEditing && (
+                <nav className="wiki-toc" style={{ 
+                  backgroundColor: '#2a2a2e', 
+                  border: '1px solid #54595d', 
+                  padding: '12px 20px', 
+                  marginBottom: '24px',
+                  display: 'inline-block',
+                  minWidth: '200px'
                 }}>
-                  <h2 style={{ 
-                    margin: 0, 
-                    fontSize: '22px', 
-                    fontWeight: 'normal',
-                    fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
-                    color: '#fff'
-                  }}>
-                    {field}
-                  </h2>
-                  {isEditing && (
-                    <button 
-                      onClick={() => openMultiLineEdit(field)}
-                      style={{
-                        fontSize: '12px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#3498db',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                      onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                    >
-                      [ 独立编辑 ]
-                    </button>
-                  )}
-                </div>
-                
-                {isEditing ? (
-                  <textarea 
-                    value={data[field] || ''}
-                    onChange={(e) => handleChange(field, e.target.value)}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#1e1e1e',
-                      border: '1px solid #54595d',
-                      color: '#ccc',
-                      padding: '12px',
-                      borderRadius: '0',
-                      minHeight: '120px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      lineHeight: '1.6',
-                      fontSize: '15px'
-                    }}
-                  />
-                ) : (
                   <div style={{ 
-                    fontSize: '16px', 
-                    lineHeight: '1.7',
-                    whiteSpace: 'pre-wrap', 
-                    color: data[field] ? '#d1d1d1' : '#666',
-                    fontFamily: 'sans-serif'
+                    fontWeight: 'bold', 
+                    textAlign: 'center', 
+                    marginBottom: '10px',
+                    fontSize: '14px'
                   }}>
-                    {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。您可以点击右上方“编辑”按钮添加信息。</span>}
+                    目录
                   </div>
-                )}
-              </section>
-            ))}
+                  <ul style={{ 
+                    listStyle: 'none', 
+                    padding: 0, 
+                    margin: 0,
+                    fontSize: '13px',
+                    color: '#3498db'
+                  }}>
+                    {config.multi.map((field: string, index: number) => (
+                      <li key={field} style={{ marginBottom: '4px' }}>
+                        <a 
+                          href={`#${field}`} 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          style={{ color: 'inherit', textDecoration: 'none' }}
+                          onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                          onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                        >
+                          <span style={{ color: '#ccc', marginRight: '8px' }}>{index + 1}</span>
+                          {field}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+  
+              {config.multi.map((field: string) => (
+                <section key={field} id={field} style={{ marginBottom: '24px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'baseline',
+                    borderBottom: '1px solid #54595d',
+                    marginBottom: '12px',
+                    paddingBottom: '2px'
+                  }}>
+                    <h2 style={{ 
+                      margin: 0, 
+                      fontSize: '22px', 
+                      fontWeight: 'normal',
+                      fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+                      color: '#fff'
+                    }}>
+                      {field}
+                    </h2>
+                    {isEditing && (
+                      <button 
+                        onClick={() => openMultiLineEdit(field)}
+                        style={{
+                          fontSize: '12px',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: '#3498db',
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                      >
+                        [ 独立编辑 ]
+                      </button>
+                    )}
+                  </div>
+                  
+                  {isEditing ? (
+                    <textarea 
+                      value={data[field] || ''}
+                      onChange={(e) => handleChange(field, e.target.value)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#1e1e1e',
+                        border: '1px solid #54595d',
+                        color: '#ccc',
+                        padding: '12px',
+                        borderRadius: '0',
+                        minHeight: '120px',
+                        resize: 'vertical',
+                        fontFamily: 'inherit',
+                        lineHeight: '1.6',
+                        fontSize: '15px'
+                      }}
+                    />
+                  ) : (
+                    <div style={{ 
+                      fontSize: `${appSettings.editorFontSize}px`, 
+                      lineHeight: appSettings.editorLineHeight,
+                      whiteSpace: 'pre-wrap', 
+                      color: data[field] ? '#d1d1d1' : '#666',
+                      fontFamily: appSettings.editorFontFamily
+                    }}>
+                      {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。您可以点击右上方“编辑”按钮添加信息。</span>}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
           </div>
-        </div>
       </div>
     </div>
   )
