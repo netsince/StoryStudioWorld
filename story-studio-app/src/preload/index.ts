@@ -6,6 +6,7 @@ export interface StoryNode {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
   sortOrder: number
@@ -34,6 +35,7 @@ export interface CreateNodeInput {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind?: 'story' | 'setting'
 }
 
 export interface RenameNodeInput {
@@ -72,6 +74,8 @@ const api = {
     ipcRenderer.invoke('create-project', input),
   getProjectNodes: (projectSettingsPath: string): Promise<StoryNode[]> =>
     ipcRenderer.invoke('get-project-nodes', projectSettingsPath),
+  initSettingNodes: (projectSettingsPath: string): Promise<StoryNode[]> =>
+    ipcRenderer.invoke('init-setting-nodes', projectSettingsPath),
   createStoryNode: (input: CreateNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('create-story-node', input),
   renameStoryNode: (input: RenameNodeInput): Promise<StoryNode[]> =>

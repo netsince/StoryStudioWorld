@@ -3,7 +3,11 @@ import { useProjectStore } from '../../stores/projectStore'
 import type { StoryNode } from '../../models'
 import ArchiveTree from './ArchiveTree'
 
-const ArchiveView: React.FC = () => {
+interface ArchiveViewProps {
+  kind?: 'story' | 'setting'
+}
+
+const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
   const [timeFilter, setTimeFilter] = useState<string>('all')
   
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -20,8 +24,10 @@ const ArchiveView: React.FC = () => {
   }, [currentProject, refreshArchivedNodes])
 
   const filteredNodes = useMemo(() => {
+    let nodes = archivedNodes.filter(n => n.kind === kind)
+    
     if (timeFilter === 'all') {
-      return archivedNodes
+      return nodes
     }
     const filterDate = new Date()
     
@@ -39,19 +45,19 @@ const ArchiveView: React.FC = () => {
         filterDate.setFullYear(filterDate.getFullYear() - 1)
         break
       default:
-        return archivedNodes
+        return nodes
     }
     
-    return archivedNodes.filter((node: StoryNode) => {
+    return nodes.filter((node: StoryNode) => {
       if (!node.deletedAt) return false
       const deleteDate = new Date(node.deletedAt)
       return deleteDate >= filterDate
     })
-  }, [archivedNodes, timeFilter])
+  }, [archivedNodes, timeFilter, kind])
 
   return (
     <div style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <h2 style={{ marginBottom: '16px' }}>归档空间</h2>
+      <h2 style={{ marginBottom: '16px' }}>{kind === 'setting' ? '设定归档' : '归档空间'}</h2>
       
       <div style={{ marginBottom: '16px' }}>
         <select

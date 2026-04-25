@@ -8,6 +8,7 @@ export interface StoryNode {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
   sortOrder: number
@@ -42,6 +43,7 @@ export async function initDatabase(dbPath: string): Promise<Database> {
       parentId TEXT,
       name TEXT NOT NULL,
       type TEXT NOT NULL CHECK (type IN ('folder', 'file')),
+      kind TEXT NOT NULL DEFAULT 'story' CHECK (kind IN ('story', 'setting')),
       fileName TEXT,
       content TEXT,
       sortOrder INTEGER DEFAULT 0,
@@ -67,6 +69,10 @@ function migrateDatabase(db: Database): void {
 
   const columns = result[0].values.map((row) => row[1] as string)
 
+  if (!columns.includes('kind')) {
+    db.run("ALTER TABLE nodes ADD COLUMN kind TEXT NOT NULL DEFAULT 'story'")
+  }
+
   if (!columns.includes('content')) {
     db.run('ALTER TABLE nodes ADD COLUMN content TEXT')
   }
@@ -89,7 +95,7 @@ export async function loadDatabase(dbPath: string): Promise<Database> {
 
 export function getNodes(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -106,7 +112,7 @@ export function getNodes(db: Database): StoryNode[] {
 
 export function getArchivedNodes(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE deletedAt IS NOT NULL
     ORDER BY deletedAt DESC
@@ -122,27 +128,59 @@ export function getArchivedNodes(db: Database): StoryNode[] {
 }
 
 export function restoreNode(db: Database, nodeId: string, newParentId: string | null | undefined = undefined): void {
-  const node = getNode(db, nodeId)
+  const node = getNodeWithDeleted(db, nodeId)
   if (!node) return
 
   const now = new Date().toISOString()
   
+  // If we have a parent and it's archived, restore it first
+  if (node.parentId) {
+    const parent = getNodeWithDeleted(db, node.parentId)
+    if (parent && parent.deletedAt !== null) {
+      restoreNode(db, parent.id)
+    }
+  }
+
   if (newParentId !== undefined) {
     db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ?, parentId = ? WHERE id = ?`, [now, newParentId, nodeId])
   } else {
     db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ? WHERE id = ?`, [now, nodeId])
   }
-  
-  const children = getChildNodes(db, nodeId)
-  for (const child of children) {
-    restoreNode(db, child.id, newParentId)
+
+  // Also restore children
+  const stmt = db.prepare(`SELECT id FROM nodes WHERE parentId = ? AND deletedAt IS NOT NULL`)
+  stmt.bind([nodeId])
+  const childIds: string[] = []
+  while (stmt.step()) {
+    childIds.push((stmt.getAsObject() as { id: string }).id)
   }
+  stmt.free()
+
+  for (const childId of childIds) {
+    restoreNode(db, childId)
+  }
+}
+
+export function getNodeWithDeleted(db: Database, nodeId: string): StoryNode | null {
+  const stmt = db.prepare(`
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    FROM nodes WHERE id = ?
+  `)
+  stmt.bind([nodeId])
+
+  if (stmt.step()) {
+    const node = stmt.getAsObject() as StoryNode
+    stmt.free()
+    return node
+  }
+  stmt.free()
+  return null
 }
 
 export function getNode(db: Database, nodeId: string): StoryNode | null {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
-    FROM nodes WHERE id = ?
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    FROM nodes WHERE id = ? AND deletedAt IS NULL
   `)
   stmt.bind([nodeId])
 
@@ -157,7 +195,7 @@ export function getNode(db: Database, nodeId: string): StoryNode | null {
 
 export function getChildNodes(db: Database, parentId: string | null): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE parentId IS ? AND deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -192,6 +230,7 @@ export function createNode(
   parentId: string | null,
   name: string,
   type: 'folder' | 'file',
+  kind: 'story' | 'setting' = 'story',
   content: string = ''
 ): StoryNode {
   const id = randomUUID()
@@ -200,9 +239,9 @@ export function createNode(
   const fileName = type === 'file' ? `${name}.md` : null
 
   db.run(
-    `INSERT INTO nodes (id, parentId, name, type, fileName, content, sortOrder, createdAt, updatedAt, deletedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-    [id, parentId, name, type, fileName, type === 'file' ? content : null, sortOrder, now, now]
+    `INSERT INTO nodes (id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+    [id, parentId, name, type, kind, fileName, type === 'file' ? content : null, sortOrder, now, now]
   )
 
   return getNode(db, id)!

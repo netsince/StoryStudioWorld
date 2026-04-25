@@ -24,7 +24,8 @@ interface ProjectState {
   openRecentProject: (projectSettingsPath: string) => Promise<void>
   createProject: (input: CreateProjectInput) => Promise<void>
 
-  createStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file') => Promise<void>
+  createStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file', kind?: 'story' | 'setting') => Promise<void>
+  initSettingNodes: () => Promise<void>
   renameStoryNode: (nodeId: string, newName: string) => Promise<void>
   deleteStoryNode: (nodeId: string) => Promise<void>
   moveStoryNode: (nodeId: string, newParentId: string | null) => Promise<void>
@@ -76,7 +77,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ currentProject: project, errorMessage: null, draftsByNodeId: {} })
     window.localStorage.setItem(LAST_PROJECT_SETTINGS_PATH_KEY, project.projectSettingsPath)
     updateRecentProjects(project)
-    void loadStoryNodes(project.projectSettingsPath)
+    void loadStoryNodes(project.projectSettingsPath).then(() => {
+      void get().initSettingNodes()
+    })
     useEditorStore.getState().removeCreateProjectTabs()
   }
 
@@ -146,7 +149,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
     },
 
-    createStoryNode: async (parentId, name, type) => {
+    createStoryNode: async (parentId, name, type, kind = 'story') => {
       const currentProject = get().currentProject
       if (!currentProject) return
 
@@ -156,13 +159,30 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           projectSettingsPath: currentProject.projectSettingsPath,
           parentId,
           name,
-          type
+          type,
+          kind
         })
         set({ storyNodes: nodes })
       } catch (error) {
         const message = error instanceof Error ? error.message : '创建失败。'
         set({ errorMessage: message })
         window.alert(message)
+      } finally {
+        set({ isProjectBusy: false })
+      }
+    },
+
+    initSettingNodes: async () => {
+      const currentProject = get().currentProject
+      if (!currentProject) return
+
+      try {
+        set({ isProjectBusy: true })
+        const nodes = await window.api.initSettingNodes(currentProject.projectSettingsPath)
+        set({ storyNodes: nodes })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '初始化设定节点失败。'
+        set({ errorMessage: message })
       } finally {
         set({ isProjectBusy: false })
       }

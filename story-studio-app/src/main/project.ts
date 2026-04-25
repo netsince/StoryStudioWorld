@@ -49,6 +49,7 @@ export interface CreateNodeInput {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind?: 'story' | 'setting'
 }
 
 export interface RenameNodeInput {
@@ -164,6 +165,30 @@ function withProjectPath(projectPath: string, data: PersistedProjectData): Proje
   }
 }
 
+export async function initSettingNodes(projectSettingsPath: string): Promise<StoryNode[]> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+
+  const existingNodes = getNodes(db).filter((n) => n.kind === 'setting' && n.parentId === null)
+  const defaultNames = ['人物', '地点', '世界观', '物品', '其他']
+
+  let changed = false
+  for (const name of defaultNames) {
+    if (!existingNodes.some((n) => n.name === name)) {
+      createNode(db, null, name, 'folder', 'setting')
+      changed = true
+    }
+  }
+
+  if (changed) {
+    await saveDatabase(db, project.storyDbPath)
+  }
+
+  const nodes = getNodes(db)
+  db.close()
+  return nodes
+}
+
 export async function createProject(input: CreateProjectInput): Promise<ProjectData> {
   const projectPath = normalizeProjectPath(input.projectPath)
   const projectName = input.projectName.trim()
@@ -232,7 +257,7 @@ export async function createStoryNode(input: CreateNodeInput): Promise<StoryNode
   const db = await loadDatabase(project.storyDbPath)
 
   const name = input.type === 'file' ? stripMd(input.name) : input.name
-  createNode(db, input.parentId, name, input.type)
+  createNode(db, input.parentId, name, input.type, input.kind || 'story')
 
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)

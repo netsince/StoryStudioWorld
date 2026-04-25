@@ -6,6 +6,7 @@ export interface StoryNode {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind: 'story' | 'setting'
   fileName: string | null
   sortOrder: number
   createdAt: string
@@ -33,6 +34,8 @@ export interface Tab {
   type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences' | 'archive'
   path?: string
   nodeId?: string
+  kind?: 'story' | 'setting'
+  field?: string
   isDirty?: boolean
   isPinned?: boolean
 }

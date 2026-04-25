@@ -14,10 +14,11 @@ interface CreateMenuPortalProps {
   onCreateFile: () => void
 }
 
-const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({
+const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'setting' }> = ({
   onClose,
   onCreateFolder,
-  onCreateFile
+  onCreateFile,
+  kind = 'story'
 }) => {
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -98,7 +99,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps> = ({
           onClose()
         }}
       >
-        📄 章
+        📄 {kind === 'setting' ? '设定' : '章'}
       </div>
     </div>,
     document.body
@@ -167,7 +168,10 @@ const Explorer: React.FC = () => {
   }
 
   const getNodeChildren = (parentId: string | null): StoryNode[] => {
-    return storyNodes.filter(n => n.parentId === parentId).sort((a, b) => a.sortOrder - b.sortOrder)
+    const kind = activeActivity === 'setting' ? 'setting' : 'story'
+    return storyNodes
+      .filter((n) => n.parentId === parentId && n.kind === kind)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
   }
 
   const getNodeDescendants = (nodeId: string): { folders: number; files: number; fileNames: string[] } => {
@@ -193,16 +197,32 @@ const Explorer: React.FC = () => {
 
   const handleCreateNode = async (type: 'folder' | 'file'): Promise<void> => {
     let name: string
+    const kind = activeActivity === 'setting' ? 'setting' : 'story'
+
     if (type === 'folder') {
-      name = '新文件夹'
+      name = kind === 'setting' && !getSelectedFolderId() ? '新分类' : '新文件夹'
     } else {
       const parentId = getSelectedFolderId()
       const siblings = getNodeChildren(parentId)
-      const fileCount = siblings.filter(n => n.type === 'file').length
-      name = `第${fileCount + 1}章`
+      if (kind === 'setting') {
+        if (!parentId) {
+          window.alert('请先在分类下创建文件夹，然后再创建设定文件。')
+          return
+        }
+        // Check if parent is a root category
+        const parentNode = storyNodes.find(n => n.id === parentId)
+        if (parentNode && parentNode.parentId === null) {
+           window.alert('请先在分类下创建文件夹，然后再创建设定文件。')
+           return
+        }
+        name = '新设定'
+      } else {
+        const fileCount = siblings.filter(n => n.type === 'file').length
+        name = `第${fileCount + 1}章`
+      }
     }
     const parentId = getSelectedFolderId()
-    await onCreateStoryNode(parentId, name, type)
+    await onCreateStoryNode(parentId, name, type, kind)
     if (parentId && !expandedNodeIds.includes(parentId)) {
       setExpandedNodeIds(prev => [...prev, parentId])
     }
@@ -211,12 +231,13 @@ const Explorer: React.FC = () => {
 
   const onOpenChapter = (node: StoryNode): void => {
     if (!currentProject || node.type !== 'file') return
-    openTab({ id: node.id, title: node.name, type: 'file', nodeId: node.id })
+    openTab({ id: node.id, title: node.name, type: 'file', nodeId: node.id, kind: node.kind })
   }
 
   const onRefreshStoryNodes = useProjectStore((s) => s.refreshStoryNodes)
 
   const renderStoryTree = (): React.ReactNode => {
+    const kind = activeActivity === 'setting' ? 'setting' : 'story'
     if (!currentProject) {
       return (
         <div className="explorer-content">
@@ -233,7 +254,7 @@ const Explorer: React.FC = () => {
 
     return (
       <div
-        className="explorer-story"
+        className={`explorer-${kind}`}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
         <div
@@ -253,6 +274,25 @@ const Explorer: React.FC = () => {
               className="story-toolbar-actions"
               style={{ position: 'relative', display: 'flex', gap: '2px' }}
             >
+              {kind === 'setting' && (
+                <button
+                  className="story-toolbar-btn"
+                  title="新增一级节点"
+                  disabled={isBusy}
+                  onClick={() => void onCreateStoryNode(null, '新分类', 'folder', 'setting')}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              )}
               <button
                 className="story-toolbar-btn"
                 title="刷新"
@@ -297,6 +337,7 @@ const Explorer: React.FC = () => {
                   onClose={() => setIsCreateMenuOpen(false)}
                   onCreateFolder={() => void handleCreateNode('folder')}
                   onCreateFile={() => void handleCreateNode('file')}
+                  kind={kind}
                 />
               )}
               <button
@@ -304,7 +345,7 @@ const Explorer: React.FC = () => {
                 title="归档"
                 disabled={isBusy}
                 onClick={() => {
-                  openTab({ id: 'archive', title: '归档空间', type: 'archive' })
+                  openTab({ id: kind === 'setting' ? 'setting-archive' : 'archive', title: kind === 'setting' ? '设定归档' : '归档空间', type: 'archive' })
                 }}
               >
                 <svg
@@ -327,6 +368,7 @@ const Explorer: React.FC = () => {
         <div className="story-list-panel" style={{ flex: 1, overflow: 'hidden' }}>
           <Tree
             nodes={storyNodes}
+            kind={kind}
             onOpenChapter={onOpenChapter}
             onMoveNode={onMoveStoryNode}
             onReorderNode={onReorderStoryNode}
@@ -348,44 +390,35 @@ const Explorer: React.FC = () => {
       <div className="explorer-header">{activityTitle}</div>
 
       <div className="explorer-body" style={{ height: 'calc(100% - 40px)' }}>
-        {activeActivity === 'chapter' ? (
-          <>
-            <div className="explorer-static-section" style={{ height: '100%' }}>
-              {renderStoryTree()}
+        <div className="explorer-static-section" style={{ height: '100%' }}>
+          {renderStoryTree()}
 
-              {errorMessage && <div className="explorer-inline-error">{errorMessage}</div>}
+          {errorMessage && <div className="explorer-inline-error">{errorMessage}</div>}
 
-              {!currentProject && (
-                <div className="explorer-recent-section">
-                  <div className="explorer-header" style={{ padding: '0 15px 10px 15px' }}>
-                    最近的项目
+          {!currentProject && (
+            <div className="explorer-recent-section">
+              <div className="explorer-header" style={{ padding: '0 15px 10px 15px' }}>
+                最近的项目
+              </div>
+              {recentProjects.length === 0 ? (
+                <div className="explorer-list-item muted">暂无最近项目</div>
+              ) : (
+                recentProjects.map((project) => (
+                  <div
+                    key={project.projectSettingsPath}
+                    className="explorer-list-item"
+                    onClick={() => void onOpenRecentProject(project.projectSettingsPath)}
+                  >
+                    <svg className="icon icon-sm" viewBox="0 0 24 24">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    {project.name}
                   </div>
-                  {recentProjects.length === 0 ? (
-                    <div className="explorer-list-item muted">暂无最近项目</div>
-                  ) : (
-                    recentProjects.map((project) => (
-                      <div
-                        key={project.projectSettingsPath}
-                        className="explorer-list-item"
-                        onClick={() => void onOpenRecentProject(project.projectSettingsPath)}
-                      >
-                        <svg className="icon icon-sm" viewBox="0 0 24 24">
-                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        {project.name}
-                      </div>
-                    ))
-                  )}
-                </div>
+                ))
               )}
             </div>
-          </>
-        ) : (
-          <div className="explorer-content">
-            <div className="dev-placeholder-title">{activityTitle}</div>
-            <div className="dev-placeholder-text">功能开发中...</div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Sidebar>
   )

@@ -4,6 +4,7 @@ import RenameDialog from './RenameDialog'
 
 interface TreeProps {
   nodes: StoryNode[]
+  kind?: 'story' | 'setting'
   onOpenChapter: (node: StoryNode) => void
   onMoveNode: (nodeId: string, newParentId: string | null) => void
   onReorderNode: (nodeId: string, targetNodeId: string, position: 'before' | 'after') => void
@@ -25,6 +26,7 @@ const TWISTIE_SIZE = 16
 
 const Tree: React.FC<TreeProps> = ({
   nodes,
+  kind = 'story',
   onOpenChapter,
   onMoveNode,
   onReorderNode,
@@ -97,9 +99,11 @@ const Tree: React.FC<TreeProps> = ({
 
   const getChildren = useCallback(
     (parentId: string | null) => {
-      return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.sortOrder - b.sortOrder)
+      return nodes
+        .filter((n) => n.parentId === parentId && (n.kind === kind || !n.kind))
+        .sort((a, b) => a.sortOrder - b.sortOrder)
     },
-    [nodes]
+    [nodes, kind]
   )
 
   // Build visible node list for virtual rendering
@@ -218,6 +222,11 @@ const Tree: React.FC<TreeProps> = ({
     },
     [draggingNodeId, onMoveNode]
   )
+
+  const isDefaultSettingNode = useCallback((node: StoryNode) => {
+    if (kind !== 'setting' || node.parentId !== null) return false
+    return ['人物', '地点', '世界观', '物品', '其他'].includes(node.name)
+  }, [kind])
 
   const handleContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault()
@@ -529,11 +538,20 @@ const Tree: React.FC<TreeProps> = ({
           <div
             style={{
               padding: '6px 16px',
-              cursor: 'pointer',
+              cursor: ((): string => {
+                const node = getNodeById(contextMenu.nodeId)
+                return node && isDefaultSettingNode(node) ? 'not-allowed' : 'pointer'
+              })(),
               fontSize: '13px',
-              color: '#f85149'
+              color: '#f85149',
+              opacity: ((): number => {
+                const node = getNodeById(contextMenu.nodeId)
+                return node && isDefaultSettingNode(node) ? 0.5 : 1
+              })()
             }}
             onMouseEnter={(e) => {
+              const node = getNodeById(contextMenu.nodeId)
+              if (node && isDefaultSettingNode(node)) return
               e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
             }}
             onMouseLeave={(e) => {
@@ -541,7 +559,7 @@ const Tree: React.FC<TreeProps> = ({
             }}
             onClick={() => {
               const nodeToDelete = getNodeById(contextMenu.nodeId)
-              if (!nodeToDelete) {
+              if (!nodeToDelete || isDefaultSettingNode(nodeToDelete)) {
                 setContextMenu(null)
                 return
               }

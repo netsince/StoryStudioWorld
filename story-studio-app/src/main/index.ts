@@ -6,6 +6,7 @@ import icon from '../../resources/icon.png?asset'
 import {
   createProject,
   createStoryNode,
+  initSettingNodes,
   loadProject,
   getProjectNodes,
   renameStoryNode,
@@ -104,6 +105,10 @@ function createWindow(): void {
     return getProjectNodes(projectSettingsPath)
   })
 
+  ipcMain.handle('init-setting-nodes', async (_, projectSettingsPath: string) => {
+    return initSettingNodes(projectSettingsPath)
+  })
+
   ipcMain.handle(
     'create-story-node',
     async (
@@ -113,6 +118,7 @@ function createWindow(): void {
         parentId: string | null
         name: string
         type: 'folder' | 'file'
+        kind?: 'story' | 'setting'
       }
     ) => {
       return createStoryNode(input)

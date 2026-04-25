@@ -8,6 +8,8 @@ import { commandService } from '../../services/commandService'
 import ArchiveView from './ArchiveView'
 import ContextMenu from '../ContextMenu'
 import PlainTextEditor from '../PlainTextEditor'
+import SettingEditor from './SettingEditor'
+import SettingFieldEditor from './SettingFieldEditor'
 import CreateProjectForm from './CreateProjectForm'
 import TabBar from './TabBar'
 import WelcomePage, { EmptyState } from './WelcomePage'
@@ -132,18 +134,43 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
     }
   }
 
-  const renderFile = (): React.ReactNode => (
-    <div className="editor-content">
-      <PlainTextEditor
-        content={editorContent}
-        onChange={handleEditorChange}
-        onSave={handleSave}
-        placeholder={`开始写作「${activeTab?.title}」...`}
-        tabId={activeTab?.id}
-        groupId={groupId}
-      />
-    </div>
-  )
+  const renderFile = (): React.ReactNode => {
+    if (activeTab?.kind === 'setting') {
+      if (activeTab.field) {
+        return (
+          <div className="editor-content">
+            <SettingFieldEditor
+              nodeId={activeTab.nodeId!}
+              field={activeTab.field}
+              groupId={groupId}
+              tabId={activeTab.id}
+            />
+          </div>
+        )
+      }
+      return (
+        <div className="editor-content">
+          <SettingEditor
+            nodeId={activeTab.nodeId!}
+            groupId={groupId}
+            tabId={activeTab.id}
+          />
+        </div>
+      )
+    }
+    return (
+      <div className="editor-content">
+        <PlainTextEditor
+          content={editorContent}
+          onChange={handleEditorChange}
+          onSave={handleSave}
+          placeholder={`开始写作「${activeTab?.title}」...`}
+          tabId={activeTab?.id}
+          groupId={groupId}
+        />
+      </div>
+    )
+  }
 
   const renderContent = (): React.ReactNode => {
     if (!activeTab) {
@@ -179,7 +206,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
 
     if (activeTab.type === 'archive') {
       return (
-        <ArchiveView />
+        <ArchiveView kind={activeTab.id === 'setting-archive' ? 'setting' : 'story'} />
       )
     }
 
