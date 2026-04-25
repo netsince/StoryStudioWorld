@@ -38,10 +38,14 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [data, setData] = useState<SettingData>({})
   const [loading, setLoading] = useState(true)
   const [appSettings, setAppSettings] = useState(getAppSettings())
+  const [hasLoaded, setHasLoaded] = useState(false)
   
   const currentProject = useProjectStore((s) => s.currentProject)
   const storyNodes = useProjectStore((s) => s.storyNodes)
+  const draftsByNodeId = useProjectStore((s) => s.draftsByNodeId)
   const saveNodeContent = useProjectStore((s) => s.saveNodeContent)
+  const setDraft = useProjectStore((s) => s.setDraft)
+  const clearDraft = useProjectStore((s) => s.clearDraft)
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
   const openTab = useEditorStore((s) => s.openTab)
   const openTabInSplit = useEditorStore((s) => s.openTabInSplit)
@@ -62,12 +66,27 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
   const config = (FIELD_CONFIG as any)[category] || FIELD_CONFIG.default
 
+  // 只加载一次内容，优先使用内存草稿
   useEffect(() => {
+    if (hasLoaded || !currentProject || !nodeId) return
+    
     const loadContent = async () => {
-      if (!currentProject || !nodeId) return
-      // We don't want to show loading every time it updates in background
-      // but for the first load it's fine
       try {
+        // 1. 优先检查草稿箱
+        const draft = draftsByNodeId[nodeId]
+        if (typeof draft === 'string') {
+          try {
+            const draftData = JSON.parse(draft)
+            setData(draftData)
+            setLoading(false)
+            setHasLoaded(true)
+            return
+          } catch (e) {
+            console.error('Failed to parse draft', e)
+          }
+        }
+        
+        // 2. 没有草稿才从磁盘读取
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (content) {
           setData(JSON.parse(content))
@@ -79,10 +98,37 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
         setData({})
       } finally {
         setLoading(false)
+        setHasLoaded(true)
       }
     }
     loadContent()
-  }, [nodeId, currentProject, node?.updatedAt])
+  }, [nodeId, currentProject, draftsByNodeId, hasLoaded])
+
+  // 当 node.updatedAt 变化（即外部保存），且我们没有未保存的修改时，重新加载
+  useEffect(() => {
+    if (!hasLoaded || !currentProject || !nodeId) return
+    
+    const draft = draftsByNodeId[nodeId]
+    if (typeof draft === 'string') {
+      // 有草稿，不重新加载
+      return
+    }
+    
+    // 没有草稿，从磁盘重新加载
+    const reloadContent = async () => {
+      try {
+        const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
+        if (content) {
+          setData(JSON.parse(content))
+        } else {
+          setData({})
+        }
+      } catch (e) {
+        console.error('Failed to reload setting content', e)
+      }
+    }
+    reloadContent()
+  }, [node?.updatedAt])
 
   useEffect(() => {
     // 每次切换回查看模式或组件加载时刷新设置
@@ -95,18 +141,16 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     if (!currentProject || !nodeId) return
     const content = JSON.stringify(newData)
     await saveNodeContent(nodeId, content)
+    clearDraft(nodeId)
     setDirtyTab(groupId, tabId, false)
   }
 
   const handleChange = (field: string, value: string) => {
     const newData = { ...data, [field]: value }
     setData(newData)
+    // 保存草稿到内存，避免切换标签页时丢失
+    setDraft(nodeId, JSON.stringify(newData))
     setDirtyTab(groupId, tabId, true)
-    // Real-time update for wiki part is handled by state
-    // But we should also save it if we want it to be "real-time" across sessions
-    // The requirement says "wiki must be real-time updated", which usually means 
-    // when you edit in one place, the view updates. Since they are in the same component,
-    // state is enough. If we want persistence, we can debounced save.
   }
 
   const openMultiLineEdit = (field: string) => {

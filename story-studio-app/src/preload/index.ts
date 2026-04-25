@@ -62,6 +62,26 @@ export interface ReorderNodeInput {
   position: 'before' | 'after'
 }
 
+export interface ProofreadResult {
+  issues: {
+    id: string
+    type: 'spelling' | 'grammar' | 'style' | 'duplicate' | 'punctuation'
+    message: string
+    suggestion: string
+    start: number
+    end: number
+    line: number
+    column: number
+    severity: 'error' | 'warning' | 'info'
+  }[]
+  stats: {
+    totalIssues: number
+    errorCount: number
+    warningCount: number
+    infoCount: number
+  }
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -108,7 +128,9 @@ const api = {
   openNewWindow: (): void => ipcRenderer.send('open-new-window'),
   setFullScreen: (fullScreen: boolean): void =>
     ipcRenderer.send('window-set-fullscreen', fullScreen),
-  isFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window-is-fullscreen')
+  isFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window-is-fullscreen'),
+  proofreadText: (text: string): Promise<ProofreadResult> =>
+    ipcRenderer.invoke('proofread-text', text)
 }
 
 if (process.contextIsolated) {

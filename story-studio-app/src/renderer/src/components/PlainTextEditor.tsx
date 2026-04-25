@@ -13,6 +13,7 @@ import {
 
 interface PlainTextEditorProps {
   content: string
+  isActive?: boolean
   onChange: (content: string) => void
   onSave?: () => void
   placeholder?: string
@@ -87,6 +88,7 @@ function countTextStats(text: string): {
 
 const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   content,
+  isActive,
   onChange,
   onSave,
   placeholder = '开始写作...',
@@ -110,6 +112,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // 初始检查
+  useEffect(() => {
+    if (isActive && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [isActive])
 
   useEffect(() => {
     try {
@@ -1154,6 +1163,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           onScroll={handleScroll}
           placeholder={placeholder}
           spellCheck={false}
+          data-tab-id={tabId}
+          data-group-id={groupId}
         />
       </div>
       <ChinesePunctuationBar

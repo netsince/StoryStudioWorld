@@ -171,6 +171,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
             >
               <TabContentRenderer
                 tab={tab}
+                isActive={tab.id === activeTabId}
                 groupId={groupId}
                 currentProject={currentProject}
                 onOpenCreateProject={openCreateProjectTab}

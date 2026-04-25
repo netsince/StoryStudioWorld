@@ -16,15 +16,14 @@ interface ProofreadState {
   ignoredWords: string[]
 
   // Actions
-  checkText: (text: string) => void
-  checkTextAsync: (text: string) => Promise<void>
+  checkText: (text: string) => Promise<void>
   selectIssue: (issueId: string | null) => void
   clearResult: () => void
   setAutoCheck: (enabled: boolean) => void
   toggleAutoCheck: () => void
   addIgnoredWord: (word: string) => void
   removeIgnoredWord: (word: string) => void
-  refreshCheck: (getCurrentText: () => string) => void
+  refreshCheck: (getCurrentText: () => Promise<string>) => Promise<void>
 }
 
 export const useProofreadStore = create<ProofreadState>((set, get) => ({
@@ -35,7 +34,7 @@ export const useProofreadStore = create<ProofreadState>((set, get) => ({
   lastCheckTime: null,
   ignoredWords: [],
 
-  checkText: (text: string) => {
+  checkText: async (text: string) => {
     if (!text || text.trim().length === 0) {
       set({
         result: {
@@ -55,7 +54,7 @@ export const useProofreadStore = create<ProofreadState>((set, get) => ({
     set({ isChecking: true })
 
     try {
-      const result = proofreadService.proofread(text)
+      const result = await proofreadService.proofread(text)
 
       // 过滤掉被忽略的词汇相关的问题
       const { ignoredWords } = get()
@@ -83,10 +82,6 @@ export const useProofreadStore = create<ProofreadState>((set, get) => ({
       console.error('Proofread check failed:', error)
       set({ isChecking: false })
     }
-  },
-
-  checkTextAsync: async (text: string) => {
-    get().checkText(text)
   },
 
   selectIssue: (issueId: string | null) => {
@@ -121,11 +116,11 @@ export const useProofreadStore = create<ProofreadState>((set, get) => ({
     }))
   },
 
-  refreshCheck: (getCurrentText: () => string) => {
+  refreshCheck: async (getCurrentText: () => Promise<string>) => {
     const { autoCheck } = get()
     if (autoCheck) {
-      const text = getCurrentText()
-      get().checkText(text)
+      const text = await getCurrentText()
+      await get().checkText(text)
     }
   }
 }))

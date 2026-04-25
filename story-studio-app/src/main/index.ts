@@ -19,6 +19,7 @@ import {
   restoreArchivedNode,
   permanentlyDeleteProjectNode
 } from './project'
+import { proofreadText } from './proofread'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -224,6 +225,10 @@ function createWindow(): void {
       v8: process.versions.v8 || 'Unknown',
       platform: process.platform
     }
+  })
+
+  ipcMain.handle('proofread-text', async (_, text: string) => {
+    return proofreadText(text)
   })
 
   ipcMain.on('toggle-devtools', () => {

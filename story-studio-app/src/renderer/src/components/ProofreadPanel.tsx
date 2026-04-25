@@ -85,28 +85,35 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
 
   const editorTree = useEditorStore((s) => s.editorTree)
   const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
+  const group = React.useMemo(() => findGroupNode(editorTree, focusedGroupId), [editorTree, focusedGroupId])
+  const activeTabId = group?.activeTabId
   const draftsByNodeId = useProjectStore((s) => s.draftsByNodeId)
   const currentProject = useProjectStore((s) => s.currentProject)
 
   // 获取当前激活的文本内容
-  const getCurrentText = useCallback(async (): Promise<string> => {
-    const group = findGroupNode(editorTree, focusedGroupId)
-    if (!group) return ''
+  const getCurrentText = useCallback(async (isManual = false): Promise<string> => {
+    if (!group || !activeTabId) return ''
 
-    const activeTabId = group.activeTabId
+    // 1. 优先从 DOM 获取（最实时的编辑器内容）
+    const editorTextarea = document.querySelector(
+      `.plain-text-editor-textarea[data-tab-id="${activeTabId}"]`
+    ) as HTMLTextAreaElement
+    if (editorTextarea) {
+      return editorTextarea.value
+    }
+
     const activeTab = group.tabs.find((t) => t.id === activeTabId)
     if (!activeTab) return ''
 
-    // 如果是文件类型tab，获取文件内容
+    // 2. 如果是文件类型tab，检查是否有草稿
     if (activeTab.type === 'file' && activeTab.nodeId) {
-      // 先检查是否有草稿
       const draft = draftsByNodeId[activeTab.nodeId]
       if (typeof draft === 'string') {
         return draft
       }
 
-      // 否则从文件读取
-      if (currentProject) {
+      // 3. 只有手动检查且没有草稿时，才尝试从文件读取
+      if (isManual && currentProject) {
         try {
           const content = await window.api.readNodeContent(
             currentProject.projectSettingsPath,
@@ -120,18 +127,12 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
       }
     }
 
-    // 其他类型的tab，尝试从DOM获取（针对编辑器内容）
-    const editorTextarea = document.querySelector('.plain-text-editor-textarea') as HTMLTextAreaElement
-    if (editorTextarea) {
-      return editorTextarea.value
-    }
-
     return ''
-  }, [editorTree, focusedGroupId, draftsByNodeId, currentProject])
+  }, [group, activeTabId, draftsByNodeId, currentProject])
 
   // 执行校对检查
   const handleCheck = useCallback(async () => {
-    const text = await getCurrentText()
+    const text = await getCurrentText(true) // 手动检查
     checkText(text)
   }, [getCurrentText, checkText])
 
@@ -145,6 +146,8 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
       const text = await getCurrentText()
       if (text) {
         checkText(text)
+      } else {
+        clearResult()
       }
     }
 
@@ -158,35 +161,34 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
       }, 1000)
     }
 
-    // 监听编辑器内容变化
+    // 监听输入事件
     const handleInput = (e: Event): void => {
       const target = e.target as HTMLElement
-      if (target.classList.contains('plain-text-editor-textarea')) {
+      // 确保是当前激活标签页的输入
+      if (
+        target.classList.contains('plain-text-editor-textarea') &&
+        target.getAttribute('data-tab-id') === activeTabId
+      ) {
         scheduleCheck()
       }
     }
 
-    // 监听tab切换
-    const handleVisibilityChange = (): void => {
-      if (document.visibilityState === 'visible') {
-        void check()
-      }
-    }
-
     document.addEventListener('input', handleInput)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // 初始检查
+    // 当切换标签页或激活组时，立即检查一次
+    // 注意：这里不需要防抖，因为切换操作不频繁
     void check()
 
     return () => {
       document.removeEventListener('input', handleInput)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (timeoutId) {
         window.clearTimeout(timeoutId)
       }
     }
-  }, [autoCheck, getCurrentText, checkText])
+    // 依赖项中移除 getCurrentText 以避免打字时频繁重置 Effect
+    // 这样 handleInput 闭包里的 scheduleCheck 会在 1s 后执行当时的 check()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCheck, checkText, clearResult, activeTabId, focusedGroupId])
 
   // 处理问题点击 - 跳转到对应位置
   const handleIssueClick = useCallback((issue: ProofreadIssue) => {
@@ -224,94 +226,110 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
   }, [result])
 
   return (
-    <div className={`proofread-panel ${className}`}>
+    <div className="proofread-panel">
       {/* 工具栏 */}
       <div className="proofread-toolbar">
-        <button
-          className="proofread-btn"
-          onClick={handleCheck}
-          disabled={isChecking}
-          title="立即检查"
-        >
-          {isChecking ? '⏳' : '🔍'} 检查
-        </button>
+        <div className="proofread-actions">
+          <button
+            className="story-toolbar-btn"
+            onClick={handleCheck}
+            disabled={isChecking}
+            title="手动检查"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+          <button
+            className="story-toolbar-btn"
+            onClick={clearResult}
+            disabled={!result}
+            title="清空结果"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
 
-        <label className="proofread-auto-check">
+      {/* 统计信息 - 简化版 */}
+      {result && (
+        <div className="proofread-summary">
+          <div className="summary-item">
+            <span className="summary-dot error" />
+            <span className="summary-count">{result.stats.errorCount} 错误</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-dot warning" />
+            <span className="summary-count">{result.stats.warningCount} 警告</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-dot info" />
+            <span className="summary-count">{result.stats.infoCount} 提示</span>
+          </div>
+        </div>
+      )}
+
+      {/* 设置栏 */}
+      <div className="proofread-settings">
+        <label className="proofread-checkbox">
           <input
             type="checkbox"
             checked={autoCheck}
             onChange={(e) => setAutoCheck(e.target.checked)}
           />
-          自动检查
+          <span>自动校对</span>
         </label>
-
-        {result && (
-          <button
-            className="proofread-btn proofread-clear"
-            onClick={clearResult}
-            title="清除结果"
-          >
-            ✕
-          </button>
-        )}
       </div>
 
-      {/* 统计信息 */}
-      {result && (
-        <div className="proofread-stats">
-          <div className="stat-item">
-            <span className="stat-count error">{result.stats.errorCount}</span>
-            <span className="stat-label">错误</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-count warning">{result.stats.warningCount}</span>
-            <span className="stat-label">警告</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-count info">{result.stats.infoCount}</span>
-            <span className="stat-label">提示</span>
-          </div>
-          <div className="stat-item total">
-            <span className="stat-count">{result.stats.totalIssues}</span>
-            <span className="stat-label">总计</span>
-          </div>
-        </div>
-      )}
-
       {/* 检查结果列表 */}
-      <div className="proofread-issues">
+      <div className="proofread-content">
         {isChecking && !result && (
           <div className="proofread-empty">
-            <div className="proofread-loading">正在检查...</div>
+            <div className="loading-spinner" />
+            <div className="proofread-empty-text">正在分析文本...</div>
           </div>
         )}
 
         {!isChecking && !result && (
           <div className="proofread-empty">
             <div className="proofread-empty-icon">🔍</div>
-            <div className="proofread-empty-text">点击"检查"按钮开始校对</div>
-            {autoCheck && (
-              <div className="proofread-empty-subtext">或输入文本自动检查</div>
-            )}
+            <div className="proofread-empty-text">点击搜索图标或输入内容开始校对</div>
           </div>
         )}
 
         {result && result.issues.length === 0 && (
           <div className="proofread-empty">
-            <div className="proofread-empty-icon success">✅</div>
-            <div className="proofread-empty-text">没有发现错误</div>
-            <div className="proofread-empty-subtext">文本校对通过</div>
+            <div className="proofread-empty-icon success">✓</div>
+            <div className="proofread-empty-text">未发现可优化的项目</div>
           </div>
         )}
 
         {result && result.issues.length > 0 && (
-          <>
+          <div className="proofread-list">
             {/* 错误 */}
             {groupedIssues.error?.length > 0 && (
-              <div className="issue-group">
-                <div className="issue-group-header error">
-                  <span className="issue-group-icon">❌</span>
-                  <span className="issue-group-title">错误 ({groupedIssues.error.length})</span>
+              <div className="issue-section">
+                <div className="issue-section-header">
+                  <span>错误</span>
+                  <span className="section-count">{groupedIssues.error.length}</span>
                 </div>
                 {groupedIssues.error.map((issue) => (
                   <IssueItem
@@ -326,10 +344,10 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
 
             {/* 警告 */}
             {groupedIssues.warning?.length > 0 && (
-              <div className="issue-group">
-                <div className="issue-group-header warning">
-                  <span className="issue-group-icon">⚠️</span>
-                  <span className="issue-group-title">警告 ({groupedIssues.warning.length})</span>
+              <div className="issue-section">
+                <div className="issue-section-header">
+                  <span>警告</span>
+                  <span className="section-count">{groupedIssues.warning.length}</span>
                 </div>
                 {groupedIssues.warning.map((issue) => (
                   <IssueItem
@@ -344,10 +362,10 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
 
             {/* 提示 */}
             {groupedIssues.info?.length > 0 && (
-              <div className="issue-group">
-                <div className="issue-group-header info">
-                  <span className="issue-group-icon">ℹ️</span>
-                  <span className="issue-group-title">提示 ({groupedIssues.info.length})</span>
+              <div className="issue-section">
+                <div className="issue-section-header">
+                  <span>提示</span>
+                  <span className="section-count">{groupedIssues.info.length}</span>
                 </div>
                 {groupedIssues.info.map((issue) => (
                   <IssueItem
@@ -359,7 +377,7 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -376,26 +394,22 @@ interface IssueItemProps {
 const IssueItem: React.FC<IssueItemProps> = ({ issue, isSelected, onClick }) => {
   return (
     <div
-      className={`issue-item ${isSelected ? 'selected' : ''} ${getSeverityClass(issue.severity)}`}
+      className={`proofread-item ${isSelected ? 'selected' : ''} severity-${issue.severity}`}
       onClick={onClick}
     >
-      <div className="issue-header">
-        <span className="issue-icon">{getIssueIcon(issue.type)}</span>
-        <span className="issue-type">{getIssueTypeLabel(issue.type)}</span>
-        <span className={`issue-severity ${getSeverityClass(issue.severity)}`}>
-          {getSeverityLabel(issue.severity)}
-        </span>
-        <span className="issue-location">
-          第{issue.line}行
-        </span>
-      </div>
-      <div className="issue-message">{issue.message}</div>
-      {issue.suggestion && (
-        <div className="issue-suggestion">
-          <span className="suggestion-label">建议:</span>
-          <span className="suggestion-text">{issue.suggestion}</span>
+      <div className="item-main">
+        <div className="item-header">
+          <span className="item-type">{getIssueTypeLabel(issue.type)}</span>
+          <span className="item-line">L{issue.line}</span>
         </div>
-      )}
+        <div className="item-message">{issue.message}</div>
+        {issue.suggestion && (
+          <div className="item-suggestion">
+            <span className="suggestion-label">建议:</span>
+            <span className="suggestion-text">{issue.suggestion}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -133,6 +133,10 @@ const Explorer: React.FC = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>([])
 
+  useEffect(() => {
+    setSelectedNodeIds([])
+  }, [activeActivity])
+
   const activityTitle = useMemo(() => {
     switch (activeActivity) {
       case 'chapter':

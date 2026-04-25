@@ -12,6 +12,7 @@ import PreferencesPage from './PreferencesPage'
 
 interface TabContentRendererProps {
   tab: Tab
+  isActive: boolean
   groupId: string
   currentProject: ProjectData | null
   onOpenCreateProject: () => void
@@ -25,6 +26,7 @@ interface TabContentRendererProps {
 
 const TabContentRenderer: React.FC<TabContentRendererProps> = ({
   tab,
+  isActive,
   groupId,
   currentProject,
   onOpenCreateProject,
@@ -35,7 +37,15 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
   clearDraft,
   setDirtyTab
 }) => {
-  const [editorContent, setEditorContent] = useState<string>('')
+  const [editorContent, setEditorContent] = useState<string>(() => {
+    if (tab.type === 'file' && tab.nodeId) {
+      const draft = useProjectStore.getState().draftsByNodeId[tab.nodeId]
+      if (typeof draft === 'string') {
+        return draft
+      }
+    }
+    return ''
+  })
 
   useEffect(() => {
     const loadContent = async (): Promise<void> => {
@@ -133,6 +143,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
       <div className="editor-content">
         <PlainTextEditor
           content={editorContent}
+          isActive={isActive}
           onChange={handleEditorChange}
           onSave={handleSave}
           placeholder={`开始写作「${tab.title}」...`}
