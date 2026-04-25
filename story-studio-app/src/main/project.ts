@@ -13,7 +13,6 @@ import {
   deleteNode,
   deleteNodeRecursively,
   permanentlyDeleteNode,
-  permanentlyDeleteNodeRecursively,
   restoreNode,
   moveNode,
   getNodeContent,
@@ -392,11 +391,7 @@ export async function permanentlyDeleteProjectNode(input: DeleteNodeInput): Prom
   }
   stmt.free()
   if (type !== null) {
-    if (type === 'folder') {
-      permanentlyDeleteNodeRecursively(db, input.nodeId)
-    } else {
-      permanentlyDeleteNode(db, input.nodeId)
-    }
+    permanentlyDeleteNode(db, input.nodeId)
   }
 
   await saveDatabase(db, project.storyDbPath)

@@ -255,15 +255,6 @@ export function permanentlyDeleteNode(db: Database, nodeId: string): void {
   db.run(`DELETE FROM nodes WHERE id = ?`, [nodeId])
 }
 
-export function permanentlyDeleteNodeRecursively(db: Database, nodeId: string): void {
-  const children = getChildNodes(db, nodeId)
-  for (const child of children) {
-    permanentlyDeleteNodeRecursively(db, child.id)
-  }
-
-  db.run(`DELETE FROM nodes WHERE id = ?`, [nodeId])
-}
-
 export function moveNode(
   db: Database,
   nodeId: string,
