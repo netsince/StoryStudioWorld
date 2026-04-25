@@ -115,123 +115,236 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>找不到设定节点</div>
 
   return (
-    <div className="setting-editor" style={{ 
+    <div className="setting-editor wiki-style" style={{ 
       height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
       backgroundColor: 'var(--editor-bg, #1e1e1e)',
       color: 'var(--foreground, #ccc)',
       overflowY: 'auto',
-      padding: '20px'
+      padding: '40px 60px'
     }}>
-      <div className="setting-header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '20px',
-        borderBottom: '1px solid var(--border-color, #333)',
-        paddingBottom: '10px'
-      }}>
-        <h2 style={{ margin: 0, fontSize: '20px' }}>{node.name}</h2>
-        <button 
-          onClick={() => {
-            if (isEditing) {
-              handleSave(data)
-            }
-            setIsEditing(!isEditing)
-          }}
-          style={{
-            padding: '4px 12px',
-            backgroundColor: isEditing ? 'var(--button-primary-bg, #0e639c)' : 'transparent',
-            color: '#white',
-            border: '1px solid var(--button-primary-bg, #0e639c)',
-            borderRadius: '2px',
-            cursor: 'pointer'
-          }}
-        >
-          {isEditing ? '完成' : '编辑'}
-        </button>
-      </div>
+      <div style={{ margin: '0 auto', position: 'relative' }}>
+        {/* Wiki Header */}
+        <header style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'baseline',
+          marginBottom: '20px',
+          borderBottom: '1px solid #54595d',
+          paddingBottom: '5px'
+        }}>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: '32px', 
+            fontWeight: 'normal', 
+            fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+            color: '#fff'
+          }}>
+            {node.name}
+          </h1>
+          <button 
+            onClick={() => {
+              if (isEditing) {
+                handleSave(data)
+              }
+              setIsEditing(!isEditing)
+            }}
+            style={{
+              padding: '2px 10px',
+              backgroundColor: 'transparent',
+              color: '#3498db',
+              border: 'none',
+              fontSize: '14px',
+              cursor: 'pointer',
+              textDecoration: 'none'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+          >
+            [ {isEditing ? '保存' : '编辑'} ]
+          </button>
+        </header>
 
-      <div className="setting-fields" style={{ display: 'grid', gap: '20px' }}>
-        {/* Single line fields */}
-        {config.single.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
-            {config.single.map((field: string) => (
-              <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ fontSize: '12px', color: '#888' }}>{field}</label>
+        <div style={{ display: 'flex', flexDirection: 'row-reverse', gap: '24px', alignItems: 'flex-start' }}>
+           {/* Infobox (Wikipedia style) */}
+           {config.single.length > 0 && (
+             <aside className="wiki-infobox" style={{ 
+               width: '280px', 
+               backgroundColor: '#2a2a2e', 
+               border: '1px solid #54595d', 
+               padding: '8px',
+               fontSize: '13px',
+               flexShrink: 0,
+               marginBottom: '20px'
+             }}>
+               <div style={{ 
+                 textAlign: 'center', 
+                 fontWeight: 'bold', 
+                 padding: '8px', 
+                 backgroundColor: '#3a3a3e',
+                 marginBottom: '8px',
+                 border: '1px solid #54595d'
+               }}>
+                 {node.name}
+               </div>
+               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                 <tbody>
+                   {config.single.map((field: string) => (
+                     <tr key={field} style={{ borderBottom: '1px solid #444' }}>
+                       <th style={{ 
+                         textAlign: 'left', 
+                         padding: '6px 4px', 
+                         width: '35%', 
+                         verticalAlign: 'top',
+                         color: '#aaa',
+                         fontWeight: 'bold'
+                       }}>
+                         {field}
+                       </th>
+                       <td style={{ padding: '6px 4px' }}>
+                         {isEditing ? (
+                           <input 
+                             type="text"
+                             value={data[field] || ''}
+                             onChange={(e) => handleChange(field, e.target.value)}
+                             style={{
+                               width: '100%',
+                               backgroundColor: '#1e1e1e',
+                               border: '1px solid #54595d',
+                               color: '#fff',
+                               padding: '2px 4px',
+                               fontSize: '13px'
+                             }}
+                           />
+                         ) : (
+                           <span>{data[field] || <span style={{ color: '#666', fontStyle: 'italic' }}>未填写</span>}</span>
+                         )}
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </aside>
+           )}
+ 
+           {/* Wiki Article Body */}
+           <div className="wiki-content" style={{ flex: 1 }}>
+             {/* Table of Contents */}
+             {config.multi.length >= 3 && !isEditing && (
+               <nav className="wiki-toc" style={{ 
+                 backgroundColor: '#2a2a2e', 
+                 border: '1px solid #54595d', 
+                 padding: '12px 20px', 
+                 marginBottom: '24px',
+                 display: 'inline-block',
+                 minWidth: '200px'
+               }}>
+                 <div style={{ 
+                   fontWeight: 'bold', 
+                   textAlign: 'center', 
+                   marginBottom: '10px',
+                   fontSize: '14px'
+                 }}>
+                   目录
+                 </div>
+                 <ul style={{ 
+                   listStyle: 'none', 
+                   padding: 0, 
+                   margin: 0,
+                   fontSize: '13px',
+                   color: '#3498db'
+                 }}>
+                   {config.multi.map((field: string, index: number) => (
+                     <li key={field} style={{ marginBottom: '4px' }}>
+                       <a 
+                         href={`#${field}`} 
+                         onClick={(e) => {
+                           e.preventDefault();
+                           document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' });
+                         }}
+                         style={{ color: 'inherit', textDecoration: 'none' }}
+                         onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                         onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                       >
+                         <span style={{ color: '#ccc', marginRight: '8px' }}>{index + 1}</span>
+                         {field}
+                       </a>
+                     </li>
+                   ))}
+                 </ul>
+               </nav>
+             )}
+
+             {config.multi.map((field: string) => (
+               <section key={field} id={field} style={{ marginBottom: '24px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'baseline',
+                  borderBottom: '1px solid #54595d',
+                  marginBottom: '12px',
+                  paddingBottom: '2px'
+                }}>
+                  <h2 style={{ 
+                    margin: 0, 
+                    fontSize: '22px', 
+                    fontWeight: 'normal',
+                    fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+                    color: '#fff'
+                  }}>
+                    {field}
+                  </h2>
+                  {isEditing && (
+                    <button 
+                      onClick={() => openMultiLineEdit(field)}
+                      style={{
+                        fontSize: '12px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#3498db',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                      onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                    >
+                      [ 独立编辑 ]
+                    </button>
+                  )}
+                </div>
+                
                 {isEditing ? (
-                  <input 
-                    type="text"
+                  <textarea 
                     value={data[field] || ''}
                     onChange={(e) => handleChange(field, e.target.value)}
                     style={{
-                      backgroundColor: '#252526',
-                      border: '1px solid #454545',
+                      width: '100%',
+                      backgroundColor: '#1e1e1e',
+                      border: '1px solid #54595d',
                       color: '#ccc',
-                      padding: '4px 8px',
-                      borderRadius: '2px'
+                      padding: '12px',
+                      borderRadius: '0',
+                      minHeight: '120px',
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                      lineHeight: '1.6',
+                      fontSize: '15px'
                     }}
                   />
                 ) : (
-                  <div style={{ fontSize: '14px', minHeight: '24px' }}>{data[field] || ' (未填写) '}</div>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    lineHeight: '1.7',
+                    whiteSpace: 'pre-wrap', 
+                    color: data[field] ? '#d1d1d1' : '#666',
+                    fontFamily: 'sans-serif'
+                  }}>
+                    {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。您可以点击右上方“编辑”按钮添加信息。</span>}
+                  </div>
                 )}
-              </div>
+              </section>
             ))}
           </div>
-        )}
-
-        {/* Multi line fields */}
-        {config.multi.map((field: string) => (
-          <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '12px', color: '#888' }}>{field}</label>
-              {isEditing && (
-                <button 
-                  onClick={() => openMultiLineEdit(field)}
-                  style={{
-                    fontSize: '11px',
-                    padding: '2px 6px',
-                    backgroundColor: '#333',
-                    border: 'none',
-                    color: '#aaa',
-                    cursor: 'pointer'
-                  }}
-                >
-                  在新标签页编辑
-                </button>
-              )}
-            </div>
-            {isEditing ? (
-              <textarea 
-                value={data[field] || ''}
-                onChange={(e) => handleChange(field, e.target.value)}
-                style={{
-                  backgroundColor: '#252526',
-                  border: '1px solid #454545',
-                  color: '#ccc',
-                  padding: '8px',
-                  borderRadius: '2px',
-                  minHeight: '80px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
-              />
-            ) : (
-              <div style={{ 
-                fontSize: '14px', 
-                whiteSpace: 'pre-wrap', 
-                backgroundColor: '#252526',
-                padding: '10px',
-                borderRadius: '4px',
-                minHeight: '40px',
-                color: data[field] ? '#ccc' : '#666'
-              }}>
-                {data[field] || ' (未填写) '}
-              </div>
-            )}
-          </div>
-        ))}
+        </div>
       </div>
     </div>
   )
