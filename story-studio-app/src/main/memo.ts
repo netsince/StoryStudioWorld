@@ -1,5 +1,5 @@
 import { readFile, writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { app } from 'electron'
 
 export interface Memo {
@@ -28,7 +28,7 @@ async function ensureFileExists(filePath: string): Promise<void> {
   try {
     await readFile(filePath, 'utf-8')
   } catch {
-    const dir = filePath.substring(0, filePath.lastIndexOf('\\'))
+    const dir = dirname(filePath)
     await mkdir(dir, { recursive: true })
     await writeFile(filePath, JSON.stringify({ memos: [] }, null, 2), 'utf-8')
   }
