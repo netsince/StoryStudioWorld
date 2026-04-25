@@ -3,12 +3,17 @@ Copyright (c) 2026 netSince.com
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+to use, copy, modify, merge, publish, distribute, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+If you distribute the source code of this Software, whether in original or
+modified form, you must do so only under the terms of this License. This
+requirement does not apply to binary, compiled, or executable forms of the
+Software.
 
 If the Software includes a NOTICE text file, you must include a readable copy
 of the attribution notices contained within such NOTICE file in at least one
@@ -31,11 +36,11 @@ constitutes direct or contributory patent infringement, then any patent
 licenses granted to you under this License for that Software shall terminate
 as of the date such litigation is filed.
 
-You may not use the original name of this Software, the names of its 
-copyright holders, or any trademarks, service marks, logos, or brand 
-identifiers associated with the Software to identify, endorse, or 
-promote derivative works based on the Software withoutprior written 
-permission from the copyright holders. Derivative works must use a 
+You may not use the original name of this Software, the names of its
+copyright holders, or any trademarks, service marks, logos, or brand
+identifiers associated with the Software to identify, endorse, or
+promote derivative works based on the Software without prior written
+permission from the copyright holders. Derivative works must use a
 name clearly distinct from the original Software name, and must not
 imply endorsement by or affiliation with the copyright holders.
 
