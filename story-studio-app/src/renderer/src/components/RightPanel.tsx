@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import { useLayoutStore } from '../stores/layoutStore'
 import { useUiStore } from '../stores/uiStore'
 import ProofreadPanel from './ProofreadPanel'
+import MemoPanel from './MemoPanel'
 
 const RightPanel: React.FC = () => {
   const activeActivity = useUiStore((s) => s.activeRightActivity)
@@ -18,12 +19,7 @@ const RightPanel: React.FC = () => {
       </div>
       <div className="right-panel-content">
         {activeActivity === 'proofread' && <ProofreadPanel />}
-        {activeActivity === 'memo' && (
-          <div className="right-panel-placeholder">
-            <div className="placeholder-icon">📝</div>
-            <div className="placeholder-text">便签功能开发中...</div>
-          </div>
-        )}
+        {activeActivity === 'memo' && <MemoPanel />}
         {activeActivity === 'archive' && (
           <div className="right-panel-placeholder">
             <div className="placeholder-icon">📦</div>

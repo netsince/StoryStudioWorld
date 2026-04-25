@@ -82,6 +82,13 @@ export interface ProofreadResult {
   }
 }
 
+export interface Memo {
+  id: string
+  content: string
+  createdAt: number
+  updatedAt: number
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -130,7 +137,13 @@ const api = {
     ipcRenderer.send('window-set-fullscreen', fullScreen),
   isFullScreen: (): Promise<boolean> => ipcRenderer.invoke('window-is-fullscreen'),
   proofreadText: (text: string): Promise<ProofreadResult> =>
-    ipcRenderer.invoke('proofread-text', text)
+    ipcRenderer.invoke('proofread-text', text),
+  // Memo APIs
+  getAllMemos: (): Promise<Memo[]> => ipcRenderer.invoke('get-all-memos'),
+  createMemo: (content?: string): Promise<Memo> => ipcRenderer.invoke('create-memo', content ?? ''),
+  updateMemo: (id: string, content: string): Promise<Memo | null> =>
+    ipcRenderer.invoke('update-memo', id, content),
+  deleteMemo: (id: string): Promise<boolean> => ipcRenderer.invoke('delete-memo', id)
 }
 
 if (process.contextIsolated) {

@@ -38,8 +38,20 @@ declare global {
       openNewWindow: () => void
       setFullScreen: (fullScreen: boolean) => void
       isFullScreen: () => Promise<boolean>
+      // Memo APIs
+      getAllMemos: () => Promise<Memo[]>
+      createMemo: (content?: string) => Promise<Memo>
+      updateMemo: (id: string, content: string) => Promise<Memo | null>
+      deleteMemo: (id: string) => Promise<boolean>
     }
   }
+}
+
+export interface Memo {
+  id: string
+  content: string
+  createdAt: number
+  updatedAt: number
 }
 
 export interface StoryNode {

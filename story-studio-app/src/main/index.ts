@@ -20,6 +20,7 @@ import {
   permanentlyDeleteProjectNode
 } from './project'
 import { proofreadText } from './proofread'
+import { getAllMemos, createMemo, updateMemo, deleteMemo } from './memo'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -229,6 +230,23 @@ function createWindow(): void {
 
   ipcMain.handle('proofread-text', async (_, text: string) => {
     return proofreadText(text)
+  })
+
+  // Memo IPC handlers
+  ipcMain.handle('get-all-memos', async () => {
+    return getAllMemos()
+  })
+
+  ipcMain.handle('create-memo', async (_, content: string) => {
+    return createMemo(content)
+  })
+
+  ipcMain.handle('update-memo', async (_, id: string, content: string) => {
+    return updateMemo(id, content)
+  })
+
+  ipcMain.handle('delete-memo', async (_, id: string) => {
+    return deleteMemo(id)
   })
 
   ipcMain.on('toggle-devtools', () => {
