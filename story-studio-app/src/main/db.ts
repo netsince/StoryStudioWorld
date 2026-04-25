@@ -247,7 +247,7 @@ export function deleteNodeRecursively(db: Database, nodeId: string): void {
 }
 
 export function permanentlyDeleteNode(db: Database, nodeId: string): void {
-  const stmt = db.prepare(`SELECT id FROM nodes WHERE parentId = ?`)
+  const stmt = db.prepare(`SELECT id FROM nodes WHERE parentId = ? AND deletedAt IS NULL`)
   stmt.bind([nodeId])
   while (stmt.step()) {
     const child = stmt.getAsObject() as { id: string }
