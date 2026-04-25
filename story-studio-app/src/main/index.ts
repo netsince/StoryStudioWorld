@@ -21,6 +21,13 @@ import {
 } from './project'
 import { proofreadText } from './proofread'
 import { getAllMemos, createMemo, updateMemo, deleteMemo } from './memo'
+import {
+  createSnapshot,
+  getAllSnapshots,
+  deleteSnapshot,
+  restoreSnapshot,
+  compareWithCurrent
+} from './snapshot'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -247,6 +254,27 @@ function createWindow(): void {
 
   ipcMain.handle('delete-memo', async (_, id: string) => {
     return deleteMemo(id)
+  })
+
+  // Snapshot IPC handlers
+  ipcMain.handle('create-snapshot', async (_, projectSettingsPath: string, name: string, description?: string) => {
+    return createSnapshot({ projectSettingsPath, name, description })
+  })
+
+  ipcMain.handle('get-all-snapshots', async (_, projectSettingsPath: string) => {
+    return getAllSnapshots(projectSettingsPath)
+  })
+
+  ipcMain.handle('delete-snapshot', async (_, projectSettingsPath: string, snapshotId: string) => {
+    return deleteSnapshot(projectSettingsPath, snapshotId)
+  })
+
+  ipcMain.handle('restore-snapshot', async (_, projectSettingsPath: string, snapshotId: string) => {
+    return restoreSnapshot(projectSettingsPath, snapshotId)
+  })
+
+  ipcMain.handle('compare-with-current', async (_, projectSettingsPath: string, snapshotId: string) => {
+    return compareWithCurrent(projectSettingsPath, snapshotId)
   })
 
   ipcMain.on('toggle-devtools', () => {

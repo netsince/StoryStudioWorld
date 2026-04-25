@@ -33,18 +33,18 @@ const RightActivityBar: React.FC = () => {
         <span>便签</span>
       </div>
       <div
-        className={`activity-item ${isOpen && activeActivity === 'archive' ? 'active' : ''}`}
-        title="存档"
-        onClick={() => onActivityChange('archive')}
+        className={`activity-item ${isOpen && activeActivity === 'snapshot' ? 'active' : ''}`}
+        title="快照"
+        onClick={() => onActivityChange('snapshot')}
       >
         <div className="activity-icon">
           <svg className="icon icon-lg" viewBox="0 0 24 24">
-            <path d="M7 7h10M7 7l-2 2M7 7l-2-2"></path>
-            <path d="M3 11h18v8H3z"></path>
-            <path d="M3 11V9h18v2"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
         </div>
-        <span>存档</span>
+        <span>快照</span>
       </div>
 
       <div

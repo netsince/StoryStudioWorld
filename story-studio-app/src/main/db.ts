@@ -58,6 +58,22 @@ export async function initDatabase(dbPath: string): Promise<Database> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_sortOrder ON nodes(sortOrder)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_deletedAt ON nodes(deletedAt)`)
 
+  // 快照表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS snapshots (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      createdAt TEXT NOT NULL,
+      nodeCount INTEGER DEFAULT 0,
+      storyCount INTEGER DEFAULT 0,
+      settingCount INTEGER DEFAULT 0,
+      nodesJson TEXT NOT NULL
+    )
+  `)
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_snapshots_createdAt ON snapshots(createdAt)`)
+
   migrateDatabase(db)
 
   return db
@@ -357,4 +373,159 @@ export function updateNodeContent(db: Database, nodeId: string, content: string)
 
   const now = new Date().toISOString()
   db.run(`UPDATE nodes SET content = ?, updatedAt = ? WHERE id = ?`, [content, now, nodeId])
+}
+
+// ==================== Snapshot Functions ====================
+
+export interface Snapshot {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+  nodeCount: number
+  storyCount: number
+  settingCount: number
+  nodes: StoryNode[]
+}
+
+export function createSnapshot(
+  db: Database,
+  name: string,
+  description: string | null,
+  nodes: StoryNode[]
+): Snapshot {
+  const id = randomUUID()
+  const createdAt = new Date().toISOString()
+  const nodeCount = nodes.length
+  const storyCount = nodes.filter(n => n.kind === 'story').length
+  const settingCount = nodes.filter(n => n.kind === 'setting').length
+
+  db.run(
+    `INSERT INTO snapshots (id, name, description, createdAt, nodeCount, storyCount, settingCount, nodesJson)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, name, description, createdAt, nodeCount, storyCount, settingCount, JSON.stringify(nodes)]
+  )
+
+  return {
+    id,
+    name,
+    description,
+    createdAt,
+    nodeCount,
+    storyCount,
+    settingCount,
+    nodes
+  }
+}
+
+export function getAllSnapshots(db: Database): Snapshot[] {
+  const stmt = db.prepare(`
+    SELECT id, name, description, createdAt, nodeCount, storyCount, settingCount, nodesJson
+    FROM snapshots
+    ORDER BY createdAt DESC
+  `)
+
+  const snapshots: Snapshot[] = []
+  while (stmt.step()) {
+    const row = stmt.getAsObject()
+    snapshots.push({
+      id: row.id as string,
+      name: row.name as string,
+      description: row.description as string | null,
+      createdAt: row.createdAt as string,
+      nodeCount: row.nodeCount as number,
+      storyCount: row.storyCount as number,
+      settingCount: row.settingCount as number,
+      nodes: JSON.parse(row.nodesJson as string) as StoryNode[]
+    })
+  }
+  stmt.free()
+
+  return snapshots
+}
+
+export function getSnapshot(db: Database, snapshotId: string): Snapshot | null {
+  const stmt = db.prepare(`
+    SELECT id, name, description, createdAt, nodeCount, storyCount, settingCount, nodesJson
+    FROM snapshots WHERE id = ?
+  `)
+  stmt.bind([snapshotId])
+
+  if (stmt.step()) {
+    const row = stmt.getAsObject()
+    stmt.free()
+
+    return {
+      id: row.id as string,
+      name: row.name as string,
+      description: row.description as string | null,
+      createdAt: row.createdAt as string,
+      nodeCount: row.nodeCount as number,
+      storyCount: row.storyCount as number,
+      settingCount: row.settingCount as number,
+      nodes: JSON.parse(row.nodesJson as string) as StoryNode[]
+    }
+  }
+
+  stmt.free()
+  return null
+}
+
+export function deleteSnapshot(db: Database, snapshotId: string): boolean {
+  const stmt = db.prepare(`SELECT id FROM snapshots WHERE id = ?`)
+  stmt.bind([snapshotId])
+  const exists = stmt.step()
+  stmt.free()
+
+  if (!exists) return false
+
+  db.run(`DELETE FROM snapshots WHERE id = ?`, [snapshotId])
+  return true
+}
+
+export function restoreFromSnapshot(db: Database, snapshotId: string): boolean {
+  const snapshot = getSnapshot(db, snapshotId)
+  if (!snapshot) return false
+
+  // 清除现有节点（硬删除）
+  db.run(`DELETE FROM nodes`)
+
+  // 恢复快照中的节点
+  for (const node of snapshot.nodes) {
+    db.run(
+      `INSERT INTO nodes (id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        node.id,
+        node.parentId,
+        node.name,
+        node.type,
+        node.kind,
+        node.fileName,
+        node.content,
+        node.sortOrder,
+        node.createdAt,
+        node.updatedAt,
+        node.deletedAt
+      ]
+    )
+  }
+
+  return true
+}
+
+export function getAllNodesWithDeleted(db: Database): StoryNode[] {
+  const stmt = db.prepare(`
+    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    FROM nodes
+    ORDER BY sortOrder ASC, createdAt ASC
+  `)
+
+  const nodes: StoryNode[] = []
+  while (stmt.step()) {
+    nodes.push(stmt.getAsObject() as StoryNode)
+  }
+  stmt.free()
+
+  return nodes
 }

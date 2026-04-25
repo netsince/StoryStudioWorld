@@ -1,5 +1,5 @@
 export type ActivityType = 'chapter' | 'setting' | 'plugin' | 'archive'
-export type RightActivityType = 'proofread' | 'memo' | 'archive'
+export type RightActivityType = 'proofread' | 'memo' | 'snapshot'
 
 export interface StoryNode {
   id: string

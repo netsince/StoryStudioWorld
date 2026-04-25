@@ -43,6 +43,12 @@ declare global {
       createMemo: (content?: string) => Promise<Memo>
       updateMemo: (id: string, content: string) => Promise<Memo | null>
       deleteMemo: (id: string) => Promise<boolean>
+      // Snapshot APIs
+      createSnapshot: (projectSettingsPath: string, name: string, description?: string) => Promise<Snapshot>
+      getAllSnapshots: (projectSettingsPath: string) => Promise<Snapshot[]>
+      deleteSnapshot: (projectSettingsPath: string, snapshotId: string) => Promise<boolean>
+      restoreSnapshot: (projectSettingsPath: string, snapshotId: string) => Promise<boolean>
+      compareWithCurrent: (projectSettingsPath: string, snapshotId: string) => Promise<DiffResult | null>
     }
   }
 }
@@ -52,6 +58,39 @@ export interface Memo {
   content: string
   createdAt: number
   updatedAt: number
+}
+
+export interface Snapshot {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+  nodeCount: number
+  storyCount: number
+  settingCount: number
+  nodes: StoryNode[]
+}
+
+export interface DiffNode {
+  id: string
+  name: string
+  type: 'folder' | 'file'
+  kind: 'story' | 'setting'
+  before?: StoryNode
+  after?: StoryNode
+}
+
+export interface DiffResult {
+  story: {
+    added: DiffNode[]
+    modified: DiffNode[]
+    deleted: DiffNode[]
+  }
+  setting: {
+    added: DiffNode[]
+    modified: DiffNode[]
+    deleted: DiffNode[]
+  }
 }
 
 export interface StoryNode {

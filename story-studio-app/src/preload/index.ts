@@ -89,6 +89,39 @@ export interface Memo {
   updatedAt: number
 }
 
+export interface Snapshot {
+  id: string
+  name: string
+  description: string | null
+  createdAt: string
+  nodeCount: number
+  storyCount: number
+  settingCount: number
+  nodes: StoryNode[]
+}
+
+export interface DiffNode {
+  id: string
+  name: string
+  type: 'folder' | 'file'
+  kind: 'story' | 'setting'
+  before?: StoryNode
+  after?: StoryNode
+}
+
+export interface DiffResult {
+  story: {
+    added: DiffNode[]
+    modified: DiffNode[]
+    deleted: DiffNode[]
+  }
+  setting: {
+    added: DiffNode[]
+    modified: DiffNode[]
+    deleted: DiffNode[]
+  }
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -143,7 +176,18 @@ const api = {
   createMemo: (content?: string): Promise<Memo> => ipcRenderer.invoke('create-memo', content ?? ''),
   updateMemo: (id: string, content: string): Promise<Memo | null> =>
     ipcRenderer.invoke('update-memo', id, content),
-  deleteMemo: (id: string): Promise<boolean> => ipcRenderer.invoke('delete-memo', id)
+  deleteMemo: (id: string): Promise<boolean> => ipcRenderer.invoke('delete-memo', id),
+  // Snapshot APIs
+  createSnapshot: (projectSettingsPath: string, name: string, description?: string): Promise<Snapshot> =>
+    ipcRenderer.invoke('create-snapshot', projectSettingsPath, name, description),
+  getAllSnapshots: (projectSettingsPath: string): Promise<Snapshot[]> =>
+    ipcRenderer.invoke('get-all-snapshots', projectSettingsPath),
+  deleteSnapshot: (projectSettingsPath: string, snapshotId: string): Promise<boolean> =>
+    ipcRenderer.invoke('delete-snapshot', projectSettingsPath, snapshotId),
+  restoreSnapshot: (projectSettingsPath: string, snapshotId: string): Promise<boolean> =>
+    ipcRenderer.invoke('restore-snapshot', projectSettingsPath, snapshotId),
+  compareWithCurrent: (projectSettingsPath: string, snapshotId: string): Promise<DiffResult | null> =>
+    ipcRenderer.invoke('compare-with-current', projectSettingsPath, snapshotId)
 }
 
 if (process.contextIsolated) {
