@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, width, side, className = '', 
         overflow: 'hidden'
       }}
     >
-      <div className="sidebar-inner" style={{ width: '100%', height: '100%' }}>
+      <div className="sidebar-inner" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
     </div>
