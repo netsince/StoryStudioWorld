@@ -44,6 +44,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const saveNodeContent = useProjectStore((s) => s.saveNodeContent)
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
   const openTab = useEditorStore((s) => s.openTab)
+  const openTabInSplit = useEditorStore((s) => s.openTabInSplit)
 
   const node = useMemo(() => storyNodes.find(n => n.id === nodeId), [storyNodes, nodeId])
   
@@ -109,15 +110,15 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   }
 
   const openMultiLineEdit = (field: string) => {
-    // Open a new tab for multi-line editing
-    openTab({
+    // 在右侧分屏打开编辑标签页
+    openTabInSplit({
       id: `${nodeId}-${field}`,
       title: `${node?.name} - ${field}`,
       type: 'file',
       nodeId: nodeId,
       kind: 'setting',
       field: field
-    })
+    }, groupId)
   }
 
   if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>加载中...</div>
@@ -303,54 +304,35 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     }}>
                       {field}
                     </h2>
-                    {isEditing && (
-                      <button 
-                        onClick={() => openMultiLineEdit(field)}
-                        style={{
-                          fontSize: '12px',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          color: '#3498db',
-                          cursor: 'pointer',
-                          padding: 0
-                        }}
-                        onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                        onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                      >
-                        [ 独立编辑 ]
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => openMultiLineEdit(field)}
+                      style={{
+                        fontSize: '12px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#3498db',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                      onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                    >
+                      [ 独立编辑 ]
+                    </button>
                   </div>
                   
-                  {isEditing ? (
-                    <textarea 
-                      value={data[field] || ''}
-                      onChange={(e) => handleChange(field, e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#1e1e1e',
-                        border: '1px solid #54595d',
-                        color: '#ccc',
-                        padding: '12px',
-                        borderRadius: '0',
-                        minHeight: '120px',
-                        resize: 'vertical',
-                        fontFamily: 'inherit',
-                        lineHeight: '1.6',
-                        fontSize: '15px'
-                      }}
-                    />
-                  ) : (
-                    <div style={{ 
-                      fontSize: `${appSettings.editorFontSize}px`, 
-                      lineHeight: appSettings.editorLineHeight,
-                      whiteSpace: 'pre-wrap', 
-                      color: data[field] ? '#d1d1d1' : '#666',
-                      fontFamily: appSettings.editorFontFamily
-                    }}>
-                      {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。您可以点击右上方“编辑”按钮添加信息。</span>}
-                    </div>
-                  )}
+                  <div style={{ 
+                    fontSize: `${appSettings.editorFontSize}px`, 
+                    lineHeight: appSettings.editorLineHeight,
+                    whiteSpace: 'pre-wrap', 
+                    color: data[field] ? '#d1d1d1' : '#666',
+                    fontFamily: appSettings.editorFontFamily,
+                    border: isEditing ? '1px dashed #444' : 'none',
+                    padding: isEditing ? '8px' : '0',
+                    backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
+                  }}>
+                    {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。{isEditing ? '点击上方“独立编辑”添加。' : '您可以点击右上方“编辑”按钮添加信息。'}</span>}
+                  </div>
                 </section>
               ))}
             </div>

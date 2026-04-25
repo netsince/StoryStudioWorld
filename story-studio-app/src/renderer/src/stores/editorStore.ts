@@ -95,6 +95,8 @@ interface EditorState {
   openPreferencesTab: () => void
   removeCreateProjectTabs: () => void
 
+  openTabInSplit: (tab: Tab, sourceGroupId: string, direction?: 'row' | 'column') => void
+
   switchTab: (groupId: string, tabId: string) => void
   closeTab: (groupId: string, tabId: string, onConfirmClose?: OnConfirmCloseCallback) => void
   closeOtherTabs: (groupId: string, tabId: string) => void
@@ -338,6 +340,46 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     removeCreateProjectTabs: () => {
       set((state) => ({ editorTree: removeTabsByType(state.editorTree, 'create-project') }))
+    },
+
+    openTabInSplit: (tab, sourceGroupId, direction = 'row') => {
+      set((state) => {
+        // 如果 tab 已经打开在某个组中，直接激活它
+        let existingGroupId: string | null = null
+        const findTab = (node: EditorNode): void => {
+          if (node.kind === 'group') {
+            if (node.tabs.some((t) => t.id === tab.id)) {
+              existingGroupId = node.id
+            }
+          } else {
+            findTab(node.first)
+            findTab(node.second)
+          }
+        }
+        findTab(state.editorTree)
+
+        if (existingGroupId) {
+          const nextTree = updateGroup(state.editorTree, existingGroupId, (g) => ({
+            ...g,
+            activeTabId: tab.id
+          }))
+          return { editorTree: nextTree, focusedGroupId: existingGroupId }
+        }
+
+        // 创建新组并分屏
+        const newGroup: EditorGroupNode = {
+          kind: 'group',
+          id: createId('group'),
+          tabs: [tab],
+          activeTabId: tab.id
+        }
+
+        const nextTree = splitAtGroup(state.editorTree, sourceGroupId, direction, newGroup, 'second')
+        return {
+          editorTree: nextTree,
+          focusedGroupId: newGroup.id
+        }
+      })
     },
 
     switchTab: (groupId, tabId) => {

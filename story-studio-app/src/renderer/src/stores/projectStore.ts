@@ -350,6 +350,12 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
       try {
         await window.api.writeNodeContent(currentProject.projectSettingsPath, nodeId, content)
+        // 更新节点的时间戳，触发 UI 刷新
+        set((state) => ({
+          storyNodes: state.storyNodes.map((n) =>
+            n.id === nodeId ? { ...n, updatedAt: Date.now() } : n
+          )
+        }))
       } catch (error) {
         const message = error instanceof Error ? error.message : '保存失败。'
         window.alert(message)
