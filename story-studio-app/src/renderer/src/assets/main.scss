@@ -210,6 +210,9 @@ html {
   height: 120px;
   margin-bottom: 30px;
   opacity: 0.8;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 .brand-logo rect,
 .brand-logo path {
@@ -1078,6 +1081,8 @@ html {
   gap: 10px;
   width: 100%;
   max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .start-item {

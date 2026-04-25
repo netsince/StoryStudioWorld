@@ -1,25 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { Tab } from '../../models'
 import { findGroupNode } from '../../editor/editorTree'
 import { useEditorStore } from '../../stores/editorStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { useUiStore } from '../../stores/uiStore'
 import { commandService } from '../../services/commandService'
-import ArchiveView from './ArchiveView'
 import ContextMenu from '../ContextMenu'
-import PlainTextEditor from '../PlainTextEditor'
-import SettingEditor from './SettingEditor'
-import SettingFieldEditor from './SettingFieldEditor'
-import CreateProjectForm from './CreateProjectForm'
 import TabBar from './TabBar'
-import WelcomePage, { EmptyState } from './WelcomePage'
-import AboutPage from './AboutPage'
-import PreferencesPage from './PreferencesPage'
+import { EmptyState } from './WelcomePage'
+import TabContentRenderer from './TabContentRenderer'
 import { useTabDrag } from './hooks/useTabDrag'
 
 const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const groupRootRef = useRef<HTMLDivElement>(null)
-  const [editorContent, setEditorContent] = useState<string>('')
 
   const currentProject = useProjectStore((s) => s.currentProject)
   const storyNodes = useProjectStore((s) => s.storyNodes)
@@ -54,8 +47,6 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const tabs = group?.tabs ?? []
   const activeTabId = group?.activeTabId ?? ''
-
-  const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs])
 
   const tabDrag = useTabDrag({
     groupId,
@@ -94,124 +85,6 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
     },
     [clearDraft]
   )
-
-  useEffect(() => {
-    const loadContent = async (): Promise<void> => {
-      if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
-        const draft = useProjectStore.getState().draftsByNodeId[activeTab.nodeId]
-        if (typeof draft === 'string') {
-          setEditorContent(draft)
-          return
-        }
-
-        const content = await window.api.readNodeContent(
-          currentProject.projectSettingsPath,
-          activeTab.nodeId
-        )
-        setEditorContent(content || '')
-      } else {
-        setEditorContent('')
-      }
-    }
-    void loadContent()
-  }, [activeTab?.id, activeTab?.nodeId, activeTab?.type, currentProject])
-
-  const handleEditorChange = (content: string): void => {
-    setEditorContent(content)
-    if (activeTab?.type === 'file') {
-      setDirtyTab(groupId, activeTab.id, true)
-      if (activeTab.nodeId) {
-        setDraft(activeTab.nodeId, content)
-      }
-    }
-  }
-
-  const handleSave = async (): Promise<void> => {
-    if (activeTab?.type === 'file' && activeTab.nodeId && currentProject) {
-      await saveNodeContent(activeTab.nodeId, editorContent)
-      setDirtyTab(groupId, activeTab.id, false)
-      clearDraft(activeTab.nodeId)
-    }
-  }
-
-  const renderFile = (): React.ReactNode => {
-    if (activeTab?.kind === 'setting') {
-      if (activeTab.field) {
-        return (
-          <div className="editor-content">
-            <SettingFieldEditor
-              nodeId={activeTab.nodeId!}
-              field={activeTab.field}
-              groupId={groupId}
-              tabId={activeTab.id}
-            />
-          </div>
-        )
-      }
-      return (
-        <div className="editor-content">
-          <SettingEditor
-            nodeId={activeTab.nodeId!}
-            groupId={groupId}
-            tabId={activeTab.id}
-          />
-        </div>
-      )
-    }
-    return (
-      <div className="editor-content">
-        <PlainTextEditor
-          content={editorContent}
-          onChange={handleEditorChange}
-          onSave={handleSave}
-          placeholder={`开始写作「${activeTab?.title}」...`}
-          tabId={activeTab?.id}
-          groupId={groupId}
-        />
-      </div>
-    )
-  }
-
-  const renderContent = (): React.ReactNode => {
-    if (!activeTab) {
-      return <EmptyState onOpenWelcome={openWelcomeTab} />
-    }
-
-    if (activeTab.type === 'welcome') {
-      return (
-        <WelcomePage
-          currentProject={currentProject}
-          onOpenCreateProject={openCreateProjectTab}
-          onOpenFolder={openProject}
-        />
-      )
-    }
-
-    if (activeTab.type === 'create-project') {
-      return (
-        <CreateProjectForm
-          onCreateProject={createProject}
-          onPickProjectPath={() => window.api.pickProjectPath()}
-        />
-      )
-    }
-
-    if (activeTab.type === 'about') {
-      return <AboutPage />
-    }
-
-    if (activeTab.type === 'preferences') {
-      return <PreferencesPage />
-    }
-
-    if (activeTab.type === 'archive') {
-      return (
-        <ArchiveView kind={activeTab.id === 'setting-archive' ? 'setting' : 'story'} />
-      )
-    }
-
-    return renderFile()
-  }
 
   const onTabClick = useCallback(
     (tabId: string): void => {
@@ -279,6 +152,40 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
         onTabDragEnd={tabDrag.onTabDragEnd}
       />
 
+      <div className="editor-container" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {tabs.length === 0 ? (
+          <EmptyState onOpenWelcome={openWelcomeTab} />
+        ) : (
+          tabs.map((tab) => (
+            <div
+              key={tab.id}
+              className="tab-pane"
+              style={{
+                display: tab.id === activeTabId ? 'flex' : 'none',
+                flex: 1,
+                height: '100%',
+                width: '100%',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}
+            >
+              <TabContentRenderer
+                tab={tab}
+                groupId={groupId}
+                currentProject={currentProject}
+                onOpenCreateProject={openCreateProjectTab}
+                onOpenFolder={openProject}
+                onCreateProject={createProject}
+                saveNodeContent={saveNodeContent}
+                setDraft={setDraft}
+                clearDraft={clearDraft}
+                setDirtyTab={setDirtyTab}
+              />
+            </div>
+          ))
+        )}
+      </div>
+
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -333,8 +240,6 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
           ]}
         />
       )}
-
-      {renderContent()}
     </div>
   )
 }

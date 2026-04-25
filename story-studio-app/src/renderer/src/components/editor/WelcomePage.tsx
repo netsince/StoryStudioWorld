@@ -7,7 +7,13 @@ export const EmptyState: React.FC<{ onOpenWelcome: () => void }> = ({ onOpenWelc
   <div
     key="empty"
     className="editor-content"
-    style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+    style={{
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      height: '100%',
+      width: '100%'
+    }}
   >
     <img
       className="brand-logo brand-logo-xl"
@@ -27,9 +33,19 @@ const WelcomePage: React.FC<{
   <div
     key="welcome"
     className="editor-content"
-    style={{ alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}
+    style={{
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      height: '100%',
+      width: '100%'
+    }}
   >
-    <img className="brand-logo brand-logo-xl" src={ssworldNobgSvg} alt="Story Studio World" />
+    <img
+      className="brand-logo brand-logo-xl"
+      src={ssworldNobgSvg}
+      alt="Story Studio World"
+    />
     <div className="project-title">Story Studio World</div>
     <div className="project-subtitle" style={{ marginBottom: '40px' }}>
       {currentProject ? `当前项目：${currentProject.projectPath}` : '选择项目以开始或继续。'}
