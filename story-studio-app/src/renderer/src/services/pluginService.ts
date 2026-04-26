@@ -333,7 +333,7 @@ const getCategoryFromPath = (nodes: StoryNode[], filePath: string): string => {
     current = parent
   }
 
-  return current && SETTING_FIELD_CONFIG[current.name as keyof typeof SETTING_FIELD_CONFIG]
+  return current?.name && SETTING_FIELD_CONFIG[current.name as keyof typeof SETTING_FIELD_CONFIG]
     ? current.name
     : 'default'
 }

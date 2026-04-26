@@ -48,11 +48,15 @@ async function saveMemos(data: MemoData): Promise<void> {
 
 export async function getAllMemos(): Promise<Memo[]> {
   const data = await loadMemos()
-  return data.memos.sort((a, b) => b.updatedAt - a.updatedAt)
+  const memos = data.memos || []
+  return memos.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
 export async function createMemo(content: string = ''): Promise<Memo> {
   const data = await loadMemos()
+  if (!data.memos) {
+    data.memos = []
+  }
   const now = Date.now()
   const newMemo: Memo = {
     id: generateId(),
@@ -67,6 +71,9 @@ export async function createMemo(content: string = ''): Promise<Memo> {
 
 export async function updateMemo(id: string, content: string): Promise<Memo | null> {
   const data = await loadMemos()
+  if (!data.memos) {
+    return null
+  }
   const memo = data.memos.find(m => m.id === id)
   if (!memo) return null
   
@@ -78,6 +85,9 @@ export async function updateMemo(id: string, content: string): Promise<Memo | nu
 
 export async function deleteMemo(id: string): Promise<boolean> {
   const data = await loadMemos()
+  if (!data.memos) {
+    return false
+  }
   const index = data.memos.findIndex(m => m.id === id)
   if (index === -1) return false
   

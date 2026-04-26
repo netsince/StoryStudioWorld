@@ -48,17 +48,17 @@ const MemoItem: React.FC<{
     onUpdate(editContent.trim())
   }
 
+  const handleCancel = (): void => {
+    setEditContent(memo.content)
+    onStopEdit()
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       handleSave()
     } else if (e.key === 'Escape') {
-      setEditContent(memo.content)
-      onStopEdit()
+      handleCancel()
     }
-  }
-
-  const handleBlur = (): void => {
-    handleSave()
   }
 
   if (isEditing) {
@@ -70,12 +70,30 @@ const MemoItem: React.FC<{
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
           rows={3}
         />
-        <div className="memo-edit-hint">
-          <span>Ctrl+Enter 保存</span>
-          <span>ESC 取消</span>
+        <div className="memo-edit-actions">
+          <button
+            className="memo-edit-btn memo-edit-btn-save"
+            onClick={handleSave}
+            title="保存 (Ctrl+Enter)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            保存
+          </button>
+          <button
+            className="memo-edit-btn memo-edit-btn-cancel"
+            onClick={handleCancel}
+            title="取消 (ESC)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            取消
+          </button>
         </div>
       </div>
     )
