@@ -135,7 +135,7 @@ const AboutPage: React.FC = () => {
           textAlign: 'center'
         }}
       >
-        {t('about.copyright')}
+        {t('about.copyright', { year: new Date().getFullYear() })}
       </div>
     </div>
   )
