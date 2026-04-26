@@ -108,7 +108,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const isComposingRef = useRef(false)
   const pendingEnterAfterCompositionRef = useRef(false)
 
-  const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(groupId, isActive ?? false)
+  const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(isActive ?? false)
 
   const pendingRestoreScrollRef = useRef(false)
   const lastRestoredTabIdRef = useRef<string | undefined>(undefined)

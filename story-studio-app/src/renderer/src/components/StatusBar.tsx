@@ -22,16 +22,14 @@ const StatusBar: React.FC = () => {
     )
   }, [entries])
 
-  const pluginLeftItems = useMemo(() => {
-    return pluginStatusBarItems
+  const { pluginLeftItems, pluginRightItems } = useMemo(() => {
+    const left = pluginStatusBarItems
       .filter((item) => item.alignment === 'left')
       .sort((a, b) => b.priority - a.priority)
-  }, [pluginStatusBarItems])
-
-  const pluginRightItems = useMemo(() => {
-    return pluginStatusBarItems
+    const right = pluginStatusBarItems
       .filter((item) => item.alignment === 'right')
       .sort((a, b) => b.priority - a.priority)
+    return { pluginLeftItems: left, pluginRightItems: right }
   }, [pluginStatusBarItems])
 
   const renderEntry = (entry: (typeof leftEntries)[0]): React.ReactNode => (

@@ -10,10 +10,7 @@ export interface EditorStatusBarController {
   clear: () => void
 }
 
-export const useEditorStatusBar = (
-  _groupId: string,
-  isActive: boolean
-): EditorStatusBarController => {
+export const useEditorStatusBar = (isActive: boolean): EditorStatusBarController => {
   const { t } = useTranslation()
   const { addEntry } = useStatusbar()
 
