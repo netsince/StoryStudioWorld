@@ -124,6 +124,24 @@ export interface PluginAPI {
     readNodeContent: (nodeId: string) => Promise<string | null>
     writeNodeContent: (nodeId: string, content: string) => Promise<void>
   }
+  story: {
+    getContent: (path: string) => Promise<string | null>
+    setContent: (path: string, content: string) => Promise<void>
+    list: (path: string) => Array<{ name: string; type: 'file' | 'folder'; path: string }>
+    rename: (path: string, newPath: string) => Promise<void>
+    delete: (path: string) => Promise<void>
+    create: (path: string, type: 'file' | 'folder') => Promise<void>
+    archive: (path: string) => Promise<void>
+  }
+  worldsetting: {
+    getContent: (path: string) => Promise<string | null>
+    setContent: (path: string, content: string) => Promise<void>
+    list: (path: string) => Array<{ name: string; type: 'file' | 'folder'; path: string }>
+    rename: (path: string, newPath: string) => Promise<void>
+    delete: (path: string) => Promise<void>
+    create: (path: string, type: 'file' | 'folder') => Promise<void>
+    archive: (path: string) => Promise<void>
+  }
   hooks: {
     beforeSave: (
       callback: (content: string, node: StoryNode) => string | false | void
@@ -235,6 +253,130 @@ export const triggerTabChange = (tab: Tab | null): void => {
       console.error('Tab change callback error:', e)
     }
   })
+}
+
+// Helper to find node by path
+const findNodeByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'setting'): StoryNode | null => {
+  const parts = path.split('/').filter(Boolean)
+  let currentNodes = nodes.filter((n) => n.parentId === null && n.kind === kind)
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    const found = currentNodes.find((n) => n.name === part)
+    if (!found) return null
+    if (i === parts.length - 1) return found
+    currentNodes = nodes.filter((n) => n.parentId === found.id)
+  }
+  return null
+}
+
+// Helper to get children by path
+const getChildrenByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'setting'): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
+  if (path === '' || path === '/') {
+    return nodes
+      .filter((n) => n.parentId === null && n.kind === kind)
+      .map((n) => ({
+        name: n.name,
+        type: n.type,
+        path: n.name
+      }))
+  }
+
+  const node = findNodeByPath(nodes, path, kind)
+  if (!node || node.type !== 'folder') return []
+
+  return nodes
+    .filter((n) => n.parentId === node.id)
+    .map((n) => ({
+      name: n.name,
+      type: n.type,
+      path: path + '/' + n.name
+    }))
+}
+
+// Create abstract file API for story/worldsetting
+const createAbstractFileAPI = (kind: 'story' | 'setting') => {
+  return {
+    getContent: async (filePath: string): Promise<string | null> => {
+      const project = useProjectStore.getState().currentProject
+      const nodes = useProjectStore.getState().storyNodes
+      if (!project) return null
+
+      const node = findNodeByPath(nodes, filePath, kind)
+      if (!node || node.type !== 'file') return null
+
+      return window.api.readNodeContent(project.projectSettingsPath, node.id)
+    },
+
+    setContent: async (filePath: string, content: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, kind)
+      if (!node || node.type !== 'file') return
+
+      await useProjectStore.getState().saveNodeContent(node.id, content)
+    },
+
+    list: (dirPath: string): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
+      const nodes = useProjectStore.getState().storyNodes
+      return getChildrenByPath(nodes, dirPath, kind)
+    },
+
+    rename: async (oldPath: string, newPath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, oldPath, kind)
+      if (!node) return
+
+      const newName = newPath.split('/').pop() || newPath
+      await useProjectStore.getState().renameStoryNode(node.id, newName)
+    },
+
+    delete: async (filePath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, kind)
+      if (!node) return
+
+      await useProjectStore.getState().deleteStoryNode(node.id)
+    },
+
+    create: async (filePath: string, type: 'file' | 'folder'): Promise<void> => {
+      const project = useProjectStore.getState().currentProject
+      const nodes = useProjectStore.getState().storyNodes
+      if (!project) return
+
+      const parts = filePath.split('/').filter(Boolean)
+      const name = parts.pop() || filePath
+      const parentPath = parts.join('/')
+
+      let parentId: string | null = null
+      if (parentPath) {
+        const parent = findNodeByPath(nodes, parentPath, kind)
+        if (parent) {
+          parentId = parent.id
+        }
+      }
+
+      const input: CreateNodeInput = {
+        projectSettingsPath: project.projectSettingsPath,
+        parentId,
+        name,
+        type,
+        kind
+      }
+
+      const result = await hookSystem.intercept('file:beforeCreate', input)
+      if (!result.proceed) return
+
+      await window.api.createStoryNode(result.result!)
+    },
+
+    archive: async (filePath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, kind)
+      if (!node) return
+
+      await useProjectStore.getState().deleteStoryNode(node.id)
+    }
+  }
 }
 
 const createPluginAPI = (pluginId: string): PluginAPI => {
@@ -453,6 +595,9 @@ const createPluginAPI = (pluginId: string): PluginAPI => {
         await useProjectStore.getState().saveNodeContent(nodeId, result)
       }
     },
+
+    story: createAbstractFileAPI('story'),
+    worldsetting: createAbstractFileAPI('setting'),
 
     hooks: {
       beforeSave: (callback) => hookSystem.on('content:beforeSave', callback as never),
