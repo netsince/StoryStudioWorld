@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import Sidebar from './Sidebar'
 import { useLayoutStore } from '../stores/layoutStore'
 import { useUiStore } from '../stores/uiStore'
-import { usePluginService, type PluginAPI } from '../services/pluginService'
+import { usePluginService, createPluginAPI, type PluginAPI } from '../services/pluginService'
 import ProofreadPanel from './ProofreadPanel'
 import MemoPanel from './MemoPanel'
 import SnapshotPanel from './SnapshotPanel'
@@ -48,8 +48,8 @@ const RightPanel: React.FC = () => {
   const getPluginPanel = (): React.ReactNode => {
     const item = pluginItems.find((p) => p.id === activeActivity)
     if (item?.panel) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return <PluginPanelWrapper panel={item.panel} api={{} as any} />
+      const api = createPluginAPI(item.pluginId)
+      return <PluginPanelWrapper panel={item.panel} api={api} />
     }
     return null
   }

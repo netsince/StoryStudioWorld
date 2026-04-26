@@ -134,12 +134,18 @@ export interface PluginAPI {
     archive: (path: string) => Promise<void>
   }
   worldsetting: {
-    getContent: (path: string) => Promise<string | null>
-    setContent: (path: string, content: string) => Promise<void>
+    // Content is JSON format, not plain text
+    getContent: (path: string) => Promise<Record<string, string> | null>
+    setContent: (path: string, content: Record<string, string>) => Promise<void>
     list: (path: string) => Array<{ name: string; type: 'file' | 'folder'; path: string }>
+    // Get all categories (first-level folders)
+    getCategories: () => string[]
+    // Get field configuration for a file based on its category
+    getFieldConfig: (path: string) => { single: string[]; multi: string[] }
     rename: (path: string, newPath: string) => Promise<void>
     delete: (path: string) => Promise<void>
-    create: (path: string, type: 'file' | 'folder') => Promise<void>
+    // Returns error message if creation is not allowed, null if successful
+    create: (path: string, type: 'file' | 'folder') => Promise<string | null>
     archive: (path: string) => Promise<void>
   }
   hooks: {
@@ -294,15 +300,53 @@ const getChildrenByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'se
     }))
 }
 
-// Create abstract file API for story/worldsetting
-const createAbstractFileAPI = (kind: 'story' | 'setting') => {
+// Setting field configurations (from SettingEditor)
+const SETTING_FIELD_CONFIG = {
+  人物: {
+    single: ['角色', '性别', '年龄'],
+    multi: ['背景经历', '动机目标', '成长弧线', '外貌描写', '性格特征', '说话风格', '能力技能', '其他备注']
+  },
+  地点: {
+    single: [],
+    multi: ['地点描述', '视觉', '听觉', '嗅觉', '氛围', '危险程度', '其他备注']
+  },
+  物品: {
+    single: ['类型', '品质'],
+    multi: ['描述', '数值属性', '象征意义']
+  },
+  default: {
+    single: [],
+    multi: ['设定描述', '其他备注']
+  }
+}
+
+// Helper to get category from path
+const getCategoryFromPath = (nodes: StoryNode[], filePath: string): string => {
+  const node = findNodeByPath(nodes, filePath, 'setting')
+  if (!node) return 'default'
+
+  // Find root parent
+  let current: StoryNode | undefined = node
+  while (current?.parentId) {
+    const parent = nodes.find((n) => n.id === current!.parentId)
+    if (!parent) break
+    current = parent
+  }
+
+  return current && SETTING_FIELD_CONFIG[current.name as keyof typeof SETTING_FIELD_CONFIG]
+    ? current.name
+    : 'default'
+}
+
+// Create abstract file API for story (no restrictions)
+const createStoryFileAPI = () => {
   return {
     getContent: async (filePath: string): Promise<string | null> => {
       const project = useProjectStore.getState().currentProject
       const nodes = useProjectStore.getState().storyNodes
       if (!project) return null
 
-      const node = findNodeByPath(nodes, filePath, kind)
+      const node = findNodeByPath(nodes, filePath, 'story')
       if (!node || node.type !== 'file') return null
 
       return window.api.readNodeContent(project.projectSettingsPath, node.id)
@@ -310,7 +354,7 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
 
     setContent: async (filePath: string, content: string): Promise<void> => {
       const nodes = useProjectStore.getState().storyNodes
-      const node = findNodeByPath(nodes, filePath, kind)
+      const node = findNodeByPath(nodes, filePath, 'story')
       if (!node || node.type !== 'file') return
 
       await useProjectStore.getState().saveNodeContent(node.id, content)
@@ -318,12 +362,12 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
 
     list: (dirPath: string): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
       const nodes = useProjectStore.getState().storyNodes
-      return getChildrenByPath(nodes, dirPath, kind)
+      return getChildrenByPath(nodes, dirPath, 'story')
     },
 
     rename: async (oldPath: string, newPath: string): Promise<void> => {
       const nodes = useProjectStore.getState().storyNodes
-      const node = findNodeByPath(nodes, oldPath, kind)
+      const node = findNodeByPath(nodes, oldPath, 'story')
       if (!node) return
 
       const newName = newPath.split('/').pop() || newPath
@@ -332,7 +376,7 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
 
     delete: async (filePath: string): Promise<void> => {
       const nodes = useProjectStore.getState().storyNodes
-      const node = findNodeByPath(nodes, filePath, kind)
+      const node = findNodeByPath(nodes, filePath, 'story')
       if (!node) return
 
       await useProjectStore.getState().deleteStoryNode(node.id)
@@ -349,7 +393,7 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
 
       let parentId: string | null = null
       if (parentPath) {
-        const parent = findNodeByPath(nodes, parentPath, kind)
+        const parent = findNodeByPath(nodes, parentPath, 'story')
         if (parent) {
           parentId = parent.id
         }
@@ -360,7 +404,7 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
         parentId,
         name,
         type,
-        kind
+        kind: 'story'
       }
 
       const result = await hookSystem.intercept('file:beforeCreate', input)
@@ -371,7 +415,7 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
 
     archive: async (filePath: string): Promise<void> => {
       const nodes = useProjectStore.getState().storyNodes
-      const node = findNodeByPath(nodes, filePath, kind)
+      const node = findNodeByPath(nodes, filePath, 'story')
       if (!node) return
 
       await useProjectStore.getState().deleteStoryNode(node.id)
@@ -379,7 +423,129 @@ const createAbstractFileAPI = (kind: 'story' | 'setting') => {
   }
 }
 
-const createPluginAPI = (pluginId: string): PluginAPI => {
+// Create abstract file API for worldsetting (with restrictions)
+const createWorldSettingFileAPI = () => {
+  return {
+    getContent: async (filePath: string): Promise<Record<string, string> | null> => {
+      const project = useProjectStore.getState().currentProject
+      const nodes = useProjectStore.getState().storyNodes
+      if (!project) return null
+
+      const node = findNodeByPath(nodes, filePath, 'setting')
+      if (!node || node.type !== 'file') return null
+
+      const content = await window.api.readNodeContent(project.projectSettingsPath, node.id)
+      if (!content) return null
+
+      try {
+        return JSON.parse(content) as Record<string, string>
+      } catch {
+        return null
+      }
+    },
+
+    setContent: async (filePath: string, content: Record<string, string>): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, 'setting')
+      if (!node || node.type !== 'file') return
+
+      await useProjectStore.getState().saveNodeContent(node.id, JSON.stringify(content))
+    },
+
+    list: (dirPath: string): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
+      const nodes = useProjectStore.getState().storyNodes
+      return getChildrenByPath(nodes, dirPath, 'setting')
+    },
+
+    getCategories: (): string[] => {
+      const nodes = useProjectStore.getState().storyNodes
+      return nodes
+        .filter((n) => n.kind === 'setting' && n.parentId === null && n.type === 'folder')
+        .map((n) => n.name)
+    },
+
+    getFieldConfig: (filePath: string): { single: string[]; multi: string[] } => {
+      const nodes = useProjectStore.getState().storyNodes
+      const category = getCategoryFromPath(nodes, filePath)
+      return (SETTING_FIELD_CONFIG as Record<string, { single: string[]; multi: string[] }>)[category] ||
+        SETTING_FIELD_CONFIG.default
+    },
+
+    rename: async (oldPath: string, newPath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, oldPath, 'setting')
+      if (!node) return
+
+      const newName = newPath.split('/').pop() || newPath
+      await useProjectStore.getState().renameStoryNode(node.id, newName)
+    },
+
+    delete: async (filePath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, 'setting')
+      if (!node) return
+
+      await useProjectStore.getState().deleteStoryNode(node.id)
+    },
+
+    create: async (filePath: string, type: 'file' | 'folder'): Promise<string | null> => {
+      const project = useProjectStore.getState().currentProject
+      const nodes = useProjectStore.getState().storyNodes
+      if (!project) return '项目未加载'
+
+      const parts = filePath.split('/').filter(Boolean)
+      const name = parts.pop() || filePath
+      const parentPath = parts.join('/')
+
+      let parentId: string | null = null
+      let parentNode: StoryNode | null = null
+
+      if (parentPath) {
+        parentNode = findNodeByPath(nodes, parentPath, 'setting')
+        if (parentNode) {
+          parentId = parentNode.id
+        }
+      }
+
+      // Restrictions for setting:
+      // 1. Cannot create file at root level
+      // 2. Cannot create file directly under category (first-level folder)
+      // 3. File can only be created under second-level folder
+      if (type === 'file') {
+        if (!parentId) {
+          return '设定文件不能在根目录创建，请先创建分类和文件夹'
+        }
+        if (parentNode && parentNode.parentId === null) {
+          return '设定文件不能直接放在分类下，请先在该分类下创建文件夹'
+        }
+      }
+
+      const input: CreateNodeInput = {
+        projectSettingsPath: project.projectSettingsPath,
+        parentId,
+        name,
+        type,
+        kind: 'setting'
+      }
+
+      const result = await hookSystem.intercept('file:beforeCreate', input)
+      if (!result.proceed) return '创建被阻止'
+
+      await window.api.createStoryNode(result.result!)
+      return null
+    },
+
+    archive: async (filePath: string): Promise<void> => {
+      const nodes = useProjectStore.getState().storyNodes
+      const node = findNodeByPath(nodes, filePath, 'setting')
+      if (!node) return
+
+      await useProjectStore.getState().deleteStoryNode(node.id)
+    }
+  }
+}
+
+export const createPluginAPI = (pluginId: string): PluginAPI => {
   const storage = new PluginStorage(pluginId)
 
   return {
@@ -596,8 +762,8 @@ const createPluginAPI = (pluginId: string): PluginAPI => {
       }
     },
 
-    story: createAbstractFileAPI('story'),
-    worldsetting: createAbstractFileAPI('setting'),
+    story: createStoryFileAPI(),
+    worldsetting: createWorldSettingFileAPI(),
 
     hooks: {
       beforeSave: (callback) => hookSystem.on('content:beforeSave', callback as never),
