@@ -1,10 +1,19 @@
 import React from 'react'
 import { useUiStore } from '../stores/uiStore'
+import { usePluginService } from '../services/pluginService'
 
 const RightActivityBar: React.FC = () => {
   const activeActivity = useUiStore((s) => s.activeRightActivity)
   const isOpen = useUiStore((s) => s.isRightSidebarOpen)
   const onActivityChange = useUiStore((s) => s.handleRightActivityChange)
+  const pluginItems = usePluginService((s) => s.rightActivityItems)
+
+  const renderIcon = (icon: React.ReactNode | string): React.ReactNode => {
+    if (typeof icon === 'string') {
+      return <span dangerouslySetInnerHTML={{ __html: icon }} />
+    }
+    return icon
+  }
 
   return (
     <div className="right-activity-bar">
@@ -46,6 +55,25 @@ const RightActivityBar: React.FC = () => {
         </div>
         <span>快照</span>
       </div>
+
+      {pluginItems.length > 0 && (
+        <>
+          <div className="activity-separator" style={{ height: '1px', background: 'var(--border-subtle)', margin: '8px 12px' }} />
+          {pluginItems.map((item) => (
+            <div
+              key={item.id}
+              className={`activity-item ${isOpen && activeActivity === item.id ? 'active' : ''}`}
+              title={item.title}
+              onClick={() => onActivityChange(item.id as 'proofread' | 'memo' | 'snapshot')}
+            >
+              <div className="activity-icon">
+                {renderIcon(item.icon)}
+              </div>
+              <span>{item.title}</span>
+            </div>
+          ))}
+        </>
+      )}
 
       <div
         className="activity-item"

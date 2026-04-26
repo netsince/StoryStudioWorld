@@ -122,6 +122,32 @@ export interface DiffResult {
   }
 }
 
+export interface PluginManifest {
+  id: string
+  name: string
+  version: string
+  description?: string
+  author?: string
+  main: string
+  contributes?: {
+    commands?: Array<{ id: string; title: string }>
+    activityBar?: Array<{ id: string; title: string; icon?: string }>
+    rightActivityBar?: Array<{ id: string; title: string; icon?: string }>
+  }
+}
+
+export interface PluginInfo {
+  manifest: PluginManifest
+  path: string
+  mainPath: string
+  enabled: boolean
+}
+
+export interface PluginSettings {
+  enabledPlugins: string[]
+  disabledPlugins: string[]
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -187,7 +213,16 @@ const api = {
   restoreSnapshot: (projectSettingsPath: string, snapshotId: string): Promise<boolean> =>
     ipcRenderer.invoke('restore-snapshot', projectSettingsPath, snapshotId),
   compareWithCurrent: (projectSettingsPath: string, snapshotId: string): Promise<DiffResult | null> =>
-    ipcRenderer.invoke('compare-with-current', projectSettingsPath, snapshotId)
+    ipcRenderer.invoke('compare-with-current', projectSettingsPath, snapshotId),
+  // Plugin APIs
+  getPlugins: (): Promise<PluginInfo[]> => ipcRenderer.invoke('get-plugins'),
+  getPluginSettings: (): Promise<PluginSettings> => ipcRenderer.invoke('get-plugin-settings'),
+  setPluginEnabled: (pluginId: string, enabled: boolean): Promise<boolean> =>
+    ipcRenderer.invoke('set-plugin-enabled', pluginId, enabled),
+  getPluginDir: (): Promise<string> => ipcRenderer.invoke('get-plugin-dir'),
+  openPluginsFolder: (): void => ipcRenderer.send('open-plugins-folder'),
+  readPluginFile: (filePath: string): Promise<{ success: boolean; content?: string; error?: string }> =>
+    ipcRenderer.invoke('read-plugin-file', filePath)
 }
 
 if (process.contextIsolated) {

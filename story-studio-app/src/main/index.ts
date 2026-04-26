@@ -1,6 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
@@ -28,6 +28,7 @@ import {
   restoreSnapshot,
   compareWithCurrent
 } from './snapshot'
+import { pluginLoader } from './pluginLoader'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -277,6 +278,39 @@ function createWindow(): void {
     return compareWithCurrent(projectSettingsPath, snapshotId)
   })
 
+  // Plugin IPC handlers
+  ipcMain.handle('get-plugins', async () => {
+    return pluginLoader.discoverPlugins()
+  })
+
+  ipcMain.handle('get-plugin-settings', async () => {
+    return pluginLoader.getSettings()
+  })
+
+  ipcMain.handle('set-plugin-enabled', async (_, pluginId: string, enabled: boolean) => {
+    return pluginLoader.setPluginEnabled(pluginId, enabled)
+  })
+
+  ipcMain.handle('get-plugin-dir', async () => {
+    return pluginLoader.getPluginDir()
+  })
+
+  ipcMain.on('open-plugins-folder', () => {
+    shell.openPath(pluginLoader.getPluginDir())
+  })
+
+  ipcMain.handle('read-plugin-file', async (_, filePath: string) => {
+    try {
+      if (!existsSync(filePath)) {
+        return { success: false, error: 'File not found' }
+      }
+      const content = readFileSync(filePath, 'utf-8')
+      return { success: true, content }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
   ipcMain.on('toggle-devtools', () => {
     if (mainWindow.webContents.isDevToolsOpened()) {
       mainWindow.webContents.closeDevTools()
@@ -298,6 +332,8 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
+
+  pluginLoader.init()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

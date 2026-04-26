@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { Tab, ProjectData } from '../../models'
 import { useProjectStore } from '../../stores/projectStore'
+import { triggerContentChange, triggerTabChange } from '../../services/pluginService'
 import ArchiveView from './ArchiveView'
 import PlainTextEditor from '../PlainTextEditor'
 import SettingEditor from './SettingEditor'
@@ -53,6 +54,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
         const draft = useProjectStore.getState().draftsByNodeId[tab.nodeId]
         if (typeof draft === 'string') {
           setEditorContent(draft)
+          triggerTabChange(tab)
           return
         }
 
@@ -61,6 +63,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
           tab.nodeId
         )
         setEditorContent(content || '')
+        triggerTabChange(tab)
       }
     }
     void loadContent()
@@ -68,6 +71,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
 
   const handleEditorChange = (content: string): void => {
     setEditorContent(content)
+    triggerContentChange(content)
     if (tab.type === 'file') {
       setDirtyTab(groupId, tab.id, true)
       if (tab.nodeId) {

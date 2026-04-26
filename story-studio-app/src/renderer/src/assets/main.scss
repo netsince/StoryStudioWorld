@@ -370,6 +370,13 @@ html {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
+  width: 24px;
+  height: 24px;
+}
+
+.activity-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* Left Explorer Panel */

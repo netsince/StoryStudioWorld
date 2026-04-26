@@ -5,6 +5,7 @@ import { useEditorStore } from '../../stores/editorStore'
 import { useProjectStore } from '../../stores/projectStore'
 import { useUiStore } from '../../stores/uiStore'
 import { commandService } from '../../services/commandService'
+import { triggerTabChange } from '../../services/pluginService'
 import ContextMenu from '../ContextMenu'
 import TabBar from './TabBar'
 import { EmptyState } from './WelcomePage'
@@ -70,6 +71,16 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
     return () => window.removeEventListener('click', handleClick)
   }, [])
 
+  // 当组获得焦点时触发 Tab 变更事件
+  useEffect(() => {
+    if (isFocused && group?.activeTabId) {
+      const activeTab = group.tabs.find((t) => t.id === group.activeTabId)
+      if (activeTab) {
+        triggerTabChange(activeTab)
+      }
+    }
+  }, [isFocused, group?.activeTabId, group?.tabs])
+
   const handleContextMenu = (event: React.MouseEvent, tabId: string): void => {
     event.preventDefault()
     setContextMenu({ x: event.clientX, y: event.clientY, groupId, tabId })
@@ -97,6 +108,10 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
         ? findGroupNode(useEditorStore.getState().editorTree, groupId)
         : null
       const tab = currentGroup?.tabs.find((t) => t.id === tabId)
+      
+      // 触发插件 Tab 切换事件
+      triggerTabChange(tab || null)
+      
       if (tab && tab.nodeId && storyNodes.length > 0) {
         const nodeId = tab.nodeId
         const parentIds: string[] = []

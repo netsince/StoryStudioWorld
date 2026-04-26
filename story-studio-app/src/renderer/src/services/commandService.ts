@@ -82,6 +82,31 @@ class CommandService {
     const list = this.commands.get(id)
     return list !== undefined && list.length > 0
   }
+
+  getAllCommands(): string[] {
+    return Array.from(this.commands.keys())
+  }
+
+  getCommandsByGroup(groupId: string): string[] {
+    const result: string[] = []
+    this.commands.forEach((list, id) => {
+      if (list.some((cmd) => cmd.groupId === groupId)) {
+        result.push(id)
+      }
+    })
+    return result
+  }
+
+  unregisterByGroup(groupId: string): void {
+    this.commands.forEach((list, id) => {
+      const filtered = list.filter((cmd) => cmd.groupId !== groupId)
+      if (filtered.length === 0) {
+        this.commands.delete(id)
+      } else if (filtered.length !== list.length) {
+        this.commands.set(id, filtered)
+      }
+    })
+  }
 }
 
 export const commandService = new CommandService()

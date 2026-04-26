@@ -1,4 +1,3 @@
-import type { Database } from 'sql.js'
 import type { StoryNode, Snapshot } from './db'
 import {
   loadDatabase,

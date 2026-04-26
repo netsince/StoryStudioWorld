@@ -7,6 +7,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useUiStore } from '../stores/uiStore'
 import Tree from './Tree'
 import Sidebar from './Sidebar'
+import PluginManagerPanel from './editor/PluginManagerPanel'
 
 interface CreateMenuPortalProps {
   onClose: () => void
@@ -144,7 +145,7 @@ const Explorer: React.FC = () => {
       case 'setting':
         return '世界设定'
       case 'plugin':
-        return '插件中心'
+        return '管理插件'
       default:
         return '编写'
     }
@@ -241,6 +242,10 @@ const Explorer: React.FC = () => {
   const onRefreshStoryNodes = useProjectStore((s) => s.refreshStoryNodes)
 
   const renderStoryTree = (): React.ReactNode => {
+    if (activeActivity === 'plugin') {
+      return <PluginManagerPanel />
+    }
+
     const kind = activeActivity === 'setting' ? 'setting' : 'story'
     if (!currentProject) {
       return (

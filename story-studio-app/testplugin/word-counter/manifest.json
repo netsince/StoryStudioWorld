@@ -1,0 +1,17 @@
+{
+  "id": "word-counter",
+  "name": "字数统计",
+  "version": "1.0.0",
+  "description": "统计当前文档的字数、字符数、行数等信息",
+  "author": "Story Studio World",
+  "main": "index.js",
+  "contributes": {
+    "rightActivityBar": [
+      {
+        "id": "word-counter",
+        "title": "统计",
+        "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 7V4h16v3M9 20h6M12 4v16\"/></svg>"
+      }
+    ]
+  }
+}

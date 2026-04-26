@@ -1,0 +1,642 @@
+import { create } from 'zustand'
+import React from 'react'
+import type { Tab, StoryNode as RendererStoryNode } from '../models'
+import { hookSystem } from './hookService'
+import { commandService } from './commandService'
+import { useEditorStore } from '../stores/editorStore'
+import { useProjectStore } from '../stores/projectStore'
+import type {
+  ProofreadResult,
+  CreateNodeInput,
+  StoryNode as PreloadStoryNode
+} from '../../../preload/index'
+
+type StoryNode = RendererStoryNode
+
+export interface PluginManifest {
+  id: string
+  name: string
+  version: string
+  description?: string
+  author?: string
+  main: string
+  contributes?: {
+    commands?: Array<{ id: string; title: string }>
+    activityBar?: Array<{ id: string; title: string; icon?: string }>
+    rightActivityBar?: Array<{ id: string; title: string; icon?: string }>
+  }
+}
+
+export interface PluginInfo {
+  manifest: PluginManifest
+  path: string
+  enabled: boolean
+  loaded: boolean
+  error?: string
+}
+
+export interface ActivityItem {
+  id: string
+  icon: React.ReactNode | string
+  title: string
+  panel?: React.ComponentType
+  onClick?: () => void
+  order?: number
+  pluginId: string
+}
+
+export interface RightActivityItem {
+  id: string
+  icon: React.ReactNode | string
+  title: string
+  panel: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
+  order?: number
+  pluginId: string
+}
+
+export interface StatusBarItem {
+  id: string
+  alignment: 'left' | 'right'
+  priority: number
+  render: () => React.ReactNode
+  tooltip?: string
+  onClick?: () => void
+  pluginId: string
+}
+
+export interface NotificationOptions {
+  message: string
+  type?: 'info' | 'warning' | 'error'
+  duration?: number
+}
+
+export interface InputBoxOptions {
+  title?: string
+  prompt?: string
+  value?: string
+  placeholder?: string
+  password?: boolean
+  validateInput?: (value: string) => string | undefined
+}
+
+export interface QuickPickOptions {
+  title?: string
+  placeholder?: string
+  canPickMany?: boolean
+}
+
+export interface OpenTabOptions {
+  id: string
+  title: string
+  type: string
+  nodeId?: string
+  kind?: 'story' | 'setting'
+}
+
+export interface PluginAPI {
+  commands: {
+    register: (id: string, handler: (...args: unknown[]) => void) => () => void
+    execute: (id: string, ...args: unknown[]) => Promise<void>
+    getCommands: () => string[]
+  }
+  ui: {
+    addActivityItem: (item: Omit<ActivityItem, 'pluginId'>) => () => void
+    addRightActivityItem: (item: Omit<RightActivityItem, 'pluginId'>) => () => void
+    addStatusBarItem: (item: Omit<StatusBarItem, 'pluginId'>) => () => void
+    showNotification: (message: string, type?: 'info' | 'warning' | 'error') => void
+  }
+  editor: {
+    getActiveContent: () => Promise<string | null>
+    getActiveTab: () => Tab | null
+    openTab: (options: OpenTabOptions) => void
+    closeTab: (tabId: string) => void
+    onContentChange: (callback: (content: string) => void) => () => void
+    onTabChange: (callback: (tab: Tab | null) => void) => () => void
+  }
+  project: {
+    getCurrent: () => ReturnType<typeof useProjectStore.getState>['currentProject']
+    getNodes: () => StoryNode[]
+    getNodeById: (nodeId: string) => StoryNode | undefined
+    createNode: (input: CreateNodeInput) => Promise<PreloadStoryNode[]>
+    deleteNode: (nodeId: string) => Promise<void>
+    renameNode: (nodeId: string, newName: string) => Promise<void>
+    moveNode: (nodeId: string, newParentId: string | null) => Promise<void>
+    readNodeContent: (nodeId: string) => Promise<string | null>
+    writeNodeContent: (nodeId: string, content: string) => Promise<void>
+  }
+  hooks: {
+    beforeSave: (
+      callback: (content: string, node: StoryNode) => string | false | void
+    ) => () => void
+    afterLoad: (
+      callback: (content: string, node: StoryNode) => string | void
+    ) => () => void
+    onProofread: (
+      callback: (text: string) => ProofreadResult | Promise<ProofreadResult>
+    ) => () => void
+    onFileOpen: (
+      callback: (node: StoryNode, content: string) => void | string
+    ) => () => void
+    onNodeCreate: (
+      callback: (input: CreateNodeInput) => CreateNodeInput | false | void
+    ) => () => void
+    onNodeDelete: (
+      callback: (nodeId: string, node: StoryNode) => boolean | void
+    ) => () => void
+  }
+  storage: {
+    get: <T>(key: string) => T | undefined
+    set: <T>(key: string, value: T) => void
+    delete: (key: string) => void
+    clear: () => void
+  }
+  utils: {
+    log: (message: string, level?: 'info' | 'warn' | 'error') => void
+  }
+}
+
+interface PluginState {
+  plugins: PluginInfo[]
+  activityItems: ActivityItem[]
+  rightActivityItems: RightActivityItem[]
+  statusBarItems: StatusBarItem[]
+  notifications: NotificationOptions[]
+  isLoading: boolean
+
+  loadPlugins: () => Promise<void>
+  loadPlugin: (pluginInfo: { manifest: PluginManifest; path: string; mainPath: string }) => Promise<void>
+  unloadPlugin: (pluginId: string) => void
+  setPluginEnabled: (pluginId: string, enabled: boolean) => void
+
+  addNotification: (notification: NotificationOptions) => void
+  removeNotification: (index: number) => void
+
+  getHooks: () => typeof hookSystem
+}
+
+class PluginStorage {
+  private prefix: string
+
+  constructor(pluginId: string) {
+    this.prefix = `plugin:${pluginId}:`
+  }
+
+  get<T>(key: string): T | undefined {
+    try {
+      const value = localStorage.getItem(this.prefix + key)
+      return value ? JSON.parse(value) : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  set<T>(key: string, value: T): void {
+    try {
+      localStorage.setItem(this.prefix + key, JSON.stringify(value))
+    } catch (e) {
+      console.error('Plugin storage set error:', e)
+    }
+  }
+
+  delete(key: string): void {
+    localStorage.removeItem(this.prefix + key)
+  }
+
+  clear(): void {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith(this.prefix)) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key))
+  }
+}
+
+const contentChangeCallbacks = new Set<(content: string) => void>()
+const tabChangeCallbacks = new Set<(tab: Tab | null) => void>()
+
+export const triggerContentChange = (content: string): void => {
+  contentChangeCallbacks.forEach((cb) => {
+    try {
+      cb(content)
+    } catch (e) {
+      console.error('Content change callback error:', e)
+    }
+  })
+}
+
+export const triggerTabChange = (tab: Tab | null): void => {
+  tabChangeCallbacks.forEach((cb) => {
+    try {
+      cb(tab)
+    } catch (e) {
+      console.error('Tab change callback error:', e)
+    }
+  })
+}
+
+const createPluginAPI = (pluginId: string): PluginAPI => {
+  const storage = new PluginStorage(pluginId)
+
+  return {
+    commands: {
+      register: (id: string, handler: (...args: unknown[]) => void) => {
+        const fullId = `${pluginId}.${id}`
+        return commandService.registerCommand(fullId, handler, pluginId)
+      },
+      execute: (id: string, ...args: unknown[]) => commandService.executeCommand(id, ...args),
+      getCommands: () => {
+        const commands: string[] = []
+        return commands
+      }
+    },
+
+    ui: {
+      addActivityItem: (item: Omit<ActivityItem, 'pluginId'>) => {
+        const fullItem: ActivityItem = { ...item, pluginId }
+        usePluginService.getState().activityItems.push(fullItem)
+        return () => {
+          const state = usePluginService.getState()
+          const index = state.activityItems.findIndex(
+            (i) => i.id === fullItem.id && i.pluginId === pluginId
+          )
+          if (index !== -1) {
+            state.activityItems.splice(index, 1)
+          }
+        }
+      },
+      addRightActivityItem: (item: Omit<RightActivityItem, 'pluginId'>) => {
+        const fullItem: RightActivityItem = { ...item, pluginId }
+        usePluginService.setState((state) => ({
+          rightActivityItems: [...state.rightActivityItems, fullItem]
+        }))
+        return () => {
+          usePluginService.setState((state) => ({
+            rightActivityItems: state.rightActivityItems.filter(
+              (i) => !(i.id === fullItem.id && i.pluginId === pluginId)
+            )
+          }))
+        }
+      },
+      addStatusBarItem: (item: Omit<StatusBarItem, 'pluginId'>) => {
+        const fullItem: StatusBarItem = { ...item, pluginId }
+        usePluginService.setState((state) => ({
+          statusBarItems: [...state.statusBarItems, fullItem]
+        }))
+        return () => {
+          usePluginService.setState((state) => ({
+            statusBarItems: state.statusBarItems.filter(
+              (i) => !(i.id === fullItem.id && i.pluginId === pluginId)
+            )
+          }))
+        }
+      },
+      showNotification: (message: string, type: 'info' | 'warning' | 'error' = 'info') => {
+        usePluginService.getState().addNotification({ message, type })
+      }
+    },
+
+    editor: {
+      getActiveContent: async () => {
+        const editorState = useEditorStore.getState()
+        const projectState = useProjectStore.getState()
+        const activeGroupId = editorState.focusedGroupId
+        const group = editorState.groupEditorStates.get(activeGroupId)
+        if (!group) return null
+
+        const tree = editorState.editorTree
+        const findActiveTab = (node: typeof tree): Tab | null => {
+          if (node.kind === 'group') {
+            if (node.id === activeGroupId) {
+              return node.tabs.find((t) => t.id === node.activeTabId) || null
+            }
+            return null
+          }
+          return findActiveTab(node.first) || findActiveTab(node.second)
+        }
+
+        const activeTab = findActiveTab(tree)
+        if (!activeTab || activeTab.type !== 'file' || !activeTab.nodeId) return null
+
+        const draft = projectState.draftsByNodeId[activeTab.nodeId]
+        if (typeof draft === 'string') {
+          return draft
+        }
+
+        const project = projectState.currentProject
+        if (project) {
+          return await window.api.readNodeContent(project.projectSettingsPath, activeTab.nodeId)
+        }
+
+        return null
+      },
+      getActiveTab: () => {
+        const editorState = useEditorStore.getState()
+        const tree = editorState.editorTree
+        const activeGroupId = editorState.focusedGroupId
+
+        const findActiveTab = (node: typeof tree): Tab | null => {
+          if (node.kind === 'group') {
+            if (node.id === activeGroupId) {
+              return node.tabs.find((t) => t.id === node.activeTabId) || null
+            }
+            return null
+          }
+          return findActiveTab(node.first) || findActiveTab(node.second)
+        }
+
+        return findActiveTab(tree)
+      },
+      openTab: (options: OpenTabOptions) => {
+        useEditorStore.getState().openTab({
+          id: options.id,
+          title: options.title,
+          type: options.type as Tab['type'],
+          nodeId: options.nodeId,
+          kind: options.kind
+        })
+      },
+      closeTab: (tabId: string) => {
+        const editorState = useEditorStore.getState()
+        const groupId = editorState.focusedGroupId
+        useEditorStore.getState().closeTab(groupId, tabId)
+      },
+      onContentChange: (callback: (content: string) => void) => {
+        contentChangeCallbacks.add(callback)
+        return () => {
+          contentChangeCallbacks.delete(callback)
+        }
+      },
+      onTabChange: (callback: (tab: Tab | null) => void) => {
+        tabChangeCallbacks.add(callback)
+        // 立即调用一次当前 tab
+        const editorState = useEditorStore.getState()
+        const tree = editorState.editorTree
+        const activeGroupId = editorState.focusedGroupId
+
+        const findActiveTab = (node: typeof tree): Tab | null => {
+          if (node.kind === 'group') {
+            if (node.id === activeGroupId) {
+              return node.tabs.find((t) => t.id === node.activeTabId) || null
+            }
+            return null
+          }
+          return findActiveTab(node.first) || findActiveTab(node.second)
+        }
+
+        const currentTab = findActiveTab(tree)
+        if (currentTab) {
+          callback(currentTab)
+        }
+        return () => {
+          tabChangeCallbacks.delete(callback)
+        }
+      }
+    },
+
+    project: {
+      getCurrent: () => useProjectStore.getState().currentProject,
+      getNodes: () => useProjectStore.getState().storyNodes,
+      getNodeById: (nodeId: string) =>
+        useProjectStore.getState().storyNodes.find((n) => n.id === nodeId),
+      createNode: async (input: CreateNodeInput) => {
+        const result = await hookSystem.intercept('file:beforeCreate', input)
+        if (!result.proceed) return []
+        return window.api.createStoryNode(result.result!)
+      },
+      deleteNode: async (nodeId: string) => {
+        const node = useProjectStore.getState().storyNodes.find((n) => n.id === nodeId)
+        if (node) {
+          const result = await hookSystem.intercept('file:beforeDelete', { nodeId, node })
+          if (!result.proceed) return
+        }
+        await useProjectStore.getState().deleteStoryNode(nodeId)
+      },
+      renameNode: async (nodeId: string, newName: string) => {
+        const node = useProjectStore.getState().storyNodes.find((n) => n.id === nodeId)
+        if (node) {
+          const result = await hookSystem.intercept('file:beforeRename', {
+            nodeId,
+            newName,
+            node
+          })
+          if (!result.proceed) return
+          newName = (result.result as { newName: string }).newName
+        }
+        await useProjectStore.getState().renameStoryNode(nodeId, newName)
+      },
+      moveNode: async (nodeId: string, newParentId: string | null) => {
+        const node = useProjectStore.getState().storyNodes.find((n) => n.id === nodeId)
+        if (node) {
+          const result = await hookSystem.intercept('file:beforeMove', {
+            nodeId,
+            newParentId,
+            node
+          })
+          if (!result.proceed) return
+        }
+        await useProjectStore.getState().moveStoryNode(nodeId, newParentId)
+      },
+      readNodeContent: async (nodeId: string) => {
+        const project = useProjectStore.getState().currentProject
+        if (!project) return null
+        return window.api.readNodeContent(project.projectSettingsPath, nodeId)
+      },
+      writeNodeContent: async (nodeId: string, content: string) => {
+        const project = useProjectStore.getState().currentProject
+        const node = useProjectStore.getState().storyNodes.find((n) => n.id === nodeId)
+        if (!project || !node) return
+
+        const result = await hookSystem.waterfall('content:beforeSave', content)
+        await useProjectStore.getState().saveNodeContent(nodeId, result)
+      }
+    },
+
+    hooks: {
+      beforeSave: (callback) => hookSystem.on('content:beforeSave', callback as never),
+      afterLoad: (callback) => hookSystem.on('content:afterLoad', callback as never),
+      onProofread: (callback) => hookSystem.on('proofread:process', callback as never),
+      onFileOpen: (callback) => hookSystem.on('file:open', callback as never),
+      onNodeCreate: (callback) => hookSystem.on('file:beforeCreate', callback as never),
+      onNodeDelete: (callback) => hookSystem.on('file:beforeDelete', callback as never)
+    },
+
+    storage: {
+      get: <T>(key: string) => storage.get<T>(key),
+      set: <T>(key: string, value: T) => storage.set(key, value),
+      delete: (key: string) => storage.delete(key),
+      clear: () => storage.clear()
+    },
+
+    utils: {
+      log: (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+        const prefix = `[Plugin:${pluginId}]`
+        switch (level) {
+          case 'error':
+            console.error(prefix, message)
+            break
+          case 'warn':
+            console.warn(prefix, message)
+            break
+          default:
+            console.log(prefix, message)
+        }
+      }
+    }
+  }
+}
+
+export const usePluginService = create<PluginState>((set, get) => ({
+  plugins: [],
+  activityItems: [],
+  rightActivityItems: [],
+  statusBarItems: [],
+  notifications: [],
+  isLoading: false,
+
+  loadPlugins: async () => {
+    set({ isLoading: true })
+    try {
+      const pluginList = await window.api.getPlugins()
+      for (const plugin of pluginList) {
+        await get().loadPlugin(plugin)
+      }
+    } catch (e) {
+      console.error('Failed to load plugins:', e)
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  loadPlugin: async (pluginInfo) => {
+    const { manifest, path, mainPath } = pluginInfo
+    const existingPlugin = get().plugins.find((p) => p.manifest.id === manifest.id)
+    if (existingPlugin?.loaded) return
+
+    try {
+      const api = createPluginAPI(manifest.id)
+
+      const result = await window.api.readPluginFile(mainPath)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to read plugin file')
+      }
+
+      const pluginCode = result.content!
+      const pluginModule: { exports: { activate?: (api: PluginAPI) => void | Promise<void> } } = { exports: {} }
+
+      const wrappedCode = `
+        (function(module) {
+          ${pluginCode}
+        })
+      `
+
+      const pluginFunction = eval(wrappedCode)
+      pluginFunction(pluginModule)
+
+      const activate = pluginModule.exports.activate
+
+      if (typeof activate === 'function') {
+        await activate(api)
+      } else {
+        console.warn(`Plugin ${manifest.id} has no activate function`)
+      }
+
+      set((state) => {
+        const filtered = state.plugins.filter((p) => p.manifest.id !== manifest.id)
+        return {
+          plugins: [
+            ...filtered,
+            {
+              manifest,
+              path,
+              enabled: true,
+              loaded: true
+            }
+          ]
+        }
+      })
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      console.error(`Failed to load plugin ${manifest.id}:`, e)
+      set((state) => {
+        const filtered = state.plugins.filter((p) => p.manifest.id !== manifest.id)
+        return {
+          plugins: [
+            ...filtered,
+            {
+              manifest,
+              path,
+              enabled: false,
+              loaded: false,
+              error: errorMessage
+            }
+          ]
+        }
+      })
+    }
+  },
+
+  unloadPlugin: (pluginId: string) => {
+    const plugin = get().plugins.find((p) => p.manifest.id === pluginId)
+    if (!plugin) return
+
+    set((state) => ({
+      plugins: state.plugins.map((p) =>
+        p.manifest.id === pluginId ? { ...p, loaded: false } : p
+      ),
+      activityItems: state.activityItems.filter((i) => i.pluginId !== pluginId),
+      rightActivityItems: state.rightActivityItems.filter((i) => i.pluginId !== pluginId),
+      statusBarItems: state.statusBarItems.filter((i) => i.pluginId !== pluginId)
+    }))
+
+    new PluginStorage(pluginId).clear()
+  },
+
+  setPluginEnabled: (pluginId: string, enabled: boolean) => {
+    const plugin = get().plugins.find((p) => p.manifest.id === pluginId)
+    if (!plugin) return
+
+    if (enabled && !plugin.loaded) {
+      void get().loadPlugin({
+        manifest: plugin.manifest,
+        path: plugin.path,
+        mainPath: `${plugin.path}/${plugin.manifest.main}`
+      })
+    } else if (!enabled && plugin.loaded) {
+      get().unloadPlugin(pluginId)
+    }
+
+    set((state) => ({
+      plugins: state.plugins.map((p) =>
+        p.manifest.id === pluginId ? { ...p, enabled } : p
+      )
+    }))
+  },
+
+  addNotification: (notification: NotificationOptions) => {
+    set((state) => ({
+      notifications: [...state.notifications, notification]
+    }))
+
+    const duration = notification.duration ?? 3000
+    if (duration > 0) {
+      setTimeout(() => {
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n !== notification)
+        }))
+      }, duration)
+    }
+  },
+
+  removeNotification: (index: number) => {
+    set((state) => ({
+      notifications: state.notifications.filter((_, i) => i !== index)
+    }))
+  },
+
+  getHooks: () => hookSystem
+}))
+
+export type PluginServiceType = typeof usePluginService

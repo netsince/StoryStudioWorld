@@ -12,6 +12,7 @@ declare global {
       loadProject: (projectSettingsPath: string) => Promise<ProjectData>
       createProject: (input: CreateProjectInput) => Promise<ProjectData>
       getProjectNodes: (projectSettingsPath: string) => Promise<StoryNode[]>
+      initSettingNodes: (projectSettingsPath: string) => Promise<StoryNode[]>
       createStoryNode: (input: CreateNodeInput) => Promise<StoryNode[]>
       renameStoryNode: (input: RenameNodeInput) => Promise<StoryNode[]>
       deleteStoryNode: (input: DeleteNodeInput) => Promise<StoryNode[]>
@@ -38,6 +39,7 @@ declare global {
       openNewWindow: () => void
       setFullScreen: (fullScreen: boolean) => void
       isFullScreen: () => Promise<boolean>
+      proofreadText: (text: string) => Promise<ProofreadResult>
       // Memo APIs
       getAllMemos: () => Promise<Memo[]>
       createMemo: (content?: string) => Promise<Memo>
@@ -49,6 +51,13 @@ declare global {
       deleteSnapshot: (projectSettingsPath: string, snapshotId: string) => Promise<boolean>
       restoreSnapshot: (projectSettingsPath: string, snapshotId: string) => Promise<boolean>
       compareWithCurrent: (projectSettingsPath: string, snapshotId: string) => Promise<DiffResult | null>
+      // Plugin APIs
+      getPlugins: () => Promise<PluginInfo[]>
+      getPluginSettings: () => Promise<PluginSettings>
+      setPluginEnabled: (pluginId: string, enabled: boolean) => Promise<boolean>
+      getPluginDir: () => Promise<string>
+      openPluginsFolder: () => void
+      readPluginFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>
     }
   }
 }
@@ -98,6 +107,7 @@ export interface StoryNode {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
   sortOrder: number
@@ -126,6 +136,7 @@ export interface CreateNodeInput {
   parentId: string | null
   name: string
   type: 'folder' | 'file'
+  kind?: 'story' | 'setting'
 }
 
 export interface RenameNodeInput {
@@ -150,4 +161,50 @@ export interface ReorderNodeInput {
   nodeId: string
   targetNodeId: string
   position: 'before' | 'after'
+}
+
+export interface ProofreadResult {
+  issues: {
+    id: string
+    type: 'spelling' | 'grammar' | 'style' | 'duplicate' | 'punctuation'
+    message: string
+    suggestion: string
+    start: number
+    end: number
+    line: number
+    column: number
+    severity: 'error' | 'warning' | 'info'
+  }[]
+  stats: {
+    totalIssues: number
+    errorCount: number
+    warningCount: number
+    infoCount: number
+  }
+}
+
+export interface PluginManifest {
+  id: string
+  name: string
+  version: string
+  description?: string
+  author?: string
+  main: string
+  contributes?: {
+    commands?: Array<{ id: string; title: string }>
+    activityBar?: Array<{ id: string; title: string; icon?: string }>
+    rightActivityBar?: Array<{ id: string; title: string; icon?: string }>
+  }
+}
+
+export interface PluginInfo {
+  manifest: PluginManifest
+  path: string
+  mainPath: string
+  enabled: boolean
+}
+
+export interface PluginSettings {
+  enabledPlugins: string[]
+  disabledPlugins: string[]
 }
