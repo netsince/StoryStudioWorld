@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import type { StoryNode } from '../models'
 import { useEditorStore } from '../stores/editorStore'
 import { useLayoutStore } from '../stores/layoutStore'
@@ -21,6 +22,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'set
   onCreateFile,
   kind = 'story'
 }) => {
+  const { t } = useTranslation()
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -79,7 +81,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'set
           onClose()
         }}
       >
-        📁 文件夹
+        📁 {t('explorer.folder')}
       </div>
       <div
         style={{
@@ -100,14 +102,17 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'set
           onClose()
         }}
       >
-        📄 {kind === 'setting' ? '设定' : '章'}
+        📄 {kind === 'setting' ? t('explorer.setting') : t('explorer.chapter')}
       </div>
     </div>,
     document.body
   )
 }
 
+const RESERVED_CATEGORY_IDS = ['character', 'location', 'worldview', 'item', 'other']
+
 const Explorer: React.FC = () => {
+  const { t } = useTranslation()
   const activeActivity = useUiStore((s) => s.activeActivity)
   const isOpen = useUiStore((s) => s.isExplorerOpen)
   const expandNodePath = useUiStore((s) => s.expandNodePath)
@@ -141,15 +146,15 @@ const Explorer: React.FC = () => {
   const activityTitle = useMemo(() => {
     switch (activeActivity) {
       case 'chapter':
-        return '编写'
+        return t('explorer.write')
       case 'setting':
-        return '世界设定'
+        return t('explorer.worldSetting')
       case 'plugin':
-        return '管理插件'
+        return t('sidebar.managePlugins')
       default:
-        return '编写'
+        return t('explorer.write')
     }
-  }, [activeActivity])
+  }, [activeActivity, t])
 
   useEffect(() => {
     if (expandNodePath.length > 0) {
@@ -205,28 +210,33 @@ const Explorer: React.FC = () => {
     const kind = activeActivity === 'setting' ? 'setting' : 'story'
 
     if (type === 'folder') {
-      name = kind === 'setting' && !getSelectedFolderId() ? '新分类' : '新文件夹'
+      name = kind === 'setting' && !getSelectedFolderId() ? t('sidebar.newCategory') : t('sidebar.newFolder')
     } else {
       const parentId = getSelectedFolderId()
       const siblings = getNodeChildren(parentId)
       if (kind === 'setting') {
         if (!parentId) {
-          window.alert('请先在分类下创建文件夹，然后再创建设定文件。')
+          window.alert(t('explorer.createFolderFirst'))
           return
         }
-        // Check if parent is a root category
         const parentNode = storyNodes.find(n => n.id === parentId)
-        if (parentNode && parentNode.parentId === null) {
-           window.alert('请先在分类下创建文件夹，然后再创建设定文件。')
-           return
+        if (parentNode && parentNode.parentId === null && RESERVED_CATEGORY_IDS.includes(parentNode.name)) {
+          window.alert(t('explorer.createFolderFirst'))
+          return
         }
-        name = '新设定'
+        name = t('explorer.newSetting')
       } else {
         const fileCount = siblings.filter(n => n.type === 'file').length
-        name = `第${fileCount + 1}章`
+        name = t('explorer.newChapter', { count: fileCount + 1 })
       }
     }
     const parentId = getSelectedFolderId()
+    
+    if (kind === 'setting' && type === 'folder' && RESERVED_CATEGORY_IDS.includes(name)) {
+      window.alert(t('errors.cannotCreateInReservedCategory'))
+      return
+    }
+    
     await onCreateStoryNode(parentId, name, type, kind)
     if (parentId && !expandedNodeIds.includes(parentId)) {
       setExpandedNodeIds(prev => [...prev, parentId])
@@ -250,12 +260,12 @@ const Explorer: React.FC = () => {
     if (!currentProject) {
       return (
         <div className="explorer-content">
-          <div className="explorer-text-group">您尚未打开任何项目。</div>
+          <div className="explorer-text-group">{t('explorer.noProject')}</div>
           <button className="action-button" onClick={onOpenCreateProject}>
-            新建项目
+            {t('explorer.newProject')}
           </button>
           <button className="action-button secondary" onClick={onOpenFolder}>
-            打开项目
+            {t('explorer.openProject')}
           </button>
         </div>
       )
@@ -286,9 +296,9 @@ const Explorer: React.FC = () => {
               {kind === 'setting' && (
                 <button
                   className="story-toolbar-btn"
-                  title="新增一级节点"
+                  title={t('explorer.addRootNode')}
                   disabled={isBusy}
-                  onClick={() => void onCreateStoryNode(null, '新分类', 'folder', 'setting')}
+                  onClick={() => void onCreateStoryNode(null, t('sidebar.newCategory'), 'folder', 'setting')}
                 >
                   <svg
                     width="14"
@@ -304,7 +314,7 @@ const Explorer: React.FC = () => {
               )}
               <button
                 className="story-toolbar-btn"
-                title="刷新"
+                title={t('explorer.refresh')}
                 disabled={isBusy}
                 onClick={() => void onRefreshStoryNodes()}
               >
@@ -322,7 +332,7 @@ const Explorer: React.FC = () => {
               </button>
               <button
                 className="story-toolbar-btn story-action-button"
-                title="新建"
+                title={t('explorer.createNew')}
                 disabled={isBusy}
                 onClick={(event) => {
                   event.stopPropagation()
@@ -351,10 +361,10 @@ const Explorer: React.FC = () => {
               )}
               <button
                 className="story-toolbar-btn"
-                title="归档"
+                title={t('sidebar.archive')}
                 disabled={isBusy}
                 onClick={() => {
-                  openTab({ id: kind === 'setting' ? 'setting-archive' : 'archive', title: kind === 'setting' ? '设定归档' : '归档空间', type: 'archive' })
+                  openTab({ id: kind === 'setting' ? 'setting-archive' : 'archive', title: kind === 'setting' ? t('explorer.settingArchive') : t('explorer.archiveSpace'), type: 'archive' })
                 }}
               >
                 <svg
@@ -407,10 +417,10 @@ const Explorer: React.FC = () => {
           {!currentProject && (
             <div className="explorer-recent-section">
               <div className="explorer-header" style={{ padding: '0 15px 10px 15px' }}>
-                最近的项目
+                {t('explorer.recentProjects')}
               </div>
               {recentProjects.length === 0 ? (
-                <div className="explorer-list-item muted">暂无最近项目</div>
+                <div className="explorer-list-item muted">{t('explorer.noRecentProjects')}</div>
               ) : (
                 recentProjects.map((project) => (
                   <div

@@ -1,5 +1,6 @@
 import type { StoryNode } from '../models'
 import type { ProofreadResult, CreateNodeInput } from '../../../preload/index'
+import i18n from '../i18n'
 
 export type BeforeSaveCallback = (
   content: string,
@@ -66,22 +67,40 @@ export type HookCallback =
 
 export interface HookEvent {
   name: string
-  description: string
+  descriptionKey: string
 }
 
-export const HookEvents: HookEvent[] = [
-  { name: 'content:beforeSave', description: '保存前，可修改内容或阻止保存' },
-  { name: 'content:afterLoad', description: '加载后，可转换内容' },
-  { name: 'content:onEdit', description: '编辑时触发' },
-  { name: 'proofread:process', description: '校对处理，可替换校对引擎' },
-  { name: 'file:open', description: '文件打开时' },
-  { name: 'file:beforeCreate', description: '创建前，可修改输入或阻止' },
-  { name: 'file:beforeDelete', description: '删除前，可阻止删除' },
-  { name: 'file:beforeRename', description: '重命名前，可修改名称或阻止' },
-  { name: 'file:beforeMove', description: '移动前，可阻止移动' },
-  { name: 'export:format', description: '导出格式处理' },
-  { name: 'tab:change', description: 'Tab 切换时' }
+export const getHookEvents = (): HookEvent[] => [
+  { name: 'content:beforeSave', descriptionKey: 'hooks.beforeSave' },
+  { name: 'content:afterLoad', descriptionKey: 'hooks.afterLoad' },
+  { name: 'content:onEdit', descriptionKey: 'hooks.onEdit' },
+  { name: 'proofread:process', descriptionKey: 'hooks.proofreadProcess' },
+  { name: 'file:open', descriptionKey: 'hooks.fileOpen' },
+  { name: 'file:beforeCreate', descriptionKey: 'hooks.beforeCreate' },
+  { name: 'file:beforeDelete', descriptionKey: 'hooks.beforeDelete' },
+  { name: 'file:beforeRename', descriptionKey: 'hooks.beforeRename' },
+  { name: 'file:beforeMove', descriptionKey: 'hooks.beforeMove' },
+  { name: 'export:format', descriptionKey: 'hooks.exportFormat' },
+  { name: 'tab:change', descriptionKey: 'hooks.tabChange' }
 ]
+
+export const HookEvents: HookEvent[] = [
+  { name: 'content:beforeSave', descriptionKey: 'hooks.beforeSave' },
+  { name: 'content:afterLoad', descriptionKey: 'hooks.afterLoad' },
+  { name: 'content:onEdit', descriptionKey: 'hooks.onEdit' },
+  { name: 'proofread:process', descriptionKey: 'hooks.proofreadProcess' },
+  { name: 'file:open', descriptionKey: 'hooks.fileOpen' },
+  { name: 'file:beforeCreate', descriptionKey: 'hooks.beforeCreate' },
+  { name: 'file:beforeDelete', descriptionKey: 'hooks.beforeDelete' },
+  { name: 'file:beforeRename', descriptionKey: 'hooks.beforeRename' },
+  { name: 'file:beforeMove', descriptionKey: 'hooks.beforeMove' },
+  { name: 'export:format', descriptionKey: 'hooks.exportFormat' },
+  { name: 'tab:change', descriptionKey: 'hooks.tabChange' }
+]
+
+export const getHookEventDescription = (event: HookEvent): string => {
+  return i18n.t(event.descriptionKey)
+}
 
 class HookSystem {
   private hooks = new Map<string, Set<HookCallback>>()

@@ -41,10 +41,46 @@
     "newFile": "New File",
     "rename": "Rename",
     "delete": "Delete",
-    "archive": "Archive",
     "restore": "Restore",
     "permanentDelete": "Permanent Delete",
-    "emptyArchive": "Archive is empty"
+    "emptyArchive": "Archive is empty",
+    "newCategory": "New Category",
+    "createCategory": "Create Category",
+    "createFolder": "Create Folder",
+    "managePlugins": "Manage Plugins"
+  },
+  "explorer": {
+    "write": "Write",
+    "worldSetting": "World Setting",
+    "noProject": "No project opened.",
+    "newProject": "New Project",
+    "openProject": "Open Project",
+    "recentProjects": "Recent Projects",
+    "noRecentProjects": "No recent projects",
+    "folder": "Folder",
+    "chapter": "Chapter",
+    "setting": "Setting",
+    "newSetting": "New Setting",
+    "newChapter": "Chapter {{count}}",
+    "createFolderFirst": "Please create a folder under the category first, then create setting file.",
+    "addRootNode": "Add root node",
+    "refresh": "Refresh",
+    "createNew": "Create New",
+    "archiveSpace": "Archive",
+    "settingArchive": "Setting Archive"
+  },
+  "tree": {
+    "rename": "Rename",
+    "delete": "Delete",
+    "confirmArchive": "Are you sure you want to move \"{{name}}\" to archive?",
+    "deleteFolderWarning": {
+      "title": "You are deleting folder \"{{name}}\", which contains {{count}} chapter files.",
+      "fileList": "Included files: {{files}}{{more}}",
+      "moreFiles": "and {{count}} more files",
+      "confirm": "Are you sure you want to delete?",
+      "secondConfirm": "Warning: Folder \"{{name}}\" contains {{count}} chapters!\n\nFile list: {{files}}{{more}}\n\nThis is the second confirmation. Continue?",
+      "finalConfirm": "Final confirmation: Are you sure you want to move \"{{name}}\" to archive?\n\nThis will delete {{files}} chapter files and {{folders}} subfolders.\n\nThis action can be undone. Please confirm."
+    }
   },
   "welcome": {
     "title": "Welcome",
@@ -88,13 +124,16 @@
     "saveChanges": "Do you want to save changes?",
     "chapter": "Chapter",
     "startWriting": "Start writing \"{{title}}\"...",
+    "startWritingDefault": "Start writing...",
     "confirmClose": "{{title}} has unsaved changes. Are you sure you want to close?"
   },
   "setting": {
     "category": {
       "character": "Character",
       "location": "Location",
+      "worldview": "Worldview",
       "item": "Item",
+      "other": "Other",
       "default": "Other"
     },
     "field": {
@@ -164,11 +203,25 @@
     "ignoreAll": "Ignore All",
     "fix": "Fix",
     "fixAll": "Fix All",
+    "manualCheck": "Manual check",
+    "clearResults": "Clear results",
+    "autoProofread": "Auto proofread",
+    "analyzing": "Analyzing text...",
+    "clickToStart": "Click the search icon or type to start proofreading",
+    "noOptimizations": "No optimizations found",
+    "suggestion": "Suggestion",
     "type": {
       "spelling": "Spelling",
       "grammar": "Grammar",
       "style": "Style",
-      "punctuation": "Punctuation"
+      "punctuation": "Punctuation",
+      "duplicate": "Duplicate",
+      "other": "Other"
+    },
+    "severity": {
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info"
     }
   },
   "memo": {
@@ -283,6 +336,7 @@
     "cursorRight": "Cursor Right",
     "enterZenMode": "Enter Zen Mode",
     "exitZenMode": "Exit Zen Mode",
+    "zenMode": "Zen",
     "devTools": "Developer Tools",
     "back": "Back",
     "forward": "Forward"
@@ -295,7 +349,7 @@
     "website": "Website",
     "license": "License",
     "os": "OS",
-    "copyright": "Copyright © {{year}} netSince.com. Licensed under MIT."
+    "copyright": "Copyright © {{year}} netSince.com. Licensed under THE netSince.com's PROJECT PUBLIC LICENSE."
   },
   "plugin": {
     "title": "Plugins",
@@ -344,14 +398,19 @@
     "find": "Find",
     "replace": "Replace",
     "replaceAll": "Replace All",
-    "findPlaceholder": "Find...",
-    "replacePlaceholder": "Replace with...",
+    "findPlaceholder": "Find",
+    "replacePlaceholder": "Replace with",
     "matchCase": "Match Case",
     "wholeWord": "Whole Word",
     "useRegex": "Use Regex",
     "noResults": "No results found",
     "results": "{{current}} / {{total}} results",
-    "replaced": "Replaced {{count}} occurrences"
+    "replaced": "Replaced {{count}} occurrences",
+    "previous": "Previous",
+    "next": "Next",
+    "previousShortcut": "Previous (Shift+Enter)",
+    "nextShortcut": "Next (Enter)",
+    "close": "Close (Esc)"
   },
   "statusBar": {
     "line": "Line",
@@ -387,8 +446,42 @@
     "createFailed": "Create failed",
     "deleteFailed": "Delete failed",
     "renameFailed": "Rename failed",
+    "moveFailed": "Move failed",
+    "reorderFailed": "Reorder failed",
+    "refreshFailed": "Refresh failed",
+    "archiveLoadFailed": "Failed to load archive",
+    "archiveRestoreFailed": "Failed to restore archive",
+    "permanentDeleteFailed": "Permanent delete failed",
+    "initSettingFailed": "Failed to initialize setting nodes",
     "invalidName": "Invalid name",
     "nameExists": "Name already exists",
-    "operationCancelled": "Operation cancelled"
+    "operationCancelled": "Operation cancelled",
+    "cutFailed": "Cut failed, please try again",
+    "openProjectFailed": "Failed to open project",
+    "createProjectFailed": "Failed to create project",
+    "projectPathMustBeFolder": "Project path must be a folder.",
+    "projectPathMustBeEmpty": "Project path must be an empty folder.",
+    "invalidProjectFolder": "Current folder is not a valid Story Studio World project.",
+    "selectProjectFile": "Please select storystudioworld.sswprojectsetting file.",
+    "projectNameRequired": "Project name is required.",
+    "nodeNotFound": "Node not found",
+    "sameLevelReorderOnly": "Can only reorder within the same level",
+    "cannotCreateInReservedCategory": "Cannot create files directly in system reserved categories"
+  },
+  "hooks": {
+    "beforeSave": "Before save, can modify content or prevent saving",
+    "afterLoad": "After load, can transform content",
+    "onEdit": "Triggered on edit",
+    "proofreadProcess": "Proofread process, can replace proofread engine",
+    "fileOpen": "When file opens",
+    "beforeCreate": "Before create, can modify input or prevent",
+    "beforeDelete": "Before delete, can prevent deletion",
+    "beforeRename": "Before rename, can modify name or prevent",
+    "beforeMove": "Before move, can prevent moving",
+    "exportFormat": "Export format processing",
+    "tabChange": "When tab changes"
+  },
+  "project": {
+    "defaultStoryName": "Story"
   }
 }

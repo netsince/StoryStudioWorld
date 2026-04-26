@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import FindReplaceWidget, { type MatchRange } from './FindReplaceWidget'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
@@ -91,10 +92,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   isActive,
   onChange,
   onSave,
-  placeholder = '开始写作...',
+  placeholder,
   tabId,
   groupId = 'default'
 }) => {
+  const { t } = useTranslation()
+  const _placeholder = placeholder || t('editor.startWritingDefault')
   const [text, setText] = useState(content || '')
   const goBack = useEditorStore((s) => s.goBack)
   const goForward = useEditorStore((s) => s.goForward)
@@ -377,8 +380,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
               textarea.selectionStart = textarea.selectionEnd = start
             })
           } catch (error) {
-            console.error('剪切失败:', error)
-            alert('剪切失败，请重试')
+            console.error('Cut failed:', error)
+            alert(t('errors.cutFailed'))
           }
         }
       },
@@ -1042,12 +1045,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const contextMenuItems: ContextMenuItem[] = [
     {
       key: 'undo',
-      label: '撤销 (Ctrl+Z)',
+      label: `${t('menu.undo')} (Ctrl+Z)`,
       onSelect: () => commandService.executeCommand(Commands.UNDO)
     },
     {
       key: 'redo',
-      label: '重做 (Ctrl+Y)',
+      label: `${t('menu.redo')} (Ctrl+Y)`,
       onSelect: () => commandService.executeCommand(Commands.REDO)
     },
     {
@@ -1057,22 +1060,22 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     },
     {
       key: 'cut',
-      label: '剪切 (Ctrl+X)',
+      label: `${t('menu.cut')} (Ctrl+X)`,
       onSelect: () => commandService.executeCommand(Commands.CUT)
     },
     {
       key: 'copy',
-      label: '复制 (Ctrl+C)',
+      label: `${t('menu.copy')} (Ctrl+C)`,
       onSelect: () => commandService.executeCommand(Commands.COPY)
     },
     {
       key: 'paste',
-      label: '粘贴 (Ctrl+V)',
+      label: `${t('menu.paste')} (Ctrl+V)`,
       onSelect: () => commandService.executeCommand(Commands.PASTE)
     },
     {
       key: 'selectAll',
-      label: '全选 (Ctrl+A)',
+      label: `${t('menu.selectAll')} (Ctrl+A)`,
       onSelect: () => commandService.executeCommand(Commands.SELECT_ALL)
     },
     {
@@ -1082,7 +1085,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     },
     {
       key: 'zen-mode',
-      label: '禅',
+      label: t('menu.zenMode'),
       onSelect: () => useUiStore.getState().toggleZenMode()
     }
   ]

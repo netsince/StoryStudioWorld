@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ProjectData, RecentProject, StoryNode } from '../models'
 import { LAST_PROJECT_SETTINGS_PATH_KEY } from '../constants/storage'
 import { useEditorStore } from './editorStore'
+import i18n from '../i18n'
 
 export interface CreateProjectInput {
   projectName: string
@@ -112,7 +113,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         handleProjectLoaded(project)
         return true
       } catch (error) {
-        const message = error instanceof Error ? error.message : '打开项目失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.openProjectFailed')
         set({ errorMessage: message })
         if (showAlert) {
           window.alert(message)
@@ -137,10 +138,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     createProject: async (input: CreateProjectInput) => {
       try {
         set({ isProjectBusy: true })
-        const project = await window.api.createProject(input)
+        const project = await window.api.createProject({
+          ...input,
+          defaultStoryName: i18n.t('project.defaultStoryName')
+        })
         handleProjectLoaded(project)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '创建项目失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.createProjectFailed')
         set({ errorMessage: message })
         window.alert(message)
         throw error
@@ -164,7 +168,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '创建失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.createFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -181,7 +185,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const nodes = await window.api.initSettingNodes(currentProject.projectSettingsPath)
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '初始化设定节点失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.initSettingFailed')
         set({ errorMessage: message })
       } finally {
         set({ isProjectBusy: false })
@@ -201,7 +205,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '重命名失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.renameFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -221,7 +225,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '删除失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.deleteFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -242,7 +246,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '移动失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.moveFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -264,7 +268,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         set({ storyNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '排序失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.reorderFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -280,7 +284,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ isProjectBusy: true })
         await loadStoryNodes(currentProject.projectSettingsPath)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '刷新失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.refreshFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -297,7 +301,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         const nodes = await window.api.getArchivedNodes(currentProject.projectSettingsPath)
         set({ archivedNodes: nodes })
       } catch (error) {
-        const message = error instanceof Error ? error.message : '获取归档失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.archiveLoadFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -315,7 +319,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ storyNodes: nodes })
         await get().refreshArchivedNodes()
       } catch (error) {
-        const message = error instanceof Error ? error.message : '恢复归档失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.archiveRestoreFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -336,7 +340,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ storyNodes: nodes })
         await get().refreshArchivedNodes()
       } catch (error) {
-        const message = error instanceof Error ? error.message : '彻底删除失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.permanentDeleteFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -353,11 +357,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         // 更新节点的时间戳，触发 UI 刷新
         set((state) => ({
           storyNodes: state.storyNodes.map((n) =>
-            n.id === nodeId ? { ...n, updatedAt: Date.now() } : n
+            n.id === nodeId ? { ...n, updatedAt: new Date().toISOString() } : n
           )
         }))
       } catch (error) {
-        const message = error instanceof Error ? error.message : '保存失败。'
+        const message = error instanceof Error ? error.message : i18n.t('errors.saveFailed')
         window.alert(message)
       }
     },

@@ -41,10 +41,46 @@
     "newFile": "新建文件",
     "rename": "重命名",
     "delete": "删除",
-    "archive": "归档",
     "restore": "恢复",
     "permanentDelete": "永久删除",
-    "emptyArchive": "归档为空"
+    "emptyArchive": "归档为空",
+    "newCategory": "新分类",
+    "createCategory": "创建分类",
+    "createFolder": "创建文件夹",
+    "managePlugins": "管理插件"
+  },
+  "explorer": {
+    "write": "编写",
+    "worldSetting": "世界设定",
+    "noProject": "您尚未打开任何项目。",
+    "newProject": "新建项目",
+    "openProject": "打开项目",
+    "recentProjects": "最近的项目",
+    "noRecentProjects": "暂无最近项目",
+    "folder": "文件夹",
+    "chapter": "章",
+    "setting": "设定",
+    "newSetting": "新设定",
+    "newChapter": "第{{count}}章",
+    "createFolderFirst": "请先在分类下创建文件夹，然后再创建设定文件。",
+    "addRootNode": "新增一级节点",
+    "refresh": "刷新",
+    "createNew": "新建",
+    "archiveSpace": "归档空间",
+    "settingArchive": "设定归档"
+  },
+  "tree": {
+    "rename": "重命名",
+    "delete": "删除",
+    "confirmArchive": "确定要将「{{name}}」移至归档吗？",
+    "deleteFolderWarning": {
+      "title": "您正在删除文件夹「{{name}}」，该文件夹包含 {{count}} 个章文件。",
+      "fileList": "包含的文件：{{files}}{{more}}",
+      "moreFiles": "等{{count}}个文件",
+      "confirm": "确定要删除吗？",
+      "secondConfirm": "注意：「{{name}}」文件夹中有 {{count}} 个章！\n\n文件列表：{{files}}{{more}}\n\n这将是第二次确认，继续吗？",
+      "finalConfirm": "最后一次确认：您确定要将「{{name}}」移至归档吗？\n\n该操作将删除 {{files}} 个章文件和 {{folders}} 个子文件夹。\n\n此操作可以恢复，请确认。"
+    }
   },
   "welcome": {
     "title": "欢迎使用",
@@ -88,13 +124,16 @@
     "saveChanges": "是否保存更改？",
     "chapter": "第",
     "startWriting": "开始写作「{{title}}」...",
+    "startWritingDefault": "开始写作...",
     "confirmClose": "{{title}} 有未保存的更改，确定要关闭吗？"
   },
   "setting": {
     "category": {
       "character": "人物",
       "location": "地点",
+      "worldview": "世界观",
       "item": "物品",
+      "other": "其他",
       "default": "其他"
     },
     "field": {
@@ -164,11 +203,25 @@
     "ignoreAll": "全部忽略",
     "fix": "修复",
     "fixAll": "全部修复",
+    "manualCheck": "手动检查",
+    "clearResults": "清空结果",
+    "autoProofread": "自动校对",
+    "analyzing": "正在分析文本...",
+    "clickToStart": "点击搜索图标或输入内容开始校对",
+    "noOptimizations": "未发现可优化的项目",
+    "suggestion": "建议",
     "type": {
       "spelling": "拼写",
       "grammar": "语法",
       "style": "风格",
-      "punctuation": "标点"
+      "punctuation": "标点",
+      "duplicate": "重复",
+      "other": "其他"
+    },
+    "severity": {
+      "error": "错误",
+      "warning": "警告",
+      "info": "提示"
     }
   },
   "memo": {
@@ -283,6 +336,7 @@
     "cursorRight": "光标向右移动",
     "enterZenMode": "进入禅模式",
     "exitZenMode": "退出禅模式",
+    "zenMode": "禅",
     "devTools": "开发者工具",
     "back": "返回",
     "forward": "前进"
@@ -295,7 +349,7 @@
     "website": "网站",
     "license": "许可证",
     "os": "操作系统",
-    "copyright": "Copyright © {{year}} netSince.com. Licensed under MIT."
+    "copyright": "Copyright © {{year}} netSince.com. Licensed under THE netSince.com's PROJECT PUBLIC LICENSE."
   },
   "plugin": {
     "title": "插件",
@@ -344,14 +398,19 @@
     "find": "查找",
     "replace": "替换",
     "replaceAll": "全部替换",
-    "findPlaceholder": "查找内容...",
-    "replacePlaceholder": "替换为...",
+    "findPlaceholder": "查找",
+    "replacePlaceholder": "替换为",
     "matchCase": "区分大小写",
     "wholeWord": "全词匹配",
     "useRegex": "使用正则表达式",
     "noResults": "未找到结果",
     "results": "{{current}} / {{total}} 个结果",
-    "replaced": "已替换 {{count}} 处"
+    "replaced": "已替换 {{count}} 处",
+    "previous": "上一个",
+    "next": "下一个",
+    "previousShortcut": "上一个 (Shift+Enter)",
+    "nextShortcut": "下一个 (Enter)",
+    "close": "关闭 (Esc)"
   },
   "statusBar": {
     "line": "行",
@@ -387,8 +446,42 @@
     "createFailed": "创建失败",
     "deleteFailed": "删除失败",
     "renameFailed": "重命名失败",
+    "moveFailed": "移动失败",
+    "reorderFailed": "排序失败",
+    "refreshFailed": "刷新失败",
+    "archiveLoadFailed": "获取归档失败",
+    "archiveRestoreFailed": "恢复归档失败",
+    "permanentDeleteFailed": "彻底删除失败",
+    "initSettingFailed": "初始化设定节点失败",
     "invalidName": "名称无效",
     "nameExists": "名称已存在",
-    "operationCancelled": "操作已取消"
+    "operationCancelled": "操作已取消",
+    "cutFailed": "剪切失败，请重试",
+    "openProjectFailed": "打开项目失败",
+    "createProjectFailed": "创建项目失败",
+    "projectPathMustBeFolder": "项目路径必须是一个文件夹。",
+    "projectPathMustBeEmpty": "项目路径必须为空文件夹。",
+    "invalidProjectFolder": "当前文件夹不是有效的 Story Studio World 项目。",
+    "selectProjectFile": "请选择 storystudioworld.sswprojectsetting 文件。",
+    "projectNameRequired": "请填写项目名。",
+    "nodeNotFound": "节点不存在",
+    "sameLevelReorderOnly": "只能同层级排序",
+    "cannotCreateInReservedCategory": "不能在系统保留分类下直接创建文件"
+  },
+  "hooks": {
+    "beforeSave": "保存前，可修改内容或阻止保存",
+    "afterLoad": "加载后，可转换内容",
+    "onEdit": "编辑时触发",
+    "proofreadProcess": "校对处理，可替换校对引擎",
+    "fileOpen": "文件打开时",
+    "beforeCreate": "创建前，可修改输入或阻止",
+    "beforeDelete": "删除前，可阻止删除",
+    "beforeRename": "重命名前，可修改名称或阻止",
+    "beforeMove": "移动前，可阻止移动",
+    "exportFormat": "导出格式处理",
+    "tabChange": "Tab 切换时"
+  },
+  "project": {
+    "defaultStoryName": "故事"
   }
 }

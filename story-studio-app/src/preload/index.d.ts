@@ -129,6 +129,7 @@ export interface CreateProjectInput {
   projectName: string
   description: string
   projectPath: string
+  defaultStoryName?: string
 }
 
 export interface CreateNodeInput {

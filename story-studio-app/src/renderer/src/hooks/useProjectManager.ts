@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ProjectData, RecentProject, StoryNode } from '../models'
 import { LAST_PROJECT_SETTINGS_PATH_KEY } from '../constants/storage'
 
@@ -44,6 +45,7 @@ export const useProjectManager = (
   onProjectLoaded?: (project: ProjectData) => void,
   options?: UseProjectManagerOptions
 ): UseProjectManagerValue => {
+  const { t } = useTranslation()
   const [currentProject, setCurrentProject] = useState<ProjectData | null>(null)
   const [storyNodes, setStoryNodes] = useState<StoryNode[]>([])
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([])
@@ -95,7 +97,7 @@ export const useProjectManager = (
         handleProjectLoaded(project)
         return true
       } catch (error) {
-        const message = error instanceof Error ? error.message : '打开项目失败。'
+        const message = error instanceof Error ? error.message : t('errors.openProjectFailed')
         setErrorMessage(message)
         options?.onError?.(message)
         return false
@@ -103,7 +105,7 @@ export const useProjectManager = (
         setIsProjectBusy(false)
       }
     },
-    [handleProjectLoaded, options]
+    [handleProjectLoaded, options, t]
   )
 
   const openProject = useCallback(async (): Promise<void> => {
@@ -127,7 +129,7 @@ export const useProjectManager = (
         const project = await window.api.createProject(input)
         handleProjectLoaded(project)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '创建项目失败。'
+        const message = error instanceof Error ? error.message : t('errors.createProjectFailed')
         setErrorMessage(message)
         options?.onError?.(message)
         throw error
@@ -135,7 +137,7 @@ export const useProjectManager = (
         setIsProjectBusy(false)
       }
     },
-    [handleProjectLoaded, options]
+    [handleProjectLoaded, options, t]
   )
 
   const createStoryNode = useCallback(
@@ -152,14 +154,14 @@ export const useProjectManager = (
         })
         setStoryNodes(nodes)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '创建失败。'
+        const message = error instanceof Error ? error.message : t('errors.createFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const renameStoryNode = useCallback(
@@ -175,14 +177,14 @@ export const useProjectManager = (
         })
         setStoryNodes(nodes)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '重命名失败。'
+        const message = error instanceof Error ? error.message : t('errors.renameFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const deleteStoryNode = useCallback(
@@ -197,14 +199,14 @@ export const useProjectManager = (
         })
         setStoryNodes(nodes)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '删除失败。'
+        const message = error instanceof Error ? error.message : t('errors.deleteFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const moveStoryNode = useCallback(
@@ -220,14 +222,14 @@ export const useProjectManager = (
         })
         setStoryNodes(nodes)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '移动失败。'
+        const message = error instanceof Error ? error.message : t('errors.moveFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const reorderStoryNode = useCallback(
@@ -244,14 +246,14 @@ export const useProjectManager = (
         })
         setStoryNodes(nodes)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '排序失败。'
+        const message = error instanceof Error ? error.message : t('errors.reorderFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       } finally {
         setIsProjectBusy(false)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const saveNodeContent = useCallback(
@@ -261,12 +263,12 @@ export const useProjectManager = (
       try {
         await window.api.writeNodeContent(currentProject.projectSettingsPath, nodeId, content)
       } catch (error) {
-        const message = error instanceof Error ? error.message : '保存失败。'
+        const message = error instanceof Error ? error.message : t('errors.saveFailed')
         setErrorMessage(message)
         options?.onError?.(message)
       }
     },
-    [currentProject, options]
+    [currentProject, options, t]
   )
 
   const lastProjectMarker = useCallback(

@@ -5,6 +5,7 @@ export interface CreateProjectInput {
   projectName: string
   description: string
   projectPath: string
+  defaultStoryName?: string
 }
 
 const CreateProjectForm: React.FC<{

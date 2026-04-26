@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface MatchRange {
   start: number
@@ -24,6 +25,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   onTextChange,
   onMatchesChange
 }) => {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabType>('find')
   const [findText, setFindText] = useState('')
   const [replaceText, setReplaceText] = useState('')
@@ -214,13 +216,13 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
           className={`find-replace-tab ${activeTab === 'find' ? 'active' : ''}`}
           onClick={() => setActiveTab('find')}
         >
-          查找
+          {t('findReplace.find')}
         </button>
         <button
           className={`find-replace-tab ${activeTab === 'replace' ? 'active' : ''}`}
           onClick={() => setActiveTab('replace')}
         >
-          替换
+          {t('findReplace.replace')}
         </button>
       </div>
 
@@ -230,7 +232,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
             ref={findInputRef}
             type="text"
             className="find-replace-input"
-            placeholder="查找"
+            placeholder={t('findReplace.findPlaceholder')}
             value={findText}
             onChange={(e) => setFindText(e.target.value)}
           />
@@ -247,7 +249,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
               ref={replaceInputRef}
               type="text"
               className="find-replace-input"
-              placeholder="替换为"
+              placeholder={t('findReplace.replacePlaceholder')}
               value={replaceText}
               onChange={(e) => setReplaceText(e.target.value)}
             />
@@ -259,17 +261,17 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
             className="find-replace-btn"
             onClick={handlePrevMatch}
             disabled={matchCount === 0}
-            title="上一个 (Shift+Enter)"
+            title={t('findReplace.previousShortcut')}
           >
-            ← 上一个
+            ← {t('findReplace.previous')}
           </button>
           <button
             className="find-replace-btn"
             onClick={handleNextMatch}
             disabled={matchCount === 0}
-            title="下一个 (Enter)"
+            title={t('findReplace.nextShortcut')}
           >
-            下一个 →
+            {t('findReplace.next')} →
           </button>
 
           {activeTab === 'replace' && (
@@ -279,19 +281,19 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
                 onClick={handleReplace}
                 disabled={matchCount === 0}
               >
-                替换
+                {t('findReplace.replace')}
               </button>
               <button
                 className="find-replace-btn"
                 onClick={handleReplaceAll}
                 disabled={matchCount === 0}
               >
-                全部替换
+                {t('findReplace.replaceAll')}
               </button>
             </>
           )}
 
-          <button className="find-replace-btn close-btn" onClick={onClose} title="关闭 (Esc)">
+          <button className="find-replace-btn close-btn" onClick={onClose} title={t('findReplace.close')}>
             ✕
           </button>
         </div>

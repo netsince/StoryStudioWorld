@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StoryNode } from '../models'
 import RenameDialog from './RenameDialog'
 
@@ -38,6 +39,7 @@ const Tree: React.FC<TreeProps> = ({
   onExpandedChange,
   getNodeDescendants
 }) => {
+  const { t } = useTranslation()
   const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(new Set())
   const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(new Set())
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
@@ -225,8 +227,20 @@ const Tree: React.FC<TreeProps> = ({
 
   const isDefaultSettingNode = useCallback((node: StoryNode) => {
     if (kind !== 'setting' || node.parentId !== null) return false
-    return ['人物', '地点', '世界观', '物品', '其他'].includes(node.name)
+    const defaultCategories = ['character', 'location', 'worldview', 'item', 'other']
+    return defaultCategories.includes(node.name)
   }, [kind])
+
+  const getDisplayNodeName = useCallback((node: StoryNode): string => {
+    if (kind === 'setting' && node.parentId === null) {
+      const categoryKey = `setting.category.${node.name}`
+      const translated = t(categoryKey)
+      if (translated !== categoryKey) {
+        return translated
+      }
+    }
+    return node.name
+  }, [kind, t])
 
   const handleContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault()
@@ -452,7 +466,7 @@ const Tree: React.FC<TreeProps> = ({
               lineHeight: `${ROW_HEIGHT}px`
             }}
           >
-            {node.name}
+            {getDisplayNodeName(node)}
           </span>
         </div>
 
@@ -533,7 +547,7 @@ const Tree: React.FC<TreeProps> = ({
               setContextMenu(null)
             }}
           >
-            重命名
+            {t('tree.rename')}
           </div>
           <div
             style={{
@@ -571,21 +585,21 @@ const Tree: React.FC<TreeProps> = ({
                   const sortedByLength = [...descendants.fileNames].sort((a, b) => b.length - a.length)
                   const top5ByLength = sortedByLength.slice(0, 5)
                   const fileList = top5ByLength.join(', ')
-                  const moreText = descendants.fileNames.length > 5 ? `等${descendants.fileNames.length}个文件` : ''
+                  const moreText = descendants.fileNames.length > 5 
+                    ? t('tree.deleteFolderWarning.moreFiles', { count: descendants.fileNames.length }) 
+                    : ''
                   
                   const confirmMessages = [
-                    `您正在删除文件夹「${nodeToDelete.name}」，该文件夹包含 ${descendants.files} 个章文件。\n\n包含的文件：${fileList}${moreText}\n\n确定要删除吗？`,
-                    `注意：「${nodeToDelete.name}」文件夹中有 ${descendants.files} 个章！\n\n文件列表：${fileList}${moreText}\n\n这将是第二次确认，继续吗？`,
-                    `最后一次确认：您确定要将「${nodeToDelete.name}」移至归档吗？\n\n该操作将删除 ${descendants.files} 个章文件和 ${descendants.folders} 个子文件夹。\n\n此操作可以恢复，请确认。`
+                    t('tree.deleteFolderWarning.title', { name: nodeToDelete.name, count: descendants.files }) + 
+                      '\n\n' + t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) + 
+                      '\n\n' + t('tree.deleteFolderWarning.confirm'),
+                    t('tree.deleteFolderWarning.secondConfirm', { name: nodeToDelete.name, count: descendants.files, files: fileList, more: moreText }),
+                    t('tree.deleteFolderWarning.finalConfirm', { name: nodeToDelete.name, files: descendants.files, folders: descendants.folders })
                   ]
                   
                   let confirmed = false
                   for (let i = 0; i < confirmMessages.length; i++) {
-                    if (i === 0) {
-                      confirmed = confirm(confirmMessages[i])
-                    } else {
-                      confirmed = confirm(confirmMessages[i])
-                    }
+                    confirmed = confirm(confirmMessages[i])
                     if (!confirmed) break
                   }
                   
@@ -593,19 +607,19 @@ const Tree: React.FC<TreeProps> = ({
                     onDeleteNode(contextMenu.nodeId)
                   }
                 } else {
-                  if (confirm(`确定要将「${nodeToDelete.name}」移至归档吗？`)) {
+                  if (confirm(t('tree.confirmArchive', { name: nodeToDelete.name }))) {
                     onDeleteNode(contextMenu.nodeId)
                   }
                 }
               } else {
-                if (confirm(`确定要将「${nodeToDelete?.name}」移至归档吗？`)) {
+                if (confirm(t('tree.confirmArchive', { name: nodeToDelete?.name || '' }))) {
                   onDeleteNode(contextMenu.nodeId)
                 }
               }
               setContextMenu(null)
             }}
           >
-            删除
+            {t('tree.delete')}
           </div>
         </div>
       )}
@@ -624,7 +638,7 @@ const Tree: React.FC<TreeProps> = ({
 
       {renameDialog && (
         <RenameDialog
-          title="重命名"
+          title={t('tree.rename')}
           initialValue={renameDialog.initialValue}
           onCancel={() => setRenameDialog(null)}
           onConfirm={(nextValue) => {

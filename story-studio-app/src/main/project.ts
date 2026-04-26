@@ -42,6 +42,7 @@ export interface CreateProjectInput {
   projectName: string
   description: string
   projectPath: string
+  defaultStoryName?: string
 }
 
 export interface CreateNodeInput {
@@ -170,10 +171,10 @@ export async function initSettingNodes(projectSettingsPath: string): Promise<Sto
   const db = await loadDatabase(project.storyDbPath)
 
   const existingNodes = getNodes(db).filter((n) => n.kind === 'setting' && n.parentId === null)
-  const defaultNames = ['人物', '地点', '世界观', '物品', '其他']
+  const defaultCategories = ['character', 'location', 'worldview', 'item', 'other']
 
   let changed = false
-  for (const name of defaultNames) {
+  for (const name of defaultCategories) {
     if (!existingNodes.some((n) => n.name === name)) {
       createNode(db, null, name, 'folder', 'setting')
       changed = true
@@ -204,7 +205,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   const storyDbPath = getStoryDbPath(projectPath)
   const db = await initDatabase(storyDbPath)
 
-  createNode(db, null, '故事', 'file')
+  createNode(db, null, input.defaultStoryName || 'Story', 'file')
 
   await saveDatabase(db, storyDbPath)
   db.close()

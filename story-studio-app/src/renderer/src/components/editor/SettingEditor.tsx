@@ -33,15 +33,6 @@ const FIELD_CONFIG = {
   }
 }
 
-const CATEGORY_NAME_MAP: Record<string, string> = {
-  '人物': 'character',
-  '地点': 'location',
-  '物品': 'item',
-  'character': 'character',
-  'location': 'location',
-  'item': 'item'
-}
-
 const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId }) => {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
@@ -69,9 +60,8 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       if (!parent) break
       current = parent
     }
-    const mappedKey = CATEGORY_NAME_MAP[current.name]
-    if (mappedKey && FIELD_CONFIG[mappedKey as keyof typeof FIELD_CONFIG]) {
-      return mappedKey
+    if (FIELD_CONFIG[current.name as keyof typeof FIELD_CONFIG]) {
+      return current.name
     }
     return 'default'
   }, [node, storyNodes])
