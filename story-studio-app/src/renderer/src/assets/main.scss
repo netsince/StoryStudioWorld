@@ -13,6 +13,7 @@
   --hover-bg: #2a2d2e;
   --accent-color: #007acc;
   --accent-hover: #0062a3;
+  --accent-shadow: rgba(0, 122, 204, 0.4);
 }
 
 body,
@@ -2543,7 +2544,7 @@ html {
     &:hover {
       background-color: var(--accent-hover);
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 122, 204, 0.4);
+      box-shadow: 0 2px 8px var(--accent-shadow, rgba(0, 122, 204, 0.4));
     }
     
     &:active {
