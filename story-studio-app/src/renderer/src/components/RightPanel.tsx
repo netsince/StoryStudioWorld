@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
+import { createRoot } from 'react-dom/client'
 import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
 import { useLayoutStore } from '../stores/layoutStore'
@@ -7,35 +8,71 @@ import { usePluginService, createPluginAPI, type PluginAPI } from '../services/p
 import ProofreadPanel from './ProofreadPanel'
 import MemoPanel from './MemoPanel'
 import SnapshotPanel from './SnapshotPanel'
+import WebViewPanel from './WebViewPanel'
+
+const isReactElement = (value: unknown): value is React.ReactElement => {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    '$$typeof' in value &&
+    typeof (value as { $$typeof: unknown }).$$typeof === 'symbol'
+  )
+}
 
 const PluginPanelWrapper: React.FC<{
   panel: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
   api: PluginAPI
 }> = ({ panel, api }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<ReturnType<typeof createRoot> | null>(null)
+  const [reactElement, setReactElement] = useState<React.ReactElement | null>(null)
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    container.innerHTML = ''
+    if (typeof panel !== 'function') {
+      const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })
+      setReactElement(element)
+      return
+    }
 
-    if (typeof panel === 'function') {
-      try {
-        const result = (panel as (props: { api: unknown }) => React.ReactNode | HTMLElement)({ api })
+    try {
+      const result = (panel as (props: { api: PluginAPI }) => React.ReactNode | HTMLElement)({ api })
 
-        if (result instanceof HTMLElement) {
-          container.appendChild(result)
-        }
-      } catch {
-        // If it throws, it's probably a React component
+      if (result instanceof HTMLElement) {
+        container.innerHTML = ''
+        container.appendChild(result)
+        setReactElement(null)
+      } else if (isReactElement(result)) {
+        setReactElement(result)
+      } else if (result === null || result === undefined) {
+        setReactElement(null)
+      } else {
+        setReactElement(result as React.ReactElement)
       }
+    } catch {
+      const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })
+      setReactElement(element)
     }
 
     return () => {
       container.innerHTML = ''
+      if (rootRef.current) {
+        rootRef.current.unmount()
+        rootRef.current = null
+      }
     }
   }, [panel, api])
+
+  useEffect(() => {
+    if (reactElement && containerRef.current) {
+      if (!rootRef.current) {
+        rootRef.current = createRoot(containerRef.current)
+      }
+      rootRef.current.render(reactElement)
+    }
+  }, [reactElement])
 
   return <div ref={containerRef} style={{ height: '100%', overflow: 'auto' }} />
 }
@@ -49,7 +86,13 @@ const RightPanel: React.FC = () => {
 
   const getPluginPanel = (): React.ReactNode => {
     const item = pluginItems.find((p) => p.id === activeActivity)
-    if (item?.panel) {
+    if (!item) return null
+
+    if (item.webViewId) {
+      return <WebViewPanel webViewId={item.webViewId} />
+    }
+
+    if (item.panel) {
       const api = createPluginAPI(item.pluginId)
       return <PluginPanelWrapper panel={item.panel} api={api} />
     }

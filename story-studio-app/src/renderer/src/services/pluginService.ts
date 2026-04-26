@@ -55,7 +55,8 @@ export interface RightActivityItem {
   id: string
   icon: React.ReactNode | string
   title: string
-  panel: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
+  panel?: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
+  webViewId?: string
   order?: number
   pluginId: string
 }
@@ -99,6 +100,23 @@ export interface OpenTabOptions {
   kind?: 'story' | 'setting'
 }
 
+export interface WebViewOptions {
+  id: string
+  html: string
+  scripts?: string[]
+  styles?: string[]
+  onMessage?: (message: unknown) => void
+}
+
+export interface WebViewInfo {
+  id: string
+  html: string
+  scripts: string[]
+  styles: string[]
+  pluginId: string
+  onMessage?: (message: unknown) => void
+}
+
 export interface PluginAPI {
   commands: {
     register: (id: string, handler: (...args: unknown[]) => void) => () => void
@@ -110,6 +128,16 @@ export interface PluginAPI {
     addRightActivityItem: (item: Omit<RightActivityItem, 'pluginId'>) => () => void
     addStatusBarItem: (item: Omit<StatusBarItem, 'pluginId'>) => () => void
     showNotification: (message: string, type?: 'info' | 'warning' | 'error') => void
+    createWebView: (options: WebViewOptions) => { postMessage: (message: unknown) => void; dispose: () => void }
+    addWebViewPanel: (options: {
+      id: string
+      title: string
+      icon: React.ReactNode | string
+      html: string
+      scripts?: string[]
+      styles?: string[]
+      onMessage?: (message: unknown) => void
+    }) => { postMessage: (message: unknown) => void; dispose: () => void }
   }
   editor: {
     getActiveContent: () => Promise<string | null>
@@ -207,6 +235,7 @@ interface PluginState {
   rightActivityItems: RightActivityItem[]
   statusBarItems: StatusBarItem[]
   notifications: NotificationOptions[]
+  webViews: WebViewInfo[]
   isLoading: boolean
 
   loadPlugins: () => Promise<void>
@@ -216,6 +245,10 @@ interface PluginState {
 
   addNotification: (notification: NotificationOptions) => void
   removeNotification: (index: number) => void
+
+  addWebView: (webView: WebViewInfo) => void
+  removeWebView: (id: string) => void
+  getWebView: (id: string) => WebViewInfo | undefined
 
   getHooks: () => typeof hookSystem
 }
@@ -638,6 +671,77 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
       },
       showNotification: (message: string, type: 'info' | 'warning' | 'error' = 'info') => {
         usePluginService.getState().addNotification({ message, type })
+      },
+      createWebView: (options: WebViewOptions) => {
+        const webViewId = `${pluginId}:${options.id}`
+        const webViewInfo: WebViewInfo = {
+          id: webViewId,
+          html: options.html,
+          scripts: options.scripts || [],
+          styles: options.styles || [],
+          pluginId,
+          onMessage: options.onMessage
+        }
+        usePluginService.getState().addWebView(webViewInfo)
+
+        return {
+          postMessage: (message: unknown) => {
+            const iframe = document.querySelector(`iframe[data-webview-id="${webViewId}"]`) as HTMLIFrameElement
+            if (iframe?.contentWindow) {
+              iframe.contentWindow.postMessage({ type: 'plugin-message', data: message }, '*')
+            }
+          },
+          dispose: () => {
+            usePluginService.getState().removeWebView(webViewId)
+          }
+        }
+      },
+      addWebViewPanel: (options: {
+        id: string
+        title: string
+        icon: React.ReactNode | string
+        html: string
+        scripts?: string[]
+        styles?: string[]
+        onMessage?: (message: unknown) => void
+      }) => {
+        const webViewId = `${pluginId}:${options.id}`
+
+        const webViewInfo: WebViewInfo = {
+          id: webViewId,
+          html: options.html,
+          scripts: options.scripts || [],
+          styles: options.styles || [],
+          pluginId,
+          onMessage: options.onMessage
+        }
+        usePluginService.getState().addWebView(webViewInfo)
+
+        const activityItem: RightActivityItem = {
+          id: options.id,
+          icon: options.icon,
+          title: options.title,
+          webViewId,
+          pluginId
+        }
+        usePluginService.setState((state) => ({
+          rightActivityItems: [...state.rightActivityItems, activityItem]
+        }))
+
+        return {
+          postMessage: (message: unknown) => {
+            const iframe = document.querySelector(`iframe[data-webview-id="${webViewId}"]`) as HTMLIFrameElement
+            if (iframe?.contentWindow) {
+              iframe.contentWindow.postMessage({ type: 'plugin-message', data: message }, '*')
+            }
+          },
+          dispose: () => {
+            usePluginService.getState().removeWebView(webViewId)
+            usePluginService.setState((state) => ({
+              rightActivityItems: state.rightActivityItems.filter((i) => i.id !== options.id)
+            }))
+          }
+        }
       }
     },
 
@@ -866,6 +970,7 @@ export const usePluginService = create<PluginState>((set, get) => ({
   rightActivityItems: [],
   statusBarItems: [],
   notifications: [],
+  webViews: [],
   isLoading: false,
 
   loadPlugins: async () => {
@@ -1006,6 +1111,22 @@ export const usePluginService = create<PluginState>((set, get) => ({
     set((state) => ({
       notifications: state.notifications.filter((_, i) => i !== index)
     }))
+  },
+
+  addWebView: (webView: WebViewInfo) => {
+    set((state) => ({
+      webViews: [...state.webViews, webView]
+    }))
+  },
+
+  removeWebView: (id: string) => {
+    set((state) => ({
+      webViews: state.webViews.filter((w) => w.id !== id)
+    }))
+  },
+
+  getWebView: (id: string) => {
+    return get().webViews.find((w) => w.id === id)
   },
 
   getHooks: () => hookSystem

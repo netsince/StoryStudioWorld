@@ -1,0 +1,17 @@
+{
+  "id": "webview-demo",
+  "name": "WebView 示例",
+  "version": "1.0.0",
+  "description": "演示如何使用 WebView 面板创建独立 UI",
+  "author": "Story Studio World",
+  "main": "index.js",
+  "contributes": {
+    "rightActivityBar": [
+      {
+        "id": "webview-demo",
+        "title": "WebView 演示",
+        "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18\"/></svg>"
+      }
+    ]
+  }
+}
