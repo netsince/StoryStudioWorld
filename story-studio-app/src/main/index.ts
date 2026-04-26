@@ -1,6 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
+import { exec } from 'child_process'
+import { promisify } from 'util'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
@@ -309,6 +311,222 @@ function createWindow(): void {
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) }
     }
+  })
+
+  // Plugin Native APIs
+  const execAsync = promisify(exec)
+
+  ipcMain.handle('plugin-native:fetch', async (_, url: string, options?: {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+    headers?: Record<string, string>
+    body?: string
+    timeout?: number
+  }) => {
+    try {
+      const controller = new AbortController()
+      const timeout = options?.timeout || 30000
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+      const fetchOptions: RequestInit = {
+        method: options?.method || 'GET',
+        headers: options?.headers,
+        body: options?.body,
+        signal: controller.signal
+      }
+
+      const response = await fetch(url, fetchOptions)
+      clearTimeout(timeoutId)
+
+      const headers: Record<string, string> = {}
+      response.headers.forEach((value, key) => {
+        headers[key] = value
+      })
+
+      const body = await response.text()
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+        body
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        statusText: e instanceof Error ? e.message : String(e),
+        headers: {},
+        body: ''
+      }
+    }
+  })
+
+  ipcMain.handle('plugin-native:fetchStream', async (event, streamId: string, url: string, options?: {
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+    headers?: Record<string, string>
+    body?: string
+    timeout?: number
+  }) => {
+    try {
+      const controller = new AbortController()
+      const timeout = options?.timeout || 120000
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+      const fetchOptions: RequestInit = {
+        method: options?.method || 'GET',
+        headers: options?.headers,
+        body: options?.body,
+        signal: controller.signal
+      }
+
+      const response = await fetch(url, fetchOptions)
+      clearTimeout(timeoutId)
+
+      const headers: Record<string, string> = {}
+      response.headers.forEach((value, key) => {
+        headers[key] = value
+      })
+
+      event.sender.send(`plugin-native:fetchStream:${streamId}:start`, {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers
+      })
+
+      if (!response.ok) {
+        const errorBody = await response.text()
+        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+          message: `HTTP ${response.status}: ${errorBody}`
+        })
+        return { started: false }
+      }
+
+      if (!response.body) {
+        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+          message: 'Response body is null'
+        })
+        return { started: false }
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+
+      const pump = async (): Promise<void> => {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          event.sender.send(`plugin-native:fetchStream:${streamId}:end`)
+          return
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        event.sender.send(`plugin-native:fetchStream:${streamId}:chunk`, { chunk })
+
+        return pump()
+      }
+
+      pump().catch((err) => {
+        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+          message: err instanceof Error ? err.message : String(err)
+        })
+      })
+
+      return { started: true }
+    } catch (e) {
+      event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+        message: e instanceof Error ? e.message : String(e)
+      })
+      return { started: false }
+    }
+  })
+
+  ipcMain.handle('plugin-native:fetchStreamAbort', async (_, streamId: string) => {
+    return { aborted: true }
+  })
+
+  ipcMain.handle('plugin-native:readFile', async (_, path: string, encoding: BufferEncoding = 'utf-8') => {
+    try {
+      if (!existsSync(path)) {
+        return { success: false, error: 'File not found' }
+      }
+      const content = readFileSync(path, encoding)
+      return { success: true, content }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('plugin-native:writeFile', async (_, path: string, content: string) => {
+    try {
+      const dir = join(path, '..')
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
+      }
+      writeFileSync(path, content, 'utf-8')
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('plugin-native:exists', async (_, path: string) => {
+    return existsSync(path)
+  })
+
+  ipcMain.handle('plugin-native:mkdir', async (_, path: string) => {
+    try {
+      mkdirSync(path, { recursive: true })
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('plugin-native:readdir', async (_, path: string) => {
+    try {
+      if (!existsSync(path)) {
+        return { success: false, error: 'Directory not found' }
+      }
+      const entries = readdirSync(path, { withFileTypes: true })
+      return { success: true, entries: entries.map(e => e.name) }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('plugin-native:unlink', async (_, path: string) => {
+    try {
+      if (!existsSync(path)) {
+        return { success: false, error: 'File not found' }
+      }
+      unlinkSync(path)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  ipcMain.handle('plugin-native:exec', async (_, command: string, cwd?: string) => {
+    try {
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: cwd || app.getPath('userData'),
+        timeout: 60000,
+        maxBuffer: 10 * 1024 * 1024
+      })
+      return { stdout, stderr }
+    } catch (e) {
+      return {
+        stdout: '',
+        stderr: '',
+        error: e instanceof Error ? e.message : String(e)
+      }
+    }
+  })
+
+  ipcMain.handle('plugin-native:getAppPath', async (_, name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => {
+    return app.getPath(name)
   })
 
   ipcMain.on('toggle-devtools', () => {

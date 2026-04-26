@@ -148,6 +148,38 @@ export interface PluginSettings {
   disabledPlugins: string[]
 }
 
+export interface PluginFetchResponse {
+  ok: boolean
+  status: number
+  statusText: string
+  headers: Record<string, string>
+  body: string
+}
+
+export interface PluginFetchOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  headers?: Record<string, string>
+  body?: string
+  timeout?: number
+}
+
+export interface PluginExecResult {
+  stdout: string
+  stderr: string
+  error?: string
+}
+
+export interface PluginFetchStreamCallbacks {
+  onStart?: (info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }) => void
+  onChunk?: (chunk: string) => void
+  onError?: (error: { message: string }) => void
+  onEnd?: () => void
+}
+
+export interface PluginFetchStreamOptions extends PluginFetchOptions {
+  streamId?: string
+}
+
 const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
@@ -222,7 +254,75 @@ const api = {
   getPluginDir: (): Promise<string> => ipcRenderer.invoke('get-plugin-dir'),
   openPluginsFolder: (): void => ipcRenderer.send('open-plugins-folder'),
   readPluginFile: (filePath: string): Promise<{ success: boolean; content?: string; error?: string }> =>
-    ipcRenderer.invoke('read-plugin-file', filePath)
+    ipcRenderer.invoke('read-plugin-file', filePath),
+  // Plugin Native APIs
+  pluginNative: {
+    fetch: (url: string, options?: PluginFetchOptions): Promise<PluginFetchResponse> =>
+      ipcRenderer.invoke('plugin-native:fetch', url, options),
+    fetchStream: (
+      url: string,
+      callbacks: PluginFetchStreamCallbacks,
+      options?: PluginFetchStreamOptions
+    ): { abort: () => void; streamId: string } => {
+      const streamId = options?.streamId || `stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      const startHandler = (_: unknown, info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }) => {
+        callbacks.onStart?.(info)
+      }
+      const chunkHandler = (_: unknown, data: { chunk: string }) => {
+        callbacks.onChunk?.(data.chunk)
+      }
+      const errorHandler = (_: unknown, error: { message: string }) => {
+        callbacks.onError?.(error)
+        cleanup()
+      }
+      const endHandler = () => {
+        callbacks.onEnd?.()
+        cleanup()
+      }
+
+      const cleanup = () => {
+        ipcRenderer.removeListener(`plugin-native:fetchStream:${streamId}:start`, startHandler)
+        ipcRenderer.removeListener(`plugin-native:fetchStream:${streamId}:chunk`, chunkHandler)
+        ipcRenderer.removeListener(`plugin-native:fetchStream:${streamId}:error`, errorHandler)
+        ipcRenderer.removeListener(`plugin-native:fetchStream:${streamId}:end`, endHandler)
+      }
+
+      ipcRenderer.on(`plugin-native:fetchStream:${streamId}:start`, startHandler)
+      ipcRenderer.on(`plugin-native:fetchStream:${streamId}:chunk`, chunkHandler)
+      ipcRenderer.on(`plugin-native:fetchStream:${streamId}:error`, errorHandler)
+      ipcRenderer.on(`plugin-native:fetchStream:${streamId}:end`, endHandler)
+
+      ipcRenderer.invoke('plugin-native:fetchStream', streamId, url, options).catch((err) => {
+        callbacks.onError?.({ message: err.message || String(err) })
+        cleanup()
+      })
+
+      return {
+        abort: () => {
+          ipcRenderer.invoke('plugin-native:fetchStreamAbort', streamId)
+          cleanup()
+        },
+        streamId
+      }
+    },
+    readFile: (path: string, encoding?: BufferEncoding): Promise<{ success: boolean; content?: string; error?: string }> =>
+      ipcRenderer.invoke('plugin-native:readFile', path, encoding),
+    writeFile: (path: string, content: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('plugin-native:writeFile', path, content),
+    exists: (path: string): Promise<boolean> =>
+      ipcRenderer.invoke('plugin-native:exists', path),
+    mkdir: (path: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('plugin-native:mkdir', path),
+    readdir: (path: string): Promise<{ success: boolean; entries?: string[]; error?: string }> =>
+      ipcRenderer.invoke('plugin-native:readdir', path),
+    unlink: (path: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('plugin-native:unlink', path),
+    exec: (command: string, cwd?: string): Promise<PluginExecResult> =>
+      ipcRenderer.invoke('plugin-native:exec', command, cwd),
+    getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'): Promise<string> =>
+      ipcRenderer.invoke('plugin-native:getAppPath', name)
+  }
 }
 
 if (process.contextIsolated) {

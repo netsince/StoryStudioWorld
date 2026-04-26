@@ -9,7 +9,12 @@ import i18n from '../i18n'
 import type {
   ProofreadResult,
   CreateNodeInput,
-  StoryNode as PreloadStoryNode
+  StoryNode as PreloadStoryNode,
+  PluginFetchResponse,
+  PluginFetchOptions,
+  PluginExecResult,
+  PluginFetchStreamCallbacks,
+  PluginFetchStreamOptions
 } from '../../../preload/index'
 
 type StoryNode = RendererStoryNode
@@ -177,6 +182,22 @@ export interface PluginAPI {
   }
   utils: {
     log: (message: string, level?: 'info' | 'warn' | 'error') => void
+  }
+  native: {
+    fetch: (url: string, options?: PluginFetchOptions) => Promise<PluginFetchResponse>
+    fetchStream: (
+      url: string,
+      callbacks: PluginFetchStreamCallbacks,
+      options?: PluginFetchStreamOptions
+    ) => { abort: () => void; streamId: string }
+    readFile: (path: string, encoding?: BufferEncoding) => Promise<{ success: boolean; content?: string; error?: string }>
+    writeFile: (path: string, content: string) => Promise<{ success: boolean; error?: string }>
+    exists: (path: string) => Promise<boolean>
+    mkdir: (path: string) => Promise<{ success: boolean; error?: string }>
+    readdir: (path: string) => Promise<{ success: boolean; entries?: string[]; error?: string }>
+    unlink: (path: string) => Promise<{ success: boolean; error?: string }>
+    exec: (command: string, cwd?: string) => Promise<PluginExecResult>
+    getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => Promise<string>
   }
 }
 
@@ -809,6 +830,32 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
             console.log(prefix, message)
         }
       }
+    },
+
+    native: {
+      fetch: (url: string, options?: PluginFetchOptions) =>
+        window.api.pluginNative.fetch(url, options),
+      fetchStream: (
+        url: string,
+        callbacks: PluginFetchStreamCallbacks,
+        options?: PluginFetchStreamOptions
+      ) => window.api.pluginNative.fetchStream(url, callbacks, options),
+      readFile: (path: string, encoding?: BufferEncoding) =>
+        window.api.pluginNative.readFile(path, encoding),
+      writeFile: (path: string, content: string) =>
+        window.api.pluginNative.writeFile(path, content),
+      exists: (path: string) =>
+        window.api.pluginNative.exists(path),
+      mkdir: (path: string) =>
+        window.api.pluginNative.mkdir(path),
+      readdir: (path: string) =>
+        window.api.pluginNative.readdir(path),
+      unlink: (path: string) =>
+        window.api.pluginNative.unlink(path),
+      exec: (command: string, cwd?: string) =>
+        window.api.pluginNative.exec(command, cwd),
+      getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') =>
+        window.api.pluginNative.getAppPath(name)
     }
   }
 }
