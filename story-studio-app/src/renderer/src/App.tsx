@@ -7,7 +7,6 @@ import RightActivityBar from './components/RightActivityBar'
 import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
-import { EditorStatusBar } from './components/editor/EditorStatusBar'
 import { StatusbarProvider } from './contexts/StatusbarContext'
 import { useLayoutStore } from './stores/layoutStore'
 import { useProjectStore } from './stores/projectStore'
@@ -68,8 +67,6 @@ function App(): React.JSX.Element {
             </div>
 
             <Editor />
-
-            <EditorStatusBar />
 
             <div style={{ display: 'flex', height: '100%' }}>
               <div style={{ position: 'relative', display: 'flex', height: '100%' }}>

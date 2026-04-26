@@ -11,6 +11,7 @@ import {
   getAutoSaveSettings,
   getAutoIndentSettings
 } from './editor/PreferencesPage'
+import { useEditorStatusBar } from '../hooks/useEditorStatusBar'
 
 interface PlainTextEditorProps {
   content: string
@@ -101,12 +102,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const [text, setText] = useState(content || '')
   const goBack = useEditorStore((s) => s.goBack)
   const goForward = useEditorStore((s) => s.goForward)
-  const updateGroupEditorState = useEditorStore((s) => s.updateGroupEditorState)
   const setTabScrollPosition = useEditorStore((s) => s.setTabScrollPosition)
   const getTabScrollPosition = useEditorStore((s) => s.getTabScrollPosition)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const pendingEnterAfterCompositionRef = useRef(false)
+
+  const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(groupId, isActive ?? false)
 
   const pendingRestoreScrollRef = useRef(false)
   const lastRestoredTabIdRef = useRef<string | undefined>(undefined)
@@ -619,7 +621,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           lastSavedTextRef.current = textRef.current
           const now = new Date()
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-          updateGroupEditorState(groupId, { lastSavedAt: timeStr })
+          updateLastSaved(timeStr)
         }
       },
       groupId
@@ -674,15 +676,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onChange, onSave, saveHistory, goBack, goForward, groupId])
 
-  // Update editor store state when text changes
+  // Update status bar when text changes
   useEffect(() => {
     const { chars, words, readingTime, charsWithoutSpaces, paragraphs } = countTextStats(text)
 
-    updateGroupEditorState(groupId, {
-      stats: { chars, words, readingTime, charsWithoutSpaces, paragraphs }
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, groupId])
+    updateStatusBarStats({ chars, words, readingTime, charsWithoutSpaces, paragraphs })
+  }, [text, updateStatusBarStats])
 
   // 自动保存逻辑
   const scheduleAutoSave = useCallback(() => {
@@ -699,11 +698,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
         const now = new Date()
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        updateGroupEditorState(groupId, { lastSavedAt: timeStr })
+        updateLastSaved(timeStr)
       }
     }, autoSaveSettings.interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSave])
+  }, [onSave, updateLastSaved])
 
   // 组件卸载时清理计时器
   useEffect(() => {
