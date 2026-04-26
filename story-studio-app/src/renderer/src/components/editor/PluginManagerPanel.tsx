@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePluginService } from '../../services/pluginService'
 
@@ -7,6 +7,7 @@ const PluginManagerPanel: React.FC = () => {
   const plugins = usePluginService((s) => s.plugins)
   const setPluginEnabled = usePluginService((s) => s.setPluginEnabled)
   const isLoading = usePluginService((s) => s.isLoading)
+  const [showHelp, setShowHelp] = useState(false)
 
   const handleOpenPluginsFolder = (): void => {
     window.api?.openPluginsFolder?.()
@@ -14,8 +15,8 @@ const PluginManagerPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="plugin-manager" style={{ padding: '12px' }}>
-        <div style={{ textAlign: 'center', color: 'var(--foreground-muted)' }}>
+      <div className="plugin-manager">
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
           {t('plugin.loading')}
         </div>
       </div>
@@ -23,157 +24,109 @@ const PluginManagerPanel: React.FC = () => {
   }
 
   return (
-    <div className="plugin-manager" style={{ padding: '12px' }}>
-      <div
-        className="plugin-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px'
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: '14px' }}>{t('plugin.installedPlugins')}</h3>
+    <div className="plugin-manager">
+      <div className="plugin-toolbar">
+        <span className="plugin-toolbar-title">{t('plugin.installedPlugins')}</span>
         <button
-          className="action-button secondary"
-          style={{ fontSize: '12px', padding: '4px 8px' }}
+          className="story-toolbar-btn"
+          title={t('plugin.openFolder')}
           onClick={handleOpenPluginsFolder}
         >
-          {t('plugin.openFolder')}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
         </button>
       </div>
 
-      {plugins.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            color: 'var(--foreground-muted)',
-            padding: '20px'
-          }}
-        >
-          <p style={{ margin: '0 0 12px 0' }}>{t('plugin.noPlugins')}</p>
-          <p style={{ margin: 0, fontSize: '12px' }}>
-            {t('plugin.installHint')}
-          </p>
-        </div>
-      ) : (
-        <div className="plugin-list">
-          {plugins.map((plugin) => (
-            <div
-              key={plugin.manifest.id}
-              className="plugin-item"
-              style={{
-                padding: '12px',
-                marginBottom: '8px',
-                background: 'var(--panel-bg)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '4px'
-              }}
-            >
-              <div
-                className="plugin-info"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '4px'
-                }}
-              >
-                <span className="plugin-name" style={{ fontWeight: 500 }}>
-                  {plugin.manifest.name}
-                </span>
-                <span
-                  className="plugin-version"
-                  style={{
-                    fontSize: '11px',
-                    color: 'var(--foreground-muted)',
-                    background: 'var(--badge-bg)',
-                    padding: '2px 6px',
-                    borderRadius: '3px'
-                  }}
-                >
-                  v{plugin.manifest.version}
-                </span>
-              </div>
-              {plugin.manifest.description && (
-                <div
-                  className="plugin-desc"
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--foreground-muted)',
-                    marginBottom: '8px'
-                  }}
-                >
-                  {plugin.manifest.description}
+      <div className="plugin-list">
+        {plugins.length === 0 ? (
+          <div className="plugin-empty">
+            <div className="plugin-empty-icon">🧩</div>
+            <p>{t('plugin.noPlugins')}</p>
+            <p style={{ fontSize: '11px', marginTop: '8px' }}>
+              {t('plugin.installHint')}
+            </p>
+          </div>
+        ) : (
+          plugins.map((plugin) => (
+            <div key={plugin.manifest.id} className="plugin-item">
+              <div className="plugin-item-header">
+                <div className="plugin-item-info">
+                  <div className="plugin-icon">🧩</div>
+                  <div className="plugin-name-container">
+                    <span className="plugin-name" title={plugin.manifest.name}>
+                      {plugin.manifest.name}
+                    </span>
+                    <span className="plugin-version">v{plugin.manifest.version}</span>
+                  </div>
                 </div>
-              )}
-              {plugin.manifest.author && (
-                <div
-                  className="plugin-author"
-                  style={{
-                    fontSize: '11px',
-                    color: 'var(--foreground-muted)',
-                    marginBottom: '8px'
-                  }}
-                >
-                  {t('plugin.author')}: {plugin.manifest.author}
-                </div>
-              )}
-              <div
-                className="plugin-actions"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
+                <label className="ssw-switch">
                   <input
                     type="checkbox"
                     checked={plugin.enabled && plugin.loaded}
                     onChange={(e) => setPluginEnabled(plugin.manifest.id, e.target.checked)}
                   />
-                  {t('plugin.enable')}
+                  <span className="ssw-slider"></span>
                 </label>
-                {plugin.error && (
-                  <span style={{ color: 'var(--error)', fontSize: '11px' }}>
-                    {t('plugin.error')}: {plugin.error}
-                  </span>
-                )}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
 
-      <div
-        className="plugin-help"
-        style={{
-          marginTop: '16px',
-          padding: '12px',
-          background: 'var(--panel-bg)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '4px',
-          fontSize: '12px',
-          color: 'var(--foreground-muted)'
-        }}
-      >
-        <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>{t('plugin.development')}</h4>
-        <p style={{ margin: '0 0 4px 0' }}>{t('plugin.directoryStructure')}:</p>
-        <pre
-          style={{
-            margin: 0,
-            padding: '8px',
-            background: 'var(--input-bg)',
-            borderRadius: '3px',
-            fontSize: '11px',
-            overflow: 'auto'
-          }}
+              {plugin.manifest.description && (
+                <div className="plugin-item-details">
+                  {plugin.manifest.description}
+                </div>
+              )}
+
+              {plugin.error && (
+                <div className="plugin-error">
+                  ⚠️ {plugin.error}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="plugin-help-footer">
+        <div
+          className="plugin-help-toggle"
+          onClick={() => setShowHelp(!showHelp)}
         >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{ transform: showHelp ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          {t('plugin.development')}
+        </div>
+
+        {showHelp && (
+          <div style={{ marginTop: '12px' }}>
+            <p style={{ marginBottom: '8px', color: 'var(--text-muted)' }}>{t('plugin.directoryStructure')}:</p>
+            <pre
+              style={{
+                margin: 0,
+                padding: '8px',
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '4px',
+                fontSize: '11px',
+                overflow: 'auto',
+                color: 'var(--text-main)',
+                border: '1px solid var(--border-color)'
+              }}
+            >
 {`my-plugin/
 ├── manifest.json
 └── index.js
@@ -190,7 +143,9 @@ const PluginManagerPanel: React.FC = () => {
 export function activate(api) {
   api.ui.showNotification('${t('plugin.loadedMessage')}')
 }`}
-        </pre>
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   )
