@@ -1,0 +1,8 @@
+{
+  "id": "japanese-language",
+  "name": "日本語言語パック",
+  "version": "1.0.0",
+  "description": "Story Studio World に日本語サポートを追加します",
+  "author": "Plugin Author",
+  "main": "index.js"
+}

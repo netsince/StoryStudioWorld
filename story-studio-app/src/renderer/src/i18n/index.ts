@@ -7,7 +7,7 @@ export const SUPPORTED_LANGUAGES = {
   EN: 'en'
 } as const
 
-export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[keyof typeof SUPPORTED_LANGUAGES]
+export type SupportedLanguage = string
 
 export interface LanguageMetadata {
   code: SupportedLanguage
@@ -68,6 +68,40 @@ export const getCurrentLanguage = (): SupportedLanguage => i18n.language as Supp
 export const setLanguage = (langCode: SupportedLanguage): void => {
   localStorage.setItem(SETTINGS_KEY, langCode)
   void i18n.changeLanguage(langCode)
+}
+
+export const addLanguage = (languageFile: LanguageFile): boolean => {
+  if (!languageFile.languageMetadata) {
+    console.warn('Language file missing languageMetadata')
+    return false
+  }
+
+  const langCode = languageFile.languageMetadata.code
+
+  if (resources[langCode]) {
+    const existingIndex = availableLanguages.findIndex((l) => l.code === langCode)
+    if (existingIndex !== -1) {
+      availableLanguages[existingIndex] = languageFile.languageMetadata
+    }
+    resources[langCode] = { translation: languageFile }
+  } else {
+    resources[langCode] = { translation: languageFile }
+    availableLanguages.push(languageFile.languageMetadata)
+    availableLanguages.sort((a, b) => a.code.localeCompare(b.code))
+  }
+
+  if (!i18n.hasResourceBundle(langCode, 'translation')) {
+    i18n.addResourceBundle(langCode, 'translation', languageFile, true, true)
+  } else {
+    i18n.removeResourceBundle(langCode, 'translation')
+    i18n.addResourceBundle(langCode, 'translation', languageFile, true, true)
+  }
+
+  return true
+}
+
+export const hasLanguage = (langCode: SupportedLanguage): boolean => {
+  return !!resources[langCode]
 }
 
 export default i18n

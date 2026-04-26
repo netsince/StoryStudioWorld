@@ -89,7 +89,7 @@ const WebViewPanel: React.FC<WebViewPanelProps> = ({ webViewId }) => {
         border: 'none',
         background: 'transparent'
       }}
-      sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
+      sandbox="allow-scripts allow-forms allow-popups"
     />
   )
 }

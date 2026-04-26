@@ -5,7 +5,7 @@ import { hookSystem } from './hookService'
 import { commandService } from './commandService'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
-import i18n from '../i18n'
+import i18n, { addLanguage, getAvailableLanguages, getCurrentLanguage, setLanguage, type LanguageFile, type LanguageMetadata } from '../i18n'
 import type {
   ProofreadResult,
   CreateNodeInput,
@@ -226,6 +226,13 @@ export interface PluginAPI {
     unlink: (path: string) => Promise<{ success: boolean; error?: string }>
     exec: (command: string, cwd?: string) => Promise<PluginExecResult>
     getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => Promise<string>
+  }
+  i18n: {
+    addLanguage: (languageFile: LanguageFile) => boolean
+    getAvailableLanguages: () => LanguageMetadata[]
+    getCurrentLanguage: () => string
+    setLanguage: (langCode: string) => void
+    t: (key: string, options?: Record<string, unknown>) => string
   }
 }
 
@@ -960,6 +967,14 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         window.api.pluginNative.exec(command, cwd),
       getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') =>
         window.api.pluginNative.getAppPath(name)
+    },
+
+    i18n: {
+      addLanguage: (languageFile: LanguageFile) => addLanguage(languageFile),
+      getAvailableLanguages: () => getAvailableLanguages(),
+      getCurrentLanguage: () => getCurrentLanguage(),
+      setLanguage: (langCode: string) => setLanguage(langCode),
+      t: (key: string, options?: Record<string, unknown>) => i18n.t(key, options)
     }
   }
 }
@@ -994,6 +1009,28 @@ export const usePluginService = create<PluginState>((set, get) => ({
 
     try {
       const api = createPluginAPI(manifest.id)
+
+      const languagesDir = `${path}/languages`
+      const dirResult = await window.api.pluginNative.readdir(languagesDir)
+      if (dirResult.success && dirResult.entries) {
+        for (const entry of dirResult.entries) {
+          if (entry.endsWith('.json')) {
+            const langPath = `${languagesDir}/${entry}`
+            const langResult = await window.api.pluginNative.readFile(langPath)
+            if (langResult.success && langResult.content) {
+              try {
+                const langFile = JSON.parse(langResult.content) as LanguageFile
+                if (langFile.languageMetadata) {
+                  addLanguage(langFile)
+                  console.log(`[Plugin:${manifest.id}] Loaded language: ${langFile.languageMetadata.code}`)
+                }
+              } catch (e) {
+                console.warn(`[Plugin:${manifest.id}] Failed to parse language file ${entry}:`, e)
+              }
+            }
+          }
+        }
+      }
 
       const result = await window.api.readPluginFile(mainPath)
       if (!result.success) {

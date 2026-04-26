@@ -11,12 +11,7 @@ import SnapshotPanel from './SnapshotPanel'
 import WebViewPanel from './WebViewPanel'
 
 const isReactElement = (value: unknown): value is React.ReactElement => {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    '$$typeof' in value &&
-    typeof (value as { $$typeof: unknown }).$$typeof === 'symbol'
-  )
+  return React.isValidElement(value)
 }
 
 const PluginPanelWrapper: React.FC<{
@@ -57,11 +52,11 @@ const PluginPanelWrapper: React.FC<{
     }
 
     return () => {
-      container.innerHTML = ''
       if (rootRef.current) {
         rootRef.current.unmount()
         rootRef.current = null
       }
+      container.innerHTML = ''
     }
   }, [panel, api])
 
