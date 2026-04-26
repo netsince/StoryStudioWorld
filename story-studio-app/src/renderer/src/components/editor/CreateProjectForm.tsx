@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface CreateProjectInput {
   projectName: string
@@ -10,6 +11,7 @@ const CreateProjectForm: React.FC<{
   onCreateProject: (input: CreateProjectInput) => Promise<void>
   onPickProjectPath: () => Promise<string | null>
 }> = ({ onCreateProject, onPickProjectPath }) => {
+  const { t } = useTranslation()
   const [isSubmittingProject, setIsSubmittingProject] = useState(false)
   const [form, setForm] = useState<CreateProjectInput>({
     projectName: '',
@@ -33,45 +35,44 @@ const CreateProjectForm: React.FC<{
   return (
     <div key="create-project" className="editor-content create-project-page">
       <div className="create-project-shell">
-        <div className="create-project-title">新建项目</div>
+        <div className="create-project-title">{t('welcome.newProject')}</div>
         <div className="create-project-subtitle">
-          填写项目名、简介和项目路径。创建后会自动生成{' '}
-          <code>storystudioworld.sswprojectsetting</code> 项目文件。
+          {t('createProject.subtitle')}
         </div>
 
         <form className="create-project-form" onSubmit={(event) => void handleSubmit(event)}>
           <label className="form-field">
-            <span>项目名</span>
+            <span>{t('createProject.projectName')}</span>
             <input
               value={form.projectName}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, projectName: event.target.value }))
               }
-              placeholder="例如：长夜群星"
+              placeholder={t('createProject.projectNamePlaceholder')}
             />
           </label>
 
           <label className="form-field">
-            <span>项目简介</span>
+            <span>{t('createProject.projectDescription')}</span>
             <textarea
               value={form.description}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, description: event.target.value }))
               }
-              placeholder="简单描述这个故事项目。"
+              placeholder={t('createProject.projectDescriptionPlaceholder')}
               rows={5}
             />
           </label>
 
           <label className="form-field">
-            <span>路径</span>
+            <span>{t('createProject.path')}</span>
             <div className="path-picker-row">
               <input
                 value={form.projectPath}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, projectPath: event.target.value }))
                 }
-                placeholder="选择一个空文件夹路径"
+                placeholder={t('createProject.pathPlaceholder')}
               />
               <button
                 type="button"
@@ -83,14 +84,14 @@ const CreateProjectForm: React.FC<{
                   }
                 }}
               >
-                选择
+                {t('welcome.selectLocation')}
               </button>
             </div>
           </label>
 
           <div className="create-project-actions">
             <button type="submit" className="action-button" disabled={isSubmittingProject}>
-              {isSubmittingProject ? '创建中...' : '创建项目'}
+              {isSubmittingProject ? t('createProject.creating') : t('welcome.create')}
             </button>
           </div>
         </form>

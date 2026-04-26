@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { StoryNode } from '../../models'
 
 interface ArchiveTreeProps {
@@ -14,6 +15,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
   onPermanentlyDeleteNode,
   isBusy
 }) => {
+  const { t } = useTranslation()
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
   const getChildren = useCallback(
@@ -84,7 +86,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              if (confirm(`确定要恢复「${node.name}」吗？`)) {
+              if (confirm(t('archive.confirmRestore', { name: node.name }))) {
                 const newParentId = node.type === 'folder' ? node.parentId : null
                 onRestoreNode(node.id, newParentId)
               }
@@ -101,12 +103,12 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
               opacity: isBusy ? 0.5 : 1
             }}
           >
-            恢复
+            {t('archive.restore')}
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
-              if (confirm(`确定要彻底删除「${node.name}」吗？此操作不可恢复！`)) {
+              if (confirm(t('archive.confirmDelete', { name: node.name }))) {
                 onPermanentlyDeleteNode(node.id)
               }
             }}
@@ -122,7 +124,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
               opacity: isBusy ? 0.5 : 1
             }}
           >
-            删除
+            {t('common.delete')}
           </button>
         </div>
         {isFolder && isExpanded && children.map((child) => renderNode(child, depth + 1))}

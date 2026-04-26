@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -16,12 +17,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isOpen,
   title,
   message,
-  confirmText = '确定',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   isDanger = false
 }) => {
+  const { t } = useTranslation()
+  const _confirmText = confirmText || t('common.confirm')
+  const _cancelText = cancelText || t('common.cancel')
+
   useEffect(() => {
     if (!isOpen) return
 
@@ -48,14 +53,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </div>
         <div className="ssw-modal-actions">
           <button className="action-button secondary inline-button" onClick={onCancel}>
-            {cancelText}
+            {_cancelText}
           </button>
           <button
             className={`action-button inline-button ${isDanger ? 'danger' : ''}`}
             onClick={onConfirm}
             autoFocus
           >
-            {confirmText}
+            {_confirmText}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
 import { useLayoutStore } from '../stores/layoutStore'
 import { useUiStore } from '../stores/uiStore'
@@ -40,6 +41,7 @@ const PluginPanelWrapper: React.FC<{
 }
 
 const RightPanel: React.FC = () => {
+  const { t } = useTranslation()
   const activeActivity = useUiStore((s) => s.activeRightActivity)
   const isOpen = useUiStore((s) => s.isRightSidebarOpen)
   const width = useLayoutStore((s) => s.rightPanelWidth)
@@ -57,11 +59,11 @@ const RightPanel: React.FC = () => {
   const getTitle = (): string => {
     switch (activeActivity) {
       case 'proofread':
-        return '文本校对'
+        return t('panel.proofread')
       case 'memo':
-        return '便签/备忘'
+        return t('panel.memo')
       case 'snapshot':
-        return '快照'
+        return t('panel.snapshot')
       default: {
         const item = pluginItems.find((p) => p.id === activeActivity)
         return item?.title || ''

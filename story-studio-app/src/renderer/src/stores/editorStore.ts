@@ -15,6 +15,7 @@ import {
   updateGroup,
   updateSplitRatio
 } from '../editor/editorTree'
+import i18n from '../i18n'
 
 export interface ConfirmCloseResult {
   shouldClose: boolean
@@ -296,11 +297,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openWelcomeTab: () => {
-      get().openTab({ id: 'welcome', title: '欢迎使用', type: 'welcome' })
+      get().openTab({ id: 'welcome', title: i18n.t('welcome.title'), type: 'welcome' })
     },
 
     openCreateProjectTab: () => {
-      const tab: Tab = { id: 'create-project', title: '新建项目', type: 'create-project' }
+      const tab: Tab = { id: 'create-project', title: i18n.t('welcome.newProject'), type: 'create-project' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
@@ -313,7 +314,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openAboutTab: () => {
-      const tab: Tab = { id: 'about', title: '关于', type: 'about' }
+      const tab: Tab = { id: 'about', title: i18n.t('menu.about'), type: 'about' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
@@ -326,7 +327,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openPreferencesTab: () => {
-      const tab: Tab = { id: 'preferences', title: '首选项', type: 'preferences' }
+      const tab: Tab = { id: 'preferences', title: i18n.t('menu.preferences'), type: 'preferences' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {

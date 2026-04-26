@@ -1,7 +1,9 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePluginService } from '../../services/pluginService'
 
 const PluginManagerPanel: React.FC = () => {
+  const { t } = useTranslation()
   const plugins = usePluginService((s) => s.plugins)
   const setPluginEnabled = usePluginService((s) => s.setPluginEnabled)
   const isLoading = usePluginService((s) => s.isLoading)
@@ -14,7 +16,7 @@ const PluginManagerPanel: React.FC = () => {
     return (
       <div className="plugin-manager" style={{ padding: '12px' }}>
         <div style={{ textAlign: 'center', color: 'var(--foreground-muted)' }}>
-          加载插件中...
+          {t('plugin.loading')}
         </div>
       </div>
     )
@@ -31,13 +33,13 @@ const PluginManagerPanel: React.FC = () => {
           marginBottom: '12px'
         }}
       >
-        <h3 style={{ margin: 0, fontSize: '14px' }}>已安装插件</h3>
+        <h3 style={{ margin: 0, fontSize: '14px' }}>{t('plugin.installedPlugins')}</h3>
         <button
           className="action-button secondary"
           style={{ fontSize: '12px', padding: '4px 8px' }}
           onClick={handleOpenPluginsFolder}
         >
-          打开插件目录
+          {t('plugin.openFolder')}
         </button>
       </div>
 
@@ -49,9 +51,9 @@ const PluginManagerPanel: React.FC = () => {
             padding: '20px'
           }}
         >
-          <p style={{ margin: '0 0 12px 0' }}>暂无已安装的插件</p>
+          <p style={{ margin: '0 0 12px 0' }}>{t('plugin.noPlugins')}</p>
           <p style={{ margin: 0, fontSize: '12px' }}>
-            将插件文件夹放入插件目录即可自动识别
+            {t('plugin.installHint')}
           </p>
         </div>
       ) : (
@@ -114,7 +116,7 @@ const PluginManagerPanel: React.FC = () => {
                     marginBottom: '8px'
                   }}
                 >
-                  作者: {plugin.manifest.author}
+                  {t('plugin.author')}: {plugin.manifest.author}
                 </div>
               )}
               <div
@@ -135,11 +137,11 @@ const PluginManagerPanel: React.FC = () => {
                     checked={plugin.enabled && plugin.loaded}
                     onChange={(e) => setPluginEnabled(plugin.manifest.id, e.target.checked)}
                   />
-                  启用
+                  {t('plugin.enable')}
                 </label>
                 {plugin.error && (
                   <span style={{ color: 'var(--error)', fontSize: '11px' }}>
-                    错误: {plugin.error}
+                    {t('plugin.error')}: {plugin.error}
                   </span>
                 )}
               </div>
@@ -160,8 +162,8 @@ const PluginManagerPanel: React.FC = () => {
           color: 'var(--foreground-muted)'
         }}
       >
-        <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>插件开发</h4>
-        <p style={{ margin: '0 0 4px 0' }}>插件目录结构：</p>
+        <h4 style={{ margin: '0 0 8px 0', fontSize: '12px' }}>{t('plugin.development')}</h4>
+        <p style={{ margin: '0 0 4px 0' }}>{t('plugin.directoryStructure')}:</p>
         <pre
           style={{
             margin: 0,
@@ -179,14 +181,14 @@ const PluginManagerPanel: React.FC = () => {
 // manifest.json
 {
   "id": "my-plugin",
-  "name": "我的插件",
+  "name": "${t('plugin.exampleName')}",
   "version": "1.0.0",
   "main": "index.js"
 }
 
 // index.js
 export function activate(api) {
-  api.ui.showNotification('插件已加载!')
+  api.ui.showNotification('${t('plugin.loadedMessage')}')
 }`}
         </pre>
       </div>

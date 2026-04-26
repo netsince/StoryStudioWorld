@@ -1,7 +1,9 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUiStore } from '../stores/uiStore'
 
 const ActivityBar: React.FC = () => {
+  const { t } = useTranslation()
   const activeActivity = useUiStore((s) => s.activeActivity)
   const isOpen = useUiStore((s) => s.isExplorerOpen)
   const onActivityChange = useUiStore((s) => s.handleActivityChange)
@@ -10,7 +12,7 @@ const ActivityBar: React.FC = () => {
     <div className="activity-bar">
       <div
         className={`activity-item ${isOpen && activeActivity === 'chapter' ? 'active' : ''}`}
-        title="编写"
+        title={t('activity.write')}
         onClick={() => onActivityChange('chapter')}
       >
         <div className="activity-icon">
@@ -22,11 +24,11 @@ const ActivityBar: React.FC = () => {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         </div>
-        <span>编写</span>
+        <span>{t('activity.write')}</span>
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'setting' ? 'active' : ''}`}
-        title="设定"
+        title={t('activity.setting')}
         onClick={() => onActivityChange('setting')}
       >
         <div className="activity-icon">
@@ -35,11 +37,11 @@ const ActivityBar: React.FC = () => {
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </div>
-        <span>设定</span>
+        <span>{t('activity.setting')}</span>
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'plugin' ? 'active' : ''}`}
-        title="插件"
+        title={t('activity.plugin')}
         onClick={() => onActivityChange('plugin')}
       >
         <div className="activity-icon">
@@ -49,11 +51,11 @@ const ActivityBar: React.FC = () => {
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
         </div>
-        <span>插件</span>
+        <span>{t('activity.plugin')}</span>
       </div>
       <div
         className="activity-item"
-        title="更多"
+        title={t('common.more')}
         style={{ marginTop: 'auto', marginBottom: '10px' }}
       >
         <span className="activity-icon">⋯</span>

@@ -15,6 +15,7 @@ import {
   updateGroup,
   updateSplitRatio
 } from '../editor/editorTree'
+import i18n from '../i18n'
 
 export interface ConfirmCloseResult {
   shouldClose: boolean
@@ -83,11 +84,11 @@ export const useEditorTree = (): UseEditorTreeValue => {
   )
 
   const openWelcomeTab = useCallback((): void => {
-    openTab({ id: 'welcome', title: '欢迎使用', type: 'welcome' })
+    openTab({ id: 'welcome', title: i18n.t('welcome.title'), type: 'welcome' })
   }, [openTab])
 
   const openCreateProjectTab = useCallback((): void => {
-    const tab: Tab = { id: 'create-project', title: '新建项目', type: 'create-project' }
+    const tab: Tab = { id: 'create-project', title: i18n.t('welcome.newProject'), type: 'create-project' }
     setEditorTree((prev) => {
       const targetGroupId = resolveTargetGroupId(prev)
       setFocusedGroupId(targetGroupId)

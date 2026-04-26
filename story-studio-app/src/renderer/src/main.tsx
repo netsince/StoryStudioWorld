@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { applyAppSettings, getAppSettings } from './components/editor/PreferencesPage'
 import { usePluginService } from './services/pluginService'
+import './i18n'
 
 const settings = getAppSettings()
 applyAppSettings(settings)

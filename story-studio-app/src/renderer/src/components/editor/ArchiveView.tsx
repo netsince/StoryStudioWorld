@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import type { StoryNode } from '../../models'
 import ArchiveTree from './ArchiveTree'
@@ -8,6 +9,7 @@ interface ArchiveViewProps {
 }
 
 const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
+  const { t } = useTranslation()
   const [timeFilter, setTimeFilter] = useState<string>('all')
   
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -57,7 +59,7 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
 
   return (
     <div style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <h2 style={{ marginBottom: '16px' }}>{kind === 'setting' ? '设定归档' : '归档空间'}</h2>
+      <h2 style={{ marginBottom: '16px' }}>{kind === 'setting' ? t('archive.settingArchive') : t('archive.storyArchive')}</h2>
       
       <div style={{ marginBottom: '16px' }}>
         <select
@@ -74,19 +76,19 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
             fontSize: '13px'
           }}
         >
-          <option value="all">全部</option>
-          <option value="today">今天</option>
-          <option value="week">本周</option>
-          <option value="month">本月</option>
-          <option value="year">本年</option>
+          <option value="all">{t('archive.filter.all')}</option>
+          <option value="today">{t('archive.filter.today')}</option>
+          <option value="week">{t('archive.filter.week')}</option>
+          <option value="month">{t('archive.filter.month')}</option>
+          <option value="year">{t('archive.filter.year')}</option>
         </select>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {!currentProject ? (
-          <div style={{ color: 'var(--foreground, #888)' }}>请先打开项目</div>
+          <div style={{ color: 'var(--foreground, #888)' }}>{t('errors.projectNotLoaded')}</div>
         ) : filteredNodes.length === 0 ? (
-          <div style={{ color: 'var(--foreground, #888)' }}>暂无归档内容</div>
+          <div style={{ color: 'var(--foreground, #888)' }}>{t('archive.empty')}</div>
         ) : (
           <ArchiveTree
             nodes={filteredNodes}

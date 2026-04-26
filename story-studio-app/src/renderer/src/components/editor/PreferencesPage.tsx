@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { getAvailableLanguages, setLanguage, getCurrentLanguage, type LanguageMetadata } from '../../i18n'
 
 const SETTINGS_KEY = 'ssw:app-settings'
 
@@ -38,12 +40,6 @@ const OPEN_SOURCE_FONTS = [
   { name: 'Roboto Slab', value: '"Roboto Slab", serif' }
 ]
 
-const TAB_BEHAVIOR_OPTIONS: { value: TabBehavior; label: string }[] = [
-  { value: 'tab', label: '插入制表符' },
-  { value: '4spaces', label: '插入四个空格' },
-  { value: '2spaces', label: '插入两个空格' }
-]
-
 const loadSettings = (): AppSettings => {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY)
@@ -59,13 +55,17 @@ const saveSettings = (settings: AppSettings): void => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-const PREVIEW_TEXT_CN = '梦见一个新世界'
-const PREVIEW_TEXT_EN = 'The quick brown fox jumps over the lazy dog'
-
 const PreferencesPage: React.FC = () => {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<AppSettings>(loadSettings)
   const [systemFonts, setSystemFonts] = useState<{ name: string; value: string }[]>([])
   const [activeSection, setActiveSection] = useState<string>('editor')
+  const [availableLanguages, setAvailableLanguages] = useState<LanguageMetadata[]>([])
+  const [currentLang, setCurrentLang] = useState<string>(getCurrentLanguage())
+
+  useEffect(() => {
+    setAvailableLanguages(getAvailableLanguages())
+  }, [])
 
   useEffect(() => {
     const ctx = document.createElement('canvas').getContext('2d')
@@ -134,16 +134,35 @@ const PreferencesPage: React.FC = () => {
     }
   }
 
+  const handleLanguageChange = (langCode: string): void => {
+    setLanguage(langCode)
+    setCurrentLang(langCode)
+  }
+
   const allFonts = [...OPEN_SOURCE_FONTS, ...systemFonts]
+
+  const getTabBehaviorOptions = (): { value: TabBehavior; label: string }[] => [
+    { value: 'tab', label: t('preferences.insertTab') },
+    { value: '4spaces', label: t('preferences.insert4Spaces') },
+    { value: '2spaces', label: t('preferences.insert2Spaces') }
+  ]
+
+  const getSaveIntervalOptions = (): { value: number; label: string }[] => [
+    { value: 10, label: `10 ${t('preferences.seconds')}` },
+    { value: 30, label: `30 ${t('preferences.seconds')}` },
+    { value: 60, label: `1 ${t('preferences.minutes')}` },
+    { value: 120, label: `2 ${t('preferences.minutes')}` },
+    { value: 300, label: `5 ${t('preferences.minutes')}` }
+  ]
 
   const renderSection = (): React.ReactNode => {
     switch (activeSection) {
       case 'editor':
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>编辑器</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.editor')}</h3>
 
-            {/* 预览 */}
+            {/* Preview */}
             <div
               style={{
                 marginBottom: '24px',
@@ -161,19 +180,19 @@ const PreferencesPage: React.FC = () => {
                   color: 'var(--text-color)'
                 }}
               >
-                <div style={{ marginBottom: '8px' }}>{PREVIEW_TEXT_CN}</div>
+                <div style={{ marginBottom: '8px' }}>{t('preferences.preview')}</div>
                 <div
                   style={{
                     fontSize: `${settings.editorFontSize - 2}px`,
                     color: 'var(--text-muted)'
                   }}
                 >
-                  {PREVIEW_TEXT_EN}
+                  The quick brown fox jumps over the lazy dog
                 </div>
               </div>
             </div>
 
-            {/* 字体 */}
+            {/* Font */}
             <div style={{ marginBottom: '24px' }}>
               <label
                 style={{
@@ -183,7 +202,7 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                字体
+                {t('preferences.font')}
               </label>
               <div
                 style={{
@@ -226,7 +245,7 @@ const PreferencesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 字号 */}
+            {/* Font Size */}
             <div style={{ marginBottom: '24px' }}>
               <label
                 style={{
@@ -236,7 +255,7 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                字号: {settings.editorFontSize}px
+                {t('preferences.fontSize')}: {settings.editorFontSize}px
               </label>
               <input
                 type="range"
@@ -260,7 +279,7 @@ const PreferencesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 行高 */}
+            {/* Line Height */}
             <div style={{ marginBottom: '24px' }}>
               <label
                 style={{
@@ -270,7 +289,7 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                行高: {settings.editorLineHeight}
+                {t('preferences.lineHeight')}: {settings.editorLineHeight}
               </label>
               <input
                 type="range"
@@ -289,12 +308,12 @@ const PreferencesPage: React.FC = () => {
                   color: 'var(--text-muted)'
                 }}
               >
-                <span>紧凑</span>
-                <span>宽松</span>
+                <span>{t('preferences.compact')}</span>
+                <span>{t('preferences.loose')}</span>
               </div>
             </div>
 
-            {/* 按下 Tab 时 */}
+            {/* Tab Behavior */}
             <div style={{ marginBottom: '24px' }}>
               <label
                 style={{
@@ -304,10 +323,10 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                按下 Tab 时
+                {t('preferences.tabBehavior')}
               </label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {TAB_BEHAVIOR_OPTIONS.map((option) => (
+                {getTabBehaviorOptions().map((option) => (
                   <button
                     key={option.value}
                     onClick={() => applySettings({ editorTabBehavior: option.value })}
@@ -331,7 +350,7 @@ const PreferencesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 自动保存 */}
+            {/* Auto Save */}
             <div>
               <label
                 style={{
@@ -341,7 +360,7 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                自动保存
+                {t('preferences.autoSave')}
               </label>
               <div
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}
@@ -355,12 +374,12 @@ const PreferencesPage: React.FC = () => {
                     onChange={(e) => applySettings({ autoSaveEnabled: e.target.checked })}
                     style={{ width: '16px', height: '16px' }}
                   />
-                  <span style={{ fontSize: '13px' }}>启用自动保存</span>
+                  <span style={{ fontSize: '13px' }}>{t('preferences.enableAutoSave')}</span>
                 </label>
               </div>
               {settings.autoSaveEnabled && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>保存间隔:</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('preferences.saveInterval')}:</span>
                   <select
                     value={settings.autoSaveInterval}
                     onChange={(e) => applySettings({ autoSaveInterval: parseInt(e.target.value) })}
@@ -373,17 +392,17 @@ const PreferencesPage: React.FC = () => {
                       fontSize: '13px'
                     }}
                   >
-                    <option value={10}>10 秒</option>
-                    <option value={30}>30 秒</option>
-                    <option value={60}>1 分钟</option>
-                    <option value={120}>2 分钟</option>
-                    <option value={300}>5 分钟</option>
+                    {getSaveIntervalOptions().map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
             </div>
 
-            {/* 自动缩进 */}
+            {/* Auto Indent */}
             <div style={{ marginTop: '24px' }}>
               <label
                 style={{
@@ -393,7 +412,7 @@ const PreferencesPage: React.FC = () => {
                   marginBottom: '8px'
                 }}
               >
-                自动缩进
+                {t('preferences.autoIndent')}
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <label
@@ -405,12 +424,71 @@ const PreferencesPage: React.FC = () => {
                     onChange={(e) => applySettings({ autoIndentEnabled: e.target.checked })}
                     style={{ width: '16px', height: '16px' }}
                   />
-                  <span style={{ fontSize: '13px' }}>换行时自动添加缩进</span>
+                  <span style={{ fontSize: '13px' }}>{t('preferences.autoIndentDesc')}</span>
                 </label>
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                当前缩进策略:{' '}
-                {TAB_BEHAVIOR_OPTIONS.find((o) => o.value === settings.editorTabBehavior)?.label}
+                {t('preferences.currentIndentStrategy')}:{' '}
+                {getTabBehaviorOptions().find((o) => o.value === settings.editorTabBehavior)?.label}
+              </div>
+            </div>
+          </div>
+        )
+
+      case 'localization':
+        return (
+          <div style={{ padding: '24px', paddingBottom: '48px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.localization')}</h3>
+
+            {/* Language Selection */}
+            <div style={{ marginBottom: '24px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
+                {t('preferences.language')}
+              </label>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                {t('preferences.languageDesc')}
+              </p>
+              <div
+                style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  overflow: 'hidden'
+                }}
+              >
+                {availableLanguages.map((lang, idx) => (
+                  <div
+                    key={lang.code}
+                    onClick={() => handleLanguageChange(lang.code)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      backgroundColor:
+                        currentLang === lang.code ? 'var(--bg-hover)' : 'transparent',
+                      borderBottom:
+                        idx < availableLanguages.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 500 }}>{lang.nativeName}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {lang.englishName}
+                      </div>
+                    </div>
+                    {currentLang === lang.code && (
+                      <span style={{ color: 'var(--accent-color)', fontSize: '14px' }}>✓</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -421,9 +499,14 @@ const PreferencesPage: React.FC = () => {
     }
   }
 
+  const sections = [
+    { id: 'editor', label: t('preferences.editor'), icon: '📝' },
+    { id: 'localization', label: t('preferences.localization'), icon: '🌐' }
+  ]
+
   return (
     <div style={{ height: '100%', display: 'flex', backgroundColor: 'var(--bg-color)' }}>
-      {/* 侧边栏 */}
+      {/* Sidebar */}
       <div
         style={{
           width: '180px',
@@ -431,7 +514,7 @@ const PreferencesPage: React.FC = () => {
           padding: '12px 0'
         }}
       >
-        {[{ id: 'editor', label: '编辑器', icon: '📝' }].map((section) => (
+        {sections.map((section) => (
           <div
             key={section.id}
             onClick={() => setActiveSection(section.id)}
@@ -455,7 +538,7 @@ const PreferencesPage: React.FC = () => {
         ))}
       </div>
 
-      {/* 主内容 */}
+      {/* Main content */}
       <div style={{ flex: 1, overflow: 'auto' }}>{renderSection()}</div>
     </div>
   )

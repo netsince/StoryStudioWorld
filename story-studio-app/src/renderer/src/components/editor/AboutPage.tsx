@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ssworldSvg = new URL('../../assets/ssworld.svg', import.meta.url).href
 
@@ -12,13 +13,13 @@ interface VersionInfo {
 }
 
 const AboutPage: React.FC = () => {
+  const { t } = useTranslation()
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
 
   useEffect(() => {
     window.api.getAppVersion().then(setVersionInfo)
   }, [])
 
-  // 解析操作系统信息
   const getOSInfo = (platform: string): string => {
     switch (platform) {
       case 'win32':
@@ -34,12 +35,12 @@ const AboutPage: React.FC = () => {
 
   const infoItems = versionInfo
     ? [
-        { label: '版本', value: versionInfo.version },
+        { label: t('about.version'), value: versionInfo.version },
         { label: 'Electron', value: versionInfo.electron },
         { label: 'Chromium', value: versionInfo.chrome },
         { label: 'Node.js', value: versionInfo.node },
         { label: 'V8', value: versionInfo.v8 },
-        { label: '操作系统', value: getOSInfo(versionInfo.platform) }
+        { label: t('about.os'), value: getOSInfo(versionInfo.platform) }
       ]
     : []
 
@@ -58,7 +59,6 @@ const AboutPage: React.FC = () => {
         overflow: 'auto'
       }}
     >
-      {/* Logo */}
       <div
         className="about-logo"
         style={{
@@ -78,7 +78,6 @@ const AboutPage: React.FC = () => {
         />
       </div>
 
-      {/* 应用名称 */}
       <h1
         style={{
           fontSize: '28px',
@@ -90,7 +89,6 @@ const AboutPage: React.FC = () => {
         Story Studio World
       </h1>
 
-      {/* 信息列表 */}
       <div
         className="about-info"
         style={{
@@ -129,7 +127,6 @@ const AboutPage: React.FC = () => {
         ))}
       </div>
 
-      {/* 版权信息 */}
       <div
         style={{
           marginTop: '48px',
@@ -138,7 +135,7 @@ const AboutPage: React.FC = () => {
           textAlign: 'center'
         }}
       >
-        Copyright © {new Date().getFullYear()} netSince.com. Licensed under MIT.
+        {t('about.copyright')}
       </div>
     </div>
   )

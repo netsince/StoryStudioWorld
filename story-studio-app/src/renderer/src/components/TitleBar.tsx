@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useUiStore } from '../stores/uiStore'
@@ -10,6 +11,7 @@ const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 type MenuId = 'file' | 'edit' | 'select' | 'view' | 'goto' | 'help' | null
 
 const TitleBar: React.FC = () => {
+  const { t } = useTranslation()
   const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab } =
     useEditorStore()
 
@@ -19,7 +21,6 @@ const TitleBar: React.FC = () => {
   const handleMaximize = (): void => window.api.maximize()
   const handleClose = (): void => window.api.close()
 
-  // 菜单状态
   const [activeMenu, setActiveMenu] = useState<MenuId>(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
   const menuRefs = {
@@ -31,7 +32,6 @@ const TitleBar: React.FC = () => {
     help: useRef<HTMLSpanElement>(null)
   }
 
-  // 点击外部关闭菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
       const isOutside = Object.values(menuRefs).every(
@@ -59,11 +59,10 @@ const TitleBar: React.FC = () => {
     setActiveMenu(menuId)
   }
 
-  // 文件菜单
   const fileMenuItems: ContextMenuItem[] = [
     {
       key: 'open-project',
-      label: '打开项目',
+      label: t('menu.openProject'),
       onSelect: () => {
         void openProject()
         setActiveMenu(null)
@@ -71,7 +70,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'new-project',
-      label: '新建项目',
+      label: t('menu.newProject'),
       onSelect: () => {
         openCreateProjectTab()
         setActiveMenu(null)
@@ -84,28 +83,27 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'new-folder',
-      label: '新建文件夹',
+      label: t('editor.newFolder'),
       onSelect: () => {
         setActiveMenu(null)
         if (currentProject) {
-          void createStoryNode(null, '新文件夹', 'folder')
+          void createStoryNode(null, t('sidebar.newFolder'), 'folder')
         } else {
-          alert('请先打开一个项目')
+          alert(t('errors.projectNotLoaded'))
         }
       }
     },
     {
       key: 'new-chapter',
-      label: '新建章',
+      label: t('editor.newFile'),
       onSelect: () => {
         setActiveMenu(null)
         if (currentProject) {
-          // 获取当前章节数量，生成 "第x章" 名称
           const fileCount = storyNodes.filter((n) => n.type === 'file').length
-          const name = `第${fileCount + 1}章`
+          const name = `${t('editor.chapter')} ${fileCount + 1}`
           void createStoryNode(null, name, 'file')
         } else {
-          alert('请先打开一个项目')
+          alert(t('errors.projectNotLoaded'))
         }
       }
     },
@@ -116,7 +114,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'save',
-      label: '保存 (Ctrl+S)',
+      label: `${t('menu.save')} (Ctrl+S)`,
       onSelect: () => {
         commandService.executeCommand(Commands.SAVE)
         setActiveMenu(null)
@@ -129,18 +127,17 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'close-window',
-      label: '关闭窗口',
+      label: t('menu.closeProject'),
       onSelect: () => {
         handleClose()
       }
     }
   ]
 
-  // 编辑菜单
   const editMenuItems: ContextMenuItem[] = [
     {
       key: 'undo',
-      label: '撤销 (Ctrl+Z)',
+      label: `${t('menu.undo')} (Ctrl+Z)`,
       onSelect: () => {
         commandService.executeCommand(Commands.UNDO)
         setActiveMenu(null)
@@ -148,7 +145,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'redo',
-      label: '恢复 (Ctrl+Y)',
+      label: `${t('menu.redo')} (Ctrl+Y)`,
       onSelect: () => {
         commandService.executeCommand(Commands.REDO)
         setActiveMenu(null)
@@ -161,7 +158,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'cut',
-      label: '剪切 (Ctrl+X)',
+      label: `${t('menu.cut')} (Ctrl+X)`,
       onSelect: () => {
         commandService.executeCommand(Commands.CUT)
         setActiveMenu(null)
@@ -169,7 +166,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'copy',
-      label: '复制 (Ctrl+C)',
+      label: `${t('menu.copy')} (Ctrl+C)`,
       onSelect: () => {
         commandService.executeCommand(Commands.COPY)
         setActiveMenu(null)
@@ -177,7 +174,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'paste',
-      label: '粘贴 (Ctrl+V)',
+      label: `${t('menu.paste')} (Ctrl+V)`,
       onSelect: () => {
         commandService.executeCommand(Commands.PASTE)
         setActiveMenu(null)
@@ -190,7 +187,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'find',
-      label: '本文件查找 (Ctrl+F)',
+      label: `${t('menu.find')} (Ctrl+F)`,
       onSelect: () => {
         commandService.executeCommand(Commands.FIND)
         setActiveMenu(null)
@@ -198,11 +195,10 @@ const TitleBar: React.FC = () => {
     }
   ]
 
-  // 选择菜单
   const selectMenuItems: ContextMenuItem[] = [
     {
       key: 'select-all',
-      label: '全选 (Ctrl+A)',
+      label: `${t('menu.selectAll')} (Ctrl+A)`,
       onSelect: () => {
         commandService.executeCommand(Commands.SELECT_ALL)
         setActiveMenu(null)
@@ -210,7 +206,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'expand-selection',
-      label: '扩大选区',
+      label: t('menu.expandSelection'),
       onSelect: () => {
         commandService.executeCommand(Commands.EXPAND_SELECTION)
         setActiveMenu(null)
@@ -218,7 +214,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'shrink-selection',
-      label: '缩小选区',
+      label: t('menu.shrinkSelection'),
       onSelect: () => {
         commandService.executeCommand(Commands.SHRINK_SELECTION)
         setActiveMenu(null)
@@ -231,7 +227,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'select-paragraph',
-      label: '选择本段',
+      label: t('menu.selectParagraph'),
       onSelect: () => {
         commandService.executeCommand(Commands.SELECT_PARAGRAPH)
         setActiveMenu(null)
@@ -244,7 +240,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'cursor-up',
-      label: '光标向上移动',
+      label: t('menu.cursorUp'),
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_UP)
         setActiveMenu(null)
@@ -252,7 +248,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'cursor-down',
-      label: '光标向下移动',
+      label: t('menu.cursorDown'),
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_DOWN)
         setActiveMenu(null)
@@ -260,7 +256,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'cursor-left',
-      label: '光标向左移动',
+      label: t('menu.cursorLeft'),
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_LEFT)
         setActiveMenu(null)
@@ -268,7 +264,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'cursor-right',
-      label: '光标向右移动',
+      label: t('menu.cursorRight'),
       onSelect: () => {
         commandService.executeCommand(Commands.CURSOR_RIGHT)
         setActiveMenu(null)
@@ -276,11 +272,10 @@ const TitleBar: React.FC = () => {
     }
   ]
 
-  // 查看菜单
   const viewMenuItems: ContextMenuItem[] = [
     {
       key: 'zen-mode',
-      label: useUiStore.getState().isZenMode ? '退出禅模式' : '进入禅模式',
+      label: useUiStore.getState().isZenMode ? t('menu.exitZenMode') : t('menu.enterZenMode'),
       onSelect: () => {
         useUiStore.getState().toggleZenMode()
         setActiveMenu(null)
@@ -293,7 +288,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'dev-tools',
-      label: '开发者工具',
+      label: t('menu.devTools'),
       onSelect: () => {
         window.api.toggleDevTools()
         setActiveMenu(null)
@@ -301,11 +296,10 @@ const TitleBar: React.FC = () => {
     }
   ]
 
-  // 转到菜单
   const gotoMenuItems: ContextMenuItem[] = [
     {
       key: 'welcome',
-      label: '欢迎使用',
+      label: t('welcome.title'),
       onSelect: () => {
         openWelcomeTab()
         setActiveMenu(null)
@@ -313,7 +307,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'preferences',
-      label: '首选项',
+      label: t('menu.preferences'),
       onSelect: () => {
         openPreferencesTab()
         setActiveMenu(null)
@@ -326,7 +320,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'back',
-      label: '返回',
+      label: t('menu.back'),
       onSelect: () => {
         commandService.executeCommand(Commands.NAV_BACK)
         setActiveMenu(null)
@@ -334,7 +328,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'forward',
-      label: '前进',
+      label: t('menu.forward'),
       onSelect: () => {
         commandService.executeCommand(Commands.NAV_FORWARD)
         setActiveMenu(null)
@@ -342,11 +336,10 @@ const TitleBar: React.FC = () => {
     }
   ]
 
-  // 帮助菜单
   const helpMenuItems: ContextMenuItem[] = [
     {
       key: 'dev-tools',
-      label: '开发者工具',
+      label: t('menu.devTools'),
       onSelect: () => {
         window.api.toggleDevTools()
         setActiveMenu(null)
@@ -359,7 +352,7 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'about',
-      label: '关于',
+      label: t('menu.about'),
       onSelect: () => {
         openAboutTab()
         setActiveMenu(null)
@@ -389,42 +382,42 @@ const TitleBar: React.FC = () => {
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('file')}
           >
-            文件
+            {t('menu.file')}
           </span>
           <span
             ref={menuRefs.edit}
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('edit')}
           >
-            编辑
+            {t('menu.edit')}
           </span>
           <span
             ref={menuRefs.select}
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('select')}
           >
-            选择
+            {t('menu.select')}
           </span>
           <span
             ref={menuRefs.view}
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('view')}
           >
-            查看
+            {t('menu.view')}
           </span>
           <span
             ref={menuRefs.goto}
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('goto')}
           >
-            转到
+            {t('menu.goto')}
           </span>
           <span
             ref={menuRefs.help}
             style={{ cursor: 'pointer' }}
             onClick={() => handleMenuClick('help')}
           >
-            帮助
+            {t('menu.help')}
           </span>
           {activeMenu && (
             <ContextMenu

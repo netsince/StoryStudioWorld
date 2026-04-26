@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Tab, ProjectData } from '../../models'
 import { useProjectStore } from '../../stores/projectStore'
 import { triggerContentChange, triggerTabChange } from '../../services/pluginService'
@@ -38,6 +39,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
   clearDraft,
   setDirtyTab
 }) => {
+  const { t } = useTranslation()
   const [editorContent, setEditorContent] = useState<string>(() => {
     if (tab.type === 'file' && tab.nodeId) {
       const draft = useProjectStore.getState().draftsByNodeId[tab.nodeId]
@@ -150,7 +152,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
           isActive={isActive}
           onChange={handleEditorChange}
           onSave={handleSave}
-          placeholder={`开始写作「${tab.title}」...`}
+          placeholder={t('editor.startWriting', { title: tab.title })}
           tabId={tab.id}
           groupId={groupId}
         />

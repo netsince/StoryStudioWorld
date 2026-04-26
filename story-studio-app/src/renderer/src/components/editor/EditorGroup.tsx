@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Tab } from '../../models'
 import { findGroupNode } from '../../editor/editorTree'
 import { useEditorStore } from '../../stores/editorStore'
@@ -13,6 +14,7 @@ import TabContentRenderer from './TabContentRenderer'
 import { useTabDrag } from './hooks/useTabDrag'
 
 const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
+  const { t } = useTranslation()
   const groupRootRef = useRef<HTMLDivElement>(null)
 
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -88,13 +90,13 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
 
   const confirmClose = useCallback(
     (tab: Tab) => {
-      const shouldClose = window.confirm(`${tab.title} 有未保存的更改，确定要关闭吗？`)
+      const shouldClose = window.confirm(t('editor.confirmClose', { title: tab.title }))
       if (shouldClose && tab.type === 'file' && tab.nodeId) {
         clearDraft(tab.nodeId)
       }
       return { shouldClose }
     },
-    [clearDraft]
+    [clearDraft, t]
   )
 
   const onTabClick = useCallback(
@@ -212,12 +214,12 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
               ? [
                   {
                     key: 'split-right',
-                    label: '向右分屏',
+                    label: t('editor.splitRight'),
                     onSelect: () => splitGroup(contextMenu.groupId, 'row', contextMenu.tabId)
                   },
                   {
                     key: 'split-down',
-                    label: '向下分屏',
+                    label: t('editor.splitDown'),
                     onSelect: () => splitGroup(contextMenu.groupId, 'column', contextMenu.tabId)
                   }
                 ]
@@ -226,31 +228,31 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
               ? [
                   {
                     key: 'close-group',
-                    label: '关闭分屏',
+                    label: t('editor.closeSplit'),
                     onSelect: () => closeGroup(contextMenu.groupId)
                   }
                 ]
               : []),
             {
               key: 'close',
-              label: '关闭',
+              label: t('editor.closeTab'),
               onSelect: () => closeTab(contextMenu.groupId, contextMenu.tabId, confirmClose)
             },
             {
               key: 'pin',
               label: tabs.find((tab) => tab.id === contextMenu.tabId)?.isPinned
-                ? '取消固定'
-                : '固定',
+                ? t('editor.unpin')
+                : t('editor.pin'),
               onSelect: () => togglePinTab(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-others',
-              label: '关闭其他',
+              label: t('editor.closeOthers'),
               onSelect: () => closeOtherTabs(contextMenu.groupId, contextMenu.tabId)
             },
             {
               key: 'close-all',
-              label: '关闭所有',
+              label: t('editor.closeAll'),
               onSelect: () => closeAllTabs(contextMenu.groupId)
             }
           ]}

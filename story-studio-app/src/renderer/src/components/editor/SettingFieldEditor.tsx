@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
 import PlainTextEditor from '../PlainTextEditor'
@@ -11,8 +12,9 @@ interface SettingFieldEditorProps {
 }
 
 const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, groupId, tabId }) => {
+  const { t } = useTranslation()
   const [content, setContent] = useState('')
-  const [fullData, setFullData] = useState<any>({})
+  const [fullData, setFullData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [hasLoaded, setHasLoaded] = useState(false)
 
@@ -25,13 +27,15 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
 
   const node = useProjectStore(useCallback((s) => s.storyNodes.find(n => n.id === nodeId), [nodeId]))
 
-  // 只加载一次内容，优先使用内存草稿
+  const getFieldLabel = (fieldKey: string): string => {
+    return t(`setting.field.${fieldKey}`, fieldKey)
+  }
+
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
     
     const loadData = async () => {
       try {
-        // 1. 优先检查草稿箱
         const draft = draftsByNodeId[nodeId]
         if (typeof draft === 'string') {
           try {
@@ -46,7 +50,6 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
           }
         }
         
-        // 2. 没有草稿才从磁盘读取
         const jsonContent = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (jsonContent) {
           const data = JSON.parse(jsonContent)
@@ -63,17 +66,14 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
     loadData()
   }, [nodeId, field, currentProject, draftsByNodeId, hasLoaded])
 
-  // 当 node.updatedAt 变化（即外部保存），且我们没有未保存的修改时，重新加载
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
     
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
-      // 有草稿，不重新加载
       return
     }
     
-    // 没有草稿，从磁盘重新加载
     const reloadContent = async () => {
       try {
         const jsonContent = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
@@ -91,8 +91,6 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
 
   const handleSave = async () => {
     if (!currentProject || !nodeId) return
-    // 不再读取磁盘，而是使用内存中的 fullData 和当前 content
-    // 这样可以避免覆盖其他字段的并发修改
     try {
       const newData = { ...fullData, [field]: content }
       const jsonString = JSON.stringify(newData)
@@ -107,13 +105,12 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
 
   const handleChange = (newContent: string) => {
     setContent(newContent)
-    // 保存草稿到内存，保持所有字段的完整性
     const newData = { ...fullData, [field]: newContent }
     setDraft(nodeId, JSON.stringify(newData))
     setDirtyTab(groupId, tabId, true)
   }
 
-  if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>加载中...</div>
+  if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
 
   return (
     <div className="setting-field-editor" style={{
@@ -126,7 +123,7 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
         content={content}
         onChange={handleChange}
         onSave={handleSave}
-        placeholder={`请输入 ${field} 的内容...`}
+        placeholder={t('setting.placeholder', { field: getFieldLabel(field) })}
         tabId={tabId}
         groupId={groupId}
       />

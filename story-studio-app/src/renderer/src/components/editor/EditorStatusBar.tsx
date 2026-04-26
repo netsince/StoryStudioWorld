@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStatusbar, StatusbarAlignment } from '../../contexts/StatusbarContext'
 import { useEditorStore, type EditorStats } from '../../stores/editorStore'
 import type { IStatusbarEntryAccessor } from '../../contexts/StatusbarContext'
 
-// 默认空统计
 const defaultStats: EditorStats = {
   chars: 0,
   words: 0,
@@ -13,6 +13,7 @@ const defaultStats: EditorStats = {
 }
 
 export const EditorStatusBar: React.FC = () => {
+  const { t } = useTranslation()
   const { addEntry } = useStatusbar()
   const activeGroupId = useEditorStore((s) => s.activeGroupId)
   const getGroupEditorState = useEditorStore((s) => s.getGroupEditorState)
@@ -24,7 +25,6 @@ export const EditorStatusBar: React.FC = () => {
   const readingTimeAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
   const lastSavedAccessorRef = useRef<IStatusbarEntryAccessor | null>(null)
 
-  // 更新状态栏显示
   const updateStatusBar = useCallback(
     (groupId: string | null) => {
       const state = groupId ? getGroupEditorState(groupId) : undefined
@@ -32,73 +32,74 @@ export const EditorStatusBar: React.FC = () => {
       const lastSavedAt = state?.lastSavedAt
 
       charCountAccessorRef.current?.update({
-        text: `字符: ${stats.chars.toLocaleString()}`
+        text: `${t('statusBar.chars')}: ${stats.chars.toLocaleString()}`
       })
       wordCountAccessorRef.current?.update({
-        text: `字数: ${stats.words.toLocaleString()}`
+        text: `${t('statusBar.words')}: ${stats.words.toLocaleString()}`
       })
       charsWithoutSpacesAccessorRef.current?.update({
-        text: `净字数: ${stats.charsWithoutSpaces.toLocaleString()}`
+        text: `${t('statusBar.charsWithoutSpaces')}: ${stats.charsWithoutSpaces.toLocaleString()}`
       })
       paragraphCountAccessorRef.current?.update({
-        text: `段落: ${stats.paragraphs.toLocaleString()}`
+        text: `${t('statusBar.paragraphs')}: ${stats.paragraphs.toLocaleString()}`
       })
 
       const timeText =
-        stats.readingTime < 60 ? `阅读: <1分钟` : `阅读: ${Math.ceil(stats.readingTime / 60)}分钟`
+        stats.readingTime < 60 
+          ? `${t('statusBar.reading')}: <1${t('statusBar.minutes')}` 
+          : `${t('statusBar.reading')}: ${Math.ceil(stats.readingTime / 60)}${t('statusBar.minutes')}`
       readingTimeAccessorRef.current?.update({ text: timeText })
 
       if (lastSavedAt) {
         lastSavedAccessorRef.current?.update({
-          text: `${lastSavedAt} 自动保存`
+          text: `${lastSavedAt} ${t('statusBar.autoSaved')}`
         })
       } else {
         lastSavedAccessorRef.current?.update({ text: '' })
       }
     },
-    [getGroupEditorState]
+    [getGroupEditorState, t]
   )
 
-  // 注册状态栏条目
   useEffect(() => {
     charCountAccessorRef.current = addEntry(
       'editor-char-count',
-      { name: '字符数', text: '字符: 0', ariaLabel: '字符统计' },
+      { name: t('statusBar.charCount'), text: `${t('statusBar.chars')}: 0`, ariaLabel: t('statusBar.charCountLabel') },
       StatusbarAlignment.RIGHT,
       100
     )
 
     wordCountAccessorRef.current = addEntry(
       'editor-word-count',
-      { name: '字数', text: '字数: 0', ariaLabel: '字数统计' },
+      { name: t('statusBar.wordCount'), text: `${t('statusBar.words')}: 0`, ariaLabel: t('statusBar.wordCountLabel') },
       StatusbarAlignment.RIGHT,
       90
     )
 
     charsWithoutSpacesAccessorRef.current = addEntry(
       'editor-chars-without-spaces',
-      { name: '净字数', text: '净字数: 0', ariaLabel: '净字数统计' },
+      { name: t('statusBar.charsWithoutSpacesCount'), text: `${t('statusBar.charsWithoutSpaces')}: 0`, ariaLabel: t('statusBar.charsWithoutSpacesLabel') },
       StatusbarAlignment.RIGHT,
       85
     )
 
     paragraphCountAccessorRef.current = addEntry(
       'editor-paragraph-count',
-      { name: '段落', text: '段落: 0', ariaLabel: '段落统计' },
+      { name: t('statusBar.paragraphCount'), text: `${t('statusBar.paragraphs')}: 0`, ariaLabel: t('statusBar.paragraphCountLabel') },
       StatusbarAlignment.RIGHT,
       75
     )
 
     readingTimeAccessorRef.current = addEntry(
       'editor-reading-time',
-      { name: '阅读时间', text: '阅读: <1分钟', ariaLabel: '预计阅读时间' },
+      { name: t('statusBar.readingTime'), text: `${t('statusBar.reading')}: <1${t('statusBar.minutes')}`, ariaLabel: t('statusBar.readingTimeLabel') },
       StatusbarAlignment.RIGHT,
       80
     )
 
     lastSavedAccessorRef.current = addEntry(
       'editor-last-saved',
-      { name: '自动保存', text: '', ariaLabel: '自动保存状态' },
+      { name: t('statusBar.autoSave'), text: '', ariaLabel: t('statusBar.autoSaveLabel') },
       StatusbarAlignment.RIGHT,
       70
     )
@@ -111,14 +112,11 @@ export const EditorStatusBar: React.FC = () => {
       readingTimeAccessorRef.current?.dispose()
       lastSavedAccessorRef.current?.dispose()
     }
-  }, [addEntry])
+  }, [addEntry, t])
 
-  // 监听活动组变化
   useEffect(() => {
-    // 初始更新
     updateStatusBar(activeGroupId)
 
-    // 订阅 store 变化
     const unsubscribe = useEditorStore.subscribe((state) => {
       updateStatusBar(state.activeGroupId)
     })

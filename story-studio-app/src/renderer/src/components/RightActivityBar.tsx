@@ -1,8 +1,10 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUiStore } from '../stores/uiStore'
 import { usePluginService } from '../services/pluginService'
 
 const RightActivityBar: React.FC = () => {
+  const { t } = useTranslation()
   const activeActivity = useUiStore((s) => s.activeRightActivity)
   const isOpen = useUiStore((s) => s.isRightSidebarOpen)
   const onActivityChange = useUiStore((s) => s.handleRightActivityChange)
@@ -19,7 +21,7 @@ const RightActivityBar: React.FC = () => {
     <div className="right-activity-bar">
       <div
         className={`activity-item ${isOpen && activeActivity === 'proofread' ? 'active' : ''}`}
-        title="校对"
+        title={t('panel.proofread')}
         onClick={() => onActivityChange('proofread')}
       >
         <div className="activity-icon">
@@ -27,11 +29,11 @@ const RightActivityBar: React.FC = () => {
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <span>校对</span>
+        <span>{t('panel.proofread')}</span>
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'memo' ? 'active' : ''}`}
-        title="便签"
+        title={t('panel.memo')}
         onClick={() => onActivityChange('memo')}
       >
         <div className="activity-icon">
@@ -39,11 +41,11 @@ const RightActivityBar: React.FC = () => {
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
         </div>
-        <span>便签</span>
+        <span>{t('panel.memo')}</span>
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'snapshot' ? 'active' : ''}`}
-        title="快照"
+        title={t('panel.snapshot')}
         onClick={() => onActivityChange('snapshot')}
       >
         <div className="activity-icon">
@@ -53,7 +55,7 @@ const RightActivityBar: React.FC = () => {
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
         </div>
-        <span>快照</span>
+        <span>{t('panel.snapshot')}</span>
       </div>
 
       {pluginItems.length > 0 && (
@@ -77,7 +79,7 @@ const RightActivityBar: React.FC = () => {
 
       <div
         className="activity-item"
-        title="更多"
+        title={t('common.more')}
         style={{ marginTop: 'auto', marginBottom: '10px' }}
       >
         <span className="activity-icon">⋯</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { StoryNode } from '../../models'
+import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { getAppSettings } from './PreferencesPage'
@@ -15,25 +15,35 @@ interface SettingData {
 }
 
 const FIELD_CONFIG = {
-  人物: {
-    single: ['角色', '性别', '年龄'],
-    multi: ['背景经历', '动机目标', '成长弧线', '外貌描写', '性格特征', '说话风格', '能力技能', '其他备注']
+  character: {
+    single: ['name', 'gender', 'age'],
+    multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
   },
-  地点: {
+  location: {
     single: [],
-    multi: ['地点描述', '视觉', '听觉', '嗅觉', '氛围', '危险程度', '其他备注']
+    multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
   },
-  物品: {
-    single: ['类型', '品质'],
-    multi: ['描述', '数值属性', '象征意义']
+  item: {
+    single: ['type', 'quality'],
+    multi: ['description', 'stats', 'symbolism']
   },
   default: {
     single: [],
-    multi: ['设定描述', '其他备注']
+    multi: ['description', 'notes']
   }
 }
 
+const CATEGORY_NAME_MAP: Record<string, string> = {
+  '人物': 'character',
+  '地点': 'location',
+  '物品': 'item',
+  'character': 'character',
+  'location': 'location',
+  'item': 'item'
+}
+
 const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId }) => {
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [data, setData] = useState<SettingData>({})
   const [loading, setLoading] = useState(true)
@@ -47,32 +57,36 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const setDraft = useProjectStore((s) => s.setDraft)
   const clearDraft = useProjectStore((s) => s.clearDraft)
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
-  const openTab = useEditorStore((s) => s.openTab)
   const openTabInSplit = useEditorStore((s) => s.openTabInSplit)
 
   const node = useMemo(() => storyNodes.find(n => n.id === nodeId), [storyNodes, nodeId])
   
   const category = useMemo(() => {
     if (!node) return 'default'
-    // Find the root parent
     let current = node
     while (current.parentId) {
       const parent = storyNodes.find(n => n.id === current.parentId)
       if (!parent) break
       current = parent
     }
-    return (FIELD_CONFIG as any)[current.name] ? current.name : 'default'
+    const mappedKey = CATEGORY_NAME_MAP[current.name]
+    if (mappedKey && FIELD_CONFIG[mappedKey as keyof typeof FIELD_CONFIG]) {
+      return mappedKey
+    }
+    return 'default'
   }, [node, storyNodes])
 
-  const config = (FIELD_CONFIG as any)[category] || FIELD_CONFIG.default
+  const config = FIELD_CONFIG[category as keyof typeof FIELD_CONFIG] || FIELD_CONFIG.default
 
-  // 只加载一次内容，优先使用内存草稿
+  const getFieldLabel = (fieldKey: string): string => {
+    return t(`setting.field.${fieldKey}`, fieldKey)
+  }
+
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
     
     const loadContent = async () => {
       try {
-        // 1. 优先检查草稿箱
         const draft = draftsByNodeId[nodeId]
         if (typeof draft === 'string') {
           try {
@@ -86,7 +100,6 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
           }
         }
         
-        // 2. 没有草稿才从磁盘读取
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (content) {
           setData(JSON.parse(content))
@@ -104,17 +117,14 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     loadContent()
   }, [nodeId, currentProject, draftsByNodeId, hasLoaded])
 
-  // 当 node.updatedAt 变化（即外部保存），且我们没有未保存的修改时，重新加载
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
     
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
-      // 有草稿，不重新加载
       return
     }
     
-    // 没有草稿，从磁盘重新加载
     const reloadContent = async () => {
       try {
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
@@ -131,7 +141,6 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   }, [node?.updatedAt])
 
   useEffect(() => {
-    // 每次切换回查看模式或组件加载时刷新设置
     if (!isEditing) {
       setAppSettings(getAppSettings())
     }
@@ -148,16 +157,14 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const handleChange = (field: string, value: string) => {
     const newData = { ...data, [field]: value }
     setData(newData)
-    // 保存草稿到内存，避免切换标签页时丢失
     setDraft(nodeId, JSON.stringify(newData))
     setDirtyTab(groupId, tabId, true)
   }
 
   const openMultiLineEdit = (field: string) => {
-    // 在右侧分屏打开编辑标签页
     openTabInSplit({
       id: `${nodeId}-${field}`,
-      title: `${node?.name} - ${field}`,
+      title: `${node?.name} - ${getFieldLabel(field)}`,
       type: 'file',
       nodeId: nodeId,
       kind: 'setting',
@@ -165,8 +172,8 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     }, groupId)
   }
 
-  if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>加载中...</div>
-  if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>找不到设定节点</div>
+  if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
+  if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>{t('errors.fileNotFound')}</div>
 
   return (
     <div className="setting-editor wiki-style" style={{ 
@@ -177,7 +184,6 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       padding: '40px 60px'
     }}>
       <div style={{ margin: '0 auto', position: 'relative' }}>
-        {/* Wiki Header */}
         <header style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -214,12 +220,11 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
             onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
             onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
           >
-            [ {isEditing ? '保存' : '编辑'} ]
+            [ {isEditing ? t('common.save') : t('common.rename')} ]
           </button>
         </header>
 
         <div style={{ position: 'relative', display: 'block' }}>
-           {/* Infobox (Wikipedia style) - Use float to allow text wrapping */}
            {config.single.length > 0 && (
              <aside className="wiki-infobox" style={{ 
                width: '280px', 
@@ -253,7 +258,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                          color: '#aaa',
                          fontWeight: 'bold'
                        }}>
-                         {field}
+                         {getFieldLabel(field)}
                        </th>
                        <td style={{ padding: '6px 4px' }}>
                          {isEditing ? (
@@ -271,7 +276,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                              }}
                            />
                          ) : (
-                           <span>{data[field] || <span style={{ color: '#666', fontStyle: 'italic' }}>未填写</span>}</span>
+                           <span>{data[field] || <span style={{ color: '#666', fontStyle: 'italic' }}>{t('setting.notFilled')}</span>}</span>
                          )}
                        </td>
                      </tr>
@@ -281,9 +286,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
              </aside>
            )}
   
-            {/* Wiki Article Body */}
             <div className="wiki-content">
-              {/* Table of Contents */}
               {config.multi.length >= 3 && !isEditing && (
                 <nav className="wiki-toc" style={{ 
                   backgroundColor: '#2a2a2e', 
@@ -299,7 +302,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     marginBottom: '10px',
                     fontSize: '14px'
                   }}>
-                    目录
+                    {t('setting.tableOfContents')}
                   </div>
                   <ul style={{ 
                     listStyle: 'none', 
@@ -321,7 +324,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                           onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                         >
                           <span style={{ color: '#ccc', marginRight: '8px' }}>{index + 1}</span>
-                          {field}
+                          {getFieldLabel(field)}
                         </a>
                       </li>
                     ))}
@@ -346,7 +349,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
                       color: '#fff'
                     }}>
-                      {field}
+                      {getFieldLabel(field)}
                     </h2>
                     <button 
                       onClick={() => openMultiLineEdit(field)}
@@ -361,7 +364,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                       onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                     >
-                      [ 独立编辑 ]
+                      [ {t('setting.independentEdit')} ]
                     </button>
                   </div>
                   
@@ -375,7 +378,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     padding: isEditing ? '8px' : '0',
                     backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
                   }}>
-                    {data[field] || <span style={{ fontStyle: 'italic' }}>暂无内容。{isEditing ? '点击上方“独立编辑”添加。' : '您可以点击右上方“编辑”按钮添加信息。'}</span>}
+                    {data[field] || <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>}
                   </div>
                 </section>
               ))}

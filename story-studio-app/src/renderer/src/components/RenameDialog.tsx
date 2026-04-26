@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 interface RenameDialogProps {
   title: string
@@ -14,6 +15,7 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
   onCancel,
   onConfirm
 }) => {
+  const { t } = useTranslation()
   const [value, setValue] = useState(initialValue)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -50,10 +52,10 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
         />
         <div className="ssw-modal-actions">
           <button className="action-button secondary inline-button" onMouseDown={onCancel}>
-            取消
+            {t('common.cancel')}
           </button>
           <button className="action-button inline-button" onMouseDown={() => onConfirm(value)}>
-            确定
+            {t('common.confirm')}
           </button>
         </div>
       </div>

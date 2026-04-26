@@ -301,23 +301,34 @@ const getChildrenByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'se
 }
 
 // Setting field configurations (from SettingEditor)
+// Internal keys are in English, UI display uses i18n
 const SETTING_FIELD_CONFIG = {
-  人物: {
-    single: ['角色', '性别', '年龄'],
-    multi: ['背景经历', '动机目标', '成长弧线', '外貌描写', '性格特征', '说话风格', '能力技能', '其他备注']
+  character: {
+    single: ['name', 'gender', 'age'],
+    multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
   },
-  地点: {
+  location: {
     single: [],
-    multi: ['地点描述', '视觉', '听觉', '嗅觉', '氛围', '危险程度', '其他备注']
+    multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
   },
-  物品: {
-    single: ['类型', '品质'],
-    multi: ['描述', '数值属性', '象征意义']
+  item: {
+    single: ['type', 'quality'],
+    multi: ['description', 'stats', 'symbolism']
   },
   default: {
     single: [],
-    multi: ['设定描述', '其他备注']
+    multi: ['description', 'notes']
   }
+}
+
+// Category name mapping: Chinese name -> English key (for backward compatibility with existing data)
+const CATEGORY_NAME_MAP: Record<string, string> = {
+  '人物': 'character',
+  '地点': 'location',
+  '物品': 'item',
+  'character': 'character',
+  'location': 'location',
+  'item': 'item'
 }
 
 // Helper to get category from path
@@ -333,9 +344,15 @@ const getCategoryFromPath = (nodes: StoryNode[], filePath: string): string => {
     current = parent
   }
 
-  return current?.name && SETTING_FIELD_CONFIG[current.name as keyof typeof SETTING_FIELD_CONFIG]
-    ? current.name
-    : 'default'
+  if (!current?.name) return 'default'
+  
+  // Map the category name to English key
+  const mappedKey = CATEGORY_NAME_MAP[current.name]
+  if (mappedKey && SETTING_FIELD_CONFIG[mappedKey as keyof typeof SETTING_FIELD_CONFIG]) {
+    return mappedKey
+  }
+  
+  return 'default'
 }
 
 // Create abstract file API for story (no restrictions)
@@ -491,7 +508,7 @@ const createWorldSettingFileAPI = () => {
     create: async (filePath: string, type: 'file' | 'folder'): Promise<string | null> => {
       const project = useProjectStore.getState().currentProject
       const nodes = useProjectStore.getState().storyNodes
-      if (!project) return '项目未加载'
+      if (!project) return 'errors.projectNotLoaded'
 
       const parts = filePath.split('/').filter(Boolean)
       const name = parts.pop() || filePath
@@ -513,10 +530,10 @@ const createWorldSettingFileAPI = () => {
       // 3. File can only be created under second-level folder
       if (type === 'file') {
         if (!parentId) {
-          return '设定文件不能在根目录创建，请先创建分类和文件夹'
+          return 'setting.cannotCreateAtRoot'
         }
         if (parentNode && parentNode.parentId === null) {
-          return '设定文件不能直接放在分类下，请先在该分类下创建文件夹'
+          return 'setting.cannotCreateInCategory'
         }
       }
 
@@ -529,7 +546,7 @@ const createWorldSettingFileAPI = () => {
       }
 
       const result = await hookSystem.intercept('file:beforeCreate', input)
-      if (!result.proceed) return '创建被阻止'
+      if (!result.proceed) return 'errors.operationCancelled'
 
       await window.api.createStoryNode(result.result!)
       return null
