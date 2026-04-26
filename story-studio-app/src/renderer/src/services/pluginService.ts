@@ -5,6 +5,7 @@ import { hookSystem } from './hookService'
 import { commandService } from './commandService'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
+import i18n from '../i18n'
 import type {
   ProofreadResult,
   CreateNodeInput,
@@ -508,7 +509,7 @@ const createWorldSettingFileAPI = () => {
     create: async (filePath: string, type: 'file' | 'folder'): Promise<string | null> => {
       const project = useProjectStore.getState().currentProject
       const nodes = useProjectStore.getState().storyNodes
-      if (!project) return 'errors.projectNotLoaded'
+      if (!project) return i18n.t('errors.projectNotLoaded')
 
       const parts = filePath.split('/').filter(Boolean)
       const name = parts.pop() || filePath
@@ -524,16 +525,12 @@ const createWorldSettingFileAPI = () => {
         }
       }
 
-      // Restrictions for setting:
-      // 1. Cannot create file at root level
-      // 2. Cannot create file directly under category (first-level folder)
-      // 3. File can only be created under second-level folder
       if (type === 'file') {
         if (!parentId) {
-          return 'setting.cannotCreateAtRoot'
+          return i18n.t('setting.cannotCreateAtRoot')
         }
         if (parentNode && parentNode.parentId === null) {
-          return 'setting.cannotCreateInCategory'
+          return i18n.t('setting.cannotCreateInCategory')
         }
       }
 
@@ -546,7 +543,7 @@ const createWorldSettingFileAPI = () => {
       }
 
       const result = await hookSystem.intercept('file:beforeCreate', input)
-      if (!result.proceed) return 'errors.operationCancelled'
+      if (!result.proceed) return i18n.t('errors.operationCancelled')
 
       await window.api.createStoryNode(result.result!)
       return null

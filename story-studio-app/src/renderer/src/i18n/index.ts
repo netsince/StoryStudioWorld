@@ -2,8 +2,15 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
+export const SUPPORTED_LANGUAGES = {
+  ZH_CN: 'zh-CN',
+  EN: 'en'
+} as const
+
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[keyof typeof SUPPORTED_LANGUAGES]
+
 export interface LanguageMetadata {
-  code: string
+  code: SupportedLanguage
   englishName: string
   nativeName: string
   contributors: string[]
@@ -56,9 +63,9 @@ i18n
 
 export const getAvailableLanguages = (): LanguageMetadata[] => availableLanguages
 
-export const getCurrentLanguage = (): string => i18n.language
+export const getCurrentLanguage = (): SupportedLanguage => i18n.language as SupportedLanguage
 
-export const setLanguage = (langCode: string): void => {
+export const setLanguage = (langCode: SupportedLanguage): void => {
   localStorage.setItem(SETTINGS_KEY, langCode)
   void i18n.changeLanguage(langCode)
 }

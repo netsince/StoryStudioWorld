@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getAvailableLanguages, setLanguage, getCurrentLanguage, type LanguageMetadata } from '../../i18n'
+import { getAvailableLanguages, setLanguage, getCurrentLanguage, type LanguageMetadata, type SupportedLanguage } from '../../i18n'
 
 const SETTINGS_KEY = 'ssw:app-settings'
 
@@ -61,7 +61,7 @@ const PreferencesPage: React.FC = () => {
   const [systemFonts, setSystemFonts] = useState<{ name: string; value: string }[]>([])
   const [activeSection, setActiveSection] = useState<string>('editor')
   const [availableLanguages, setAvailableLanguages] = useState<LanguageMetadata[]>([])
-  const [currentLang, setCurrentLang] = useState<string>(getCurrentLanguage())
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
 
   useEffect(() => {
     setAvailableLanguages(getAvailableLanguages())
@@ -134,7 +134,7 @@ const PreferencesPage: React.FC = () => {
     }
   }
 
-  const handleLanguageChange = (langCode: string): void => {
+  const handleLanguageChange = (langCode: SupportedLanguage): void => {
     setLanguage(langCode)
     setCurrentLang(langCode)
   }
