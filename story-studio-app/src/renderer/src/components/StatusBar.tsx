@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react'
 import { useStatusbar, StatusbarAlignment } from '../contexts/StatusbarContext'
+import { usePluginService } from '../services/pluginService'
 
 const StatusBar: React.FC = () => {
   const { entries } = useStatusbar()
+  const pluginStatusBarItems = usePluginService((s) => s.statusBarItems)
 
   const leftEntries = useMemo(() => {
     return (
       Array.from(entries.values())
         .filter((e) => e.alignment === StatusbarAlignment.LEFT)
-        // priority 数值越大优先级越高，排在前面（靠外侧）
         .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
     )
   }, [entries])
@@ -17,10 +18,21 @@ const StatusBar: React.FC = () => {
     return (
       Array.from(entries.values())
         .filter((e) => e.alignment === StatusbarAlignment.RIGHT)
-        // priority 数值越大优先级越高，排在前面（靠外侧）
         .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
     )
   }, [entries])
+
+  const pluginLeftItems = useMemo(() => {
+    return pluginStatusBarItems
+      .filter((item) => item.alignment === 'left')
+      .sort((a, b) => b.priority - a.priority)
+  }, [pluginStatusBarItems])
+
+  const pluginRightItems = useMemo(() => {
+    return pluginStatusBarItems
+      .filter((item) => item.alignment === 'right')
+      .sort((a, b) => b.priority - a.priority)
+  }, [pluginStatusBarItems])
 
   const renderEntry = (entry: (typeof leftEntries)[0]): React.ReactNode => (
     <div
@@ -34,10 +46,28 @@ const StatusBar: React.FC = () => {
     </div>
   )
 
+  const renderPluginItem = (item: (typeof pluginStatusBarItems)[0]): React.ReactNode => (
+    <div
+      key={`plugin-${item.pluginId}-${item.id}`}
+      className="status-item"
+      title={item.tooltip}
+      onClick={item.onClick}
+      style={{ cursor: item.onClick ? 'pointer' : 'default' }}
+    >
+      {item.render()}
+    </div>
+  )
+
   return (
     <div className="status-bar">
-      <div className="status-left">{leftEntries.map(renderEntry)}</div>
-      <div className="status-right">{rightEntries.map(renderEntry)}</div>
+      <div className="status-left">
+        {leftEntries.map(renderEntry)}
+        {pluginLeftItems.map(renderPluginItem)}
+      </div>
+      <div className="status-right">
+        {pluginRightItems.map(renderPluginItem)}
+        {rightEntries.map(renderEntry)}
+      </div>
     </div>
   )
 }
