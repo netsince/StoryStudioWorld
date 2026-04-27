@@ -2,6 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUiStore } from '../stores/uiStore'
 import { usePluginService } from '../services/pluginService'
+import { useUiSettings } from '../hooks/useUiSettings'
 
 const RightActivityBar: React.FC = () => {
   const { t } = useTranslation()
@@ -9,6 +10,7 @@ const RightActivityBar: React.FC = () => {
   const isOpen = useUiStore((s) => s.isRightSidebarOpen)
   const onActivityChange = useUiStore((s) => s.handleRightActivityChange)
   const pluginItems = usePluginService((s) => s.rightActivityItems)
+  const { hideActivityBarLabel: hideLabel } = useUiSettings()
 
   const renderIcon = (icon: React.ReactNode | string): React.ReactNode => {
     if (typeof icon === 'string') {
@@ -29,7 +31,7 @@ const RightActivityBar: React.FC = () => {
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <span>{t('panel.proofread')}</span>
+        {!hideLabel && <span>{t('panel.proofread')}</span>}
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'memo' ? 'active' : ''}`}
@@ -41,7 +43,7 @@ const RightActivityBar: React.FC = () => {
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
         </div>
-        <span>{t('panel.memo')}</span>
+        {!hideLabel && <span>{t('panel.memo')}</span>}
       </div>
       <div
         className={`activity-item ${isOpen && activeActivity === 'snapshot' ? 'active' : ''}`}
@@ -55,7 +57,7 @@ const RightActivityBar: React.FC = () => {
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
         </div>
-        <span>{t('panel.snapshot')}</span>
+        {!hideLabel && <span>{t('panel.snapshot')}</span>}
       </div>
 
       {pluginItems.length > 0 && (
@@ -71,7 +73,7 @@ const RightActivityBar: React.FC = () => {
               <div className="activity-icon">
                 {renderIcon(item.icon)}
               </div>
-              <span>{item.title}</span>
+              {!hideLabel && <span>{item.title}</span>}
             </div>
           ))}
         </>

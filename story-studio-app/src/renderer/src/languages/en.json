@@ -276,6 +276,7 @@
   "preferences": {
     "title": "Preferences",
     "editor": "Editor",
+    "interface": "Interface",
     "localization": "Localization",
     "font": "Font",
     "fontSize": "Font Size",
@@ -296,7 +297,16 @@
     "loose": "Loose",
     "language": "Language",
     "languageDesc": "Select interface display language",
-    "preview": "Preview"
+    "preview": "Preview",
+    "activityBar": "Activity Bar",
+    "hideActivityBarLabel": "Hide Activity Bar Labels",
+    "hideActivityBarLabelDesc": "Hide text labels under sidebar icons, show icons only",
+    "titleBar": "Title Bar",
+    "hideAppLogoText": "Hide App Name",
+    "hideAppLogoTextDesc": "Hide the app name text in the title bar, show icon only",
+    "statusBar": "Status Bar",
+    "autoHideStatusBar": "Auto-hide when empty",
+    "autoHideStatusBarDesc": "Automatically hide the status bar when it has no content"
   },
   "menu": {
     "file": "File",

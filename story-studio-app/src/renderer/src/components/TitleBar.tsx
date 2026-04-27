@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useUiStore } from '../stores/uiStore'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import { commandService, Commands } from '../services/commandService'
+import { useUiSettings } from '../hooks/useUiSettings'
 
 const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 
@@ -14,6 +15,7 @@ const TitleBar: React.FC = () => {
   const { t } = useTranslation()
   const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab } =
     useEditorStore()
+  const { hideAppLogoText } = useUiSettings()
 
   const { currentProject, openProject, createStoryNode, storyNodes } = useProjectStore()
 
@@ -374,7 +376,7 @@ const TitleBar: React.FC = () => {
       <div className="title-bar-left">
         <div className="app-logo" onClick={openWelcomeTab} style={{ cursor: 'pointer' }}>
           <img className="brand-logo" src={ssworldSvg} alt="Story Studio World" />
-          Story Studio World
+          {!hideAppLogoText && 'Story Studio World'}
         </div>
         <div className="title-bar-menu">
           <span

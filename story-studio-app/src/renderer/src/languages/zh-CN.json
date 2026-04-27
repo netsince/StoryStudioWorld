@@ -276,6 +276,7 @@
   "preferences": {
     "title": "首选项",
     "editor": "编辑器",
+    "interface": "界面",
     "localization": "本地化",
     "font": "字体",
     "fontSize": "字号",
@@ -296,7 +297,16 @@
     "loose": "宽松",
     "language": "语言",
     "languageDesc": "选择界面显示语言",
-    "preview": "预览"
+    "preview": "预览",
+    "activityBar": "活动栏",
+    "hideActivityBarLabel": "隐藏活动栏标签",
+    "hideActivityBarLabelDesc": "隐藏侧边栏图标下方的文字标签，仅显示图标",
+    "titleBar": "标题栏",
+    "hideAppLogoText": "隐藏应用名称",
+    "hideAppLogoTextDesc": "隐藏标题栏左侧的应用名称文字，仅显示图标",
+    "statusBar": "状态栏",
+    "autoHideStatusBar": "无内容时自动隐藏",
+    "autoHideStatusBarDesc": "当状态栏没有任何内容时自动隐藏状态栏"
   },
   "menu": {
     "file": "文件",

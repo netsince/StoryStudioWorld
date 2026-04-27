@@ -14,6 +14,9 @@ interface AppSettings {
   autoSaveEnabled: boolean
   autoSaveInterval: number
   autoIndentEnabled: boolean
+  hideActivityBarLabel: boolean
+  hideAppLogoText: boolean
+  autoHideStatusBar: boolean
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -23,7 +26,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   editorTabBehavior: 'tab',
   autoSaveEnabled: true,
   autoSaveInterval: 30,
-  autoIndentEnabled: false
+  autoIndentEnabled: false,
+  hideActivityBarLabel: false,
+  hideAppLogoText: false,
+  autoHideStatusBar: false
 }
 
 const OPEN_SOURCE_FONTS = [
@@ -53,6 +59,7 @@ const loadSettings = (): AppSettings => {
 
 const saveSettings = (settings: AppSettings): void => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  window.dispatchEvent(new CustomEvent('app-settings-changed'))
 }
 
 const PreferencesPage: React.FC = () => {
@@ -435,6 +442,100 @@ const PreferencesPage: React.FC = () => {
           </div>
         )
 
+      case 'interface':
+        return (
+          <div style={{ padding: '24px', paddingBottom: '48px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.interface')}</h3>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
+                {t('preferences.activityBar')}
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={settings.hideActivityBarLabel}
+                    onChange={(e) => applySettings({ hideActivityBarLabel: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '13px' }}>{t('preferences.hideActivityBarLabel')}</span>
+                </label>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                {t('preferences.hideActivityBarLabelDesc')}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
+                {t('preferences.titleBar')}
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={settings.hideAppLogoText}
+                    onChange={(e) => applySettings({ hideAppLogoText: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '13px' }}>{t('preferences.hideAppLogoText')}</span>
+                </label>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                {t('preferences.hideAppLogoTextDesc')}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}
+              >
+                {t('preferences.statusBar')}
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={settings.autoHideStatusBar}
+                    onChange={(e) => applySettings({ autoHideStatusBar: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '13px' }}>{t('preferences.autoHideStatusBar')}</span>
+                </label>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                {t('preferences.autoHideStatusBarDesc')}
+              </div>
+            </div>
+          </div>
+        )
+
       case 'localization':
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
@@ -501,6 +602,7 @@ const PreferencesPage: React.FC = () => {
 
   const sections = [
     { id: 'editor', label: t('preferences.editor'), icon: '📝' },
+    { id: 'interface', label: t('preferences.interface'), icon: '🖥️' },
     { id: 'localization', label: t('preferences.localization'), icon: '🌐' }
   ]
 
@@ -592,5 +694,16 @@ export const getAutoIndentSettings = (): { enabled: boolean; indent: string } =>
     return { enabled: settings.autoIndentEnabled ?? false, indent }
   } catch {
     return { enabled: false, indent: '\t' }
+  }
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const getActivityBarSettings = (): { hideLabel: boolean } => {
+  try {
+    const saved = localStorage.getItem('ssw:app-settings')
+    const settings = saved ? JSON.parse(saved) : DEFAULT_SETTINGS
+    return { hideLabel: settings.hideActivityBarLabel ?? false }
+  } catch {
+    return { hideLabel: false }
   }
 }

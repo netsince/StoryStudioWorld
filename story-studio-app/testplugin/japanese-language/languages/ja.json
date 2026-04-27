@@ -276,6 +276,7 @@
   "preferences": {
     "title": "設定",
     "editor": "エディタ",
+    "interface": "インターフェース",
     "localization": "ローカライズ",
     "font": "フォント",
     "fontSize": "フォントサイズ",
@@ -296,7 +297,16 @@
     "loose": "ルーズ",
     "language": "言語",
     "languageDesc": "インターフェースの表示言語を選択",
-    "preview": "プレビュー"
+    "preview": "プレビュー",
+    "activityBar": "アクティビティバー",
+    "hideActivityBarLabel": "アクティビティバーラベルを非表示",
+    "hideActivityBarLabelDesc": "サイドバーのアイコンの下のテキストラベルを非表示にし、アイコンのみ表示",
+    "titleBar": "タイトルバー",
+    "hideAppLogoText": "アプリ名を非表示",
+    "hideAppLogoTextDesc": "タイトルバー左側のアプリ名テキストを非表示にし、アイコンのみ表示",
+    "statusBar": "ステータスバー",
+    "autoHideStatusBar": "空の時に自動で非表示",
+    "autoHideStatusBarDesc": "ステータスバーに内容がない場合、自動的に非表示にします"
   },
   "menu": {
     "file": "ファイル",
