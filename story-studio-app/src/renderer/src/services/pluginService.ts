@@ -757,8 +757,6 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         const editorState = useEditorStore.getState()
         const projectState = useProjectStore.getState()
         const activeGroupId = editorState.focusedGroupId
-        const group = editorState.groupEditorStates.get(activeGroupId)
-        if (!group) return null
 
         const tree = editorState.editorTree
         const findActiveTab = (node: typeof tree): Tab | null => {
@@ -1127,6 +1125,8 @@ export const usePluginService = create<PluginState>((set, get) => ({
         p.manifest.id === pluginId ? { ...p, enabled } : p
       )
     }))
+
+    void window.api.setPluginEnabled(pluginId, enabled)
   },
 
   addNotification: (notification: NotificationOptions) => {
