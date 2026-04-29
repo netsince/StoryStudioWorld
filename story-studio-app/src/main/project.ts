@@ -199,8 +199,6 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   }
 
   await ensureDirectoryEmpty(projectPath)
-  await mkdir(join(projectPath, 'character'), { recursive: true })
-  await mkdir(join(projectPath, 'worldviewsetting'), { recursive: true })
 
   const storyDbPath = getStoryDbPath(projectPath)
   const db = await initDatabase(storyDbPath)

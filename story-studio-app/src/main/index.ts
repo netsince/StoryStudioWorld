@@ -442,7 +442,7 @@ function createWindow(): void {
     }
   })
 
-  ipcMain.handle('plugin-native:fetchStreamAbort', async (_, streamId: string) => {
+  ipcMain.handle('plugin-native:fetchStreamAbort', async () => {
     return { aborted: true }
   })
 
