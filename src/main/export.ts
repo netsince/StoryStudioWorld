@@ -1,8 +1,10 @@
-import { writeFileSync, createWriteStream } from 'fs'
+import { writeFileSync, createWriteStream, mkdirSync, existsSync } from 'fs'
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx'
 import PDFDocument from 'pdfkit'
 import archiver from 'archiver'
 import { randomBytes } from 'crypto'
+import { join } from 'path'
+import { platform } from 'os'
 
 export interface ExportContent {
   title: string
@@ -156,6 +158,51 @@ export async function exportToDocx(options: ExportOptions): Promise<void> {
   writeFileSync(filePath, buffer)
 }
 
+// 系统字体文件路径（优先使用编辑器同款字体，按优先级排序）
+function getSystemFontPaths(): string[] {
+  const sysPlatform = platform()
+
+  if (sysPlatform === 'win32') {
+    return [
+      'C:/Windows/Fonts/simsun.ttc',      // 宋体
+      'C:/Windows/Fonts/simhei.ttf',      // 黑体
+      'C:/Windows/Fonts/msyh.ttc',        // 微软雅黑
+      'C:/Windows/Fonts/msyhl.ttc',       // 微软雅黑 Light
+      'C:/Windows/Fonts/simkai.ttf',      // 楷体
+      'C:/Windows/Fonts/simfang.ttf'      // 仿宋
+    ]
+  } else if (sysPlatform === 'darwin') {
+    return [
+      '/System/Library/Fonts/PingFang.ttc',           // 苹方
+      '/System/Library/Fonts/STHeiti Light.ttc',      // 黑体
+      '/System/Library/Fonts/STHeiti Medium.ttc',
+      '/System/Library/Fonts/STSong Light.ttc',       // 宋体
+      '/Library/Fonts/Arial Unicode.ttf',             // Arial Unicode
+      '/System/Library/Fonts/Hiragino Sans GB.ttc'    // 冬青黑体
+    ]
+  } else {
+    // Linux
+    return [
+      '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',     // 文泉驿正黑
+      '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',   // 文泉驿微米黑
+      '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',  // Noto Sans CJK
+      '/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc', // Noto Serif CJK
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+    ]
+  }
+}
+
+// 查找可用的中文字体
+function findChineseFont(): string | null {
+  const fontPaths = getSystemFontPaths()
+  for (const fontPath of fontPaths) {
+    if (existsSync(fontPath)) {
+      return fontPath
+    }
+  }
+  return null
+}
+
 export async function exportToPdf(options: ExportOptions): Promise<void> {
   const { filePath, contents, projectName } = options
 
@@ -169,7 +216,21 @@ export async function exportToPdf(options: ExportOptions): Promise<void> {
 
     doc.pipe(stream)
 
+    // 注册中文字体
+    const chineseFontPath = findChineseFont()
+    if (chineseFontPath) {
+      try {
+        doc.registerFont('ChineseFont', chineseFontPath)
+      } catch (e) {
+        console.warn('Failed to register Chinese font:', e)
+      }
+    }
+
+    // 设置默认字体（优先使用注册的中文字体，否则使用 Helvetica 兜底）
+    const hasChineseFont = chineseFontPath !== null
+
     if (projectName) {
+      doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica')
       doc.fontSize(24).text(projectName, { align: 'center' })
       doc.moveDown(2)
     }
@@ -181,19 +242,27 @@ export async function exportToPdf(options: ExportOptions): Promise<void> {
         doc.addPage()
       }
 
+      doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica-Bold')
       doc.fontSize(18).text(item.title, { align: 'left' })
       doc.moveDown()
 
+      doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica')
       const lines = item.content.split('\n')
       for (const line of lines) {
         if (line.startsWith('# ')) {
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica-Bold')
           doc.fontSize(16).text(line.slice(2), { align: 'left' })
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica')
           doc.moveDown(0.5)
         } else if (line.startsWith('## ')) {
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica-Bold')
           doc.fontSize(14).text(line.slice(3), { align: 'left' })
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica')
           doc.moveDown(0.5)
         } else if (line.startsWith('### ')) {
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica-Bold')
           doc.fontSize(12).text(line.slice(4), { align: 'left' })
+          doc.font(hasChineseFont ? 'ChineseFont' : 'Helvetica')
           doc.moveDown(0.5)
         } else if (line.startsWith('- ') || line.startsWith('* ')) {
           doc.fontSize(11).text('  • ' + line.slice(2), { align: 'left' })
@@ -419,4 +488,270 @@ export function exportToMarkdown(filePath: string, contents: ExportContent[]): v
   }
 
   writeFileSync(filePath, markdown, 'utf-8')
+}
+
+export interface WikiNode {
+  id: string
+  parentId: string | null
+  name: string
+  type: 'folder' | 'file'
+  kind: 'story' | 'setting'
+  content: string | null
+  summary: string | null
+  outline: string | null
+  sortOrder: number
+}
+
+export interface WikiExportOptions {
+  exportPath: string
+  projectName: string
+  nodes: WikiNode[]
+  language: string
+}
+
+const WIKI_I18N: Record<string, Record<string, string>> = {
+  'zh-CN': {
+    tableOfContents: '目录',
+    story: '故事',
+    setting: '设定',
+    backToIndex: '返回目录',
+    summary: '简概',
+    outline: '章纲',
+    noContent: '暂无内容',
+    projectWiki: '项目维基'
+  },
+  'en': {
+    tableOfContents: 'Table of Contents',
+    story: 'Story',
+    setting: 'Setting',
+    backToIndex: 'Back to Index',
+    summary: 'Summary',
+    outline: 'Outline',
+    noContent: 'No content yet',
+    projectWiki: 'Project Wiki'
+  }
+}
+
+function getWikiI18n(lang: string): Record<string, string> {
+  return WIKI_I18N[lang] || WIKI_I18N['en'] || WIKI_I18N['zh-CN']
+}
+
+function getWikiCss(): string {
+  return `body {
+  margin: 0;
+  background: #1e1e1e;
+  color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+a { color: #3498db; text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul { list-style: none; padding-left: 0; }
+ul ul { padding-left: 24px; border-left: 1px solid #444; margin-left: 8px; }`
+}
+
+function buildWikiTreeHtml(
+  nodes: WikiNode[],
+  parentId: string | null,
+  i18n: Record<string, string>
+): string {
+  const children = nodes
+    .filter((n) => n.parentId === parentId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+
+  if (children.length === 0) return ''
+
+  let html = '<ul>\n'
+
+  for (const node of children) {
+    if (node.type === 'folder') {
+      html += '<li>\n'
+      html += `<div style="font-weight:bold;color:#aaa;font-size:13px;padding:4px 0">${escapeHtml(node.name)}</div>\n`
+      const childHtml = buildWikiTreeHtml(nodes, node.id, i18n)
+      if (childHtml) {
+        html += childHtml
+      }
+      html += '</li>\n'
+    } else {
+      html += '<li>\n'
+      html += `<a href="${node.id}.html" style="color:#3498db;font-size:14px">${escapeHtml(node.name)}</a>\n`
+      html += '</li>\n'
+    }
+  }
+
+  html += '</ul>\n'
+  return html
+}
+
+function buildSettingPageHtml(
+  node: WikiNode,
+  nodes: WikiNode[],
+  projectName: string,
+  language: string,
+  i18n: Record<string, string>
+): string {
+  let data: Record<string, string> = {}
+  try {
+    if (node.content) {
+      data = JSON.parse(node.content)
+    }
+  } catch {
+    data = {}
+  }
+
+  const FIELD_CONFIG: Record<string, { single: string[]; multi: string[] }> = {
+    character: {
+      single: ['name', 'gender', 'age'],
+      multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
+    },
+    location: {
+      single: [],
+      multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
+    },
+    item: {
+      single: ['type', 'quality'],
+      multi: ['description', 'stats', 'symbolism']
+    },
+    default: {
+      single: [],
+      multi: ['description', 'notes']
+    }
+  }
+
+  const FIELD_LABELS: Record<string, Record<string, string>> = {
+    'zh-CN': {
+      name: '角色', gender: '性别', age: '年龄', background: '背景经历',
+      motivation: '动机目标', arc: '成长弧线', appearance: '外貌描写',
+      personality: '性格特征', speech: '说话风格', skills: '能力技能',
+      notes: '其他备注', description: '设定描述', locationDescription: '地点描述',
+      visual: '视觉', auditory: '听觉', olfactory: '嗅觉', atmosphere: '氛围',
+      danger: '危险程度', type: '类型', quality: '品质', stats: '数值属性',
+      symbolism: '象征意义'
+    },
+    'en': {
+      name: 'Name', gender: 'Gender', age: 'Age', background: 'Background',
+      motivation: 'Motivation', arc: 'Character Arc', appearance: 'Appearance',
+      personality: 'Personality', speech: 'Speech Style', skills: 'Skills & Abilities',
+      notes: 'Notes', description: 'Description', locationDescription: 'Location Description',
+      visual: 'Visual', auditory: 'Auditory', olfactory: 'Olfactory', atmosphere: 'Atmosphere',
+      danger: 'Danger Level', type: 'Type', quality: 'Quality', stats: 'Stats',
+      symbolism: 'Symbolism'
+    }
+  }
+
+  const labels = FIELD_LABELS[language] || FIELD_LABELS['en'] || FIELD_LABELS['zh-CN']
+
+  let category = 'default'
+  let current = node
+  while (current.parentId) {
+    const parent = nodes.find((n) => n.id === current.parentId)
+    if (!parent) break
+    current = parent
+  }
+  if (current && FIELD_CONFIG[current.name]) {
+    category = current.name
+  }
+  const config = FIELD_CONFIG[category] || FIELD_CONFIG.default
+
+  let infoboxHtml = ''
+  if (config.single.length > 0) {
+    infoboxHtml = `<aside style="width:280px;background:#2a2a2e;border:1px solid #54595d;padding:8px;font-size:13px;float:right;margin-left:24px;margin-bottom:20px">
+      <div style="text-align:center;font-weight:bold;padding:8px;background:#3a3a3e;margin-bottom:8px;border:1px solid #54595d">${escapeHtml(node.name)}</div>
+      <table style="width:100%;border-collapse:collapse">
+        <tbody>
+          ${config.single.map((field) => {
+            const val = data[field]
+            return `<tr style="border-bottom:1px solid #444">
+              <th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${labels[field] || field}</th>
+              <td style="padding:6px 4px">${val ? escapeHtml(val) : '<span style="color:#666;font-style:italic">' + i18n.noContent + '</span>'}</td>
+            </tr>`
+          }).join('\n')}
+        </tbody>
+      </table>
+    </aside>`
+  }
+
+  let tocHtml = ''
+  if (config.multi.length >= 3) {
+    tocHtml = `<nav style="background:#2a2a2e;border:1px solid #54595d;padding:12px 20px;margin-bottom:24px;display:inline-block;min-width:200px">
+      <div style="font-weight:bold;text-align:center;margin-bottom:10px;font-size:14px">${i18n.tableOfContents}</div>
+      <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:#3498db">
+        ${config.multi.map((field, index) => `<li style="margin-bottom:4px"><a href="#${field}" style="color:inherit;text-decoration:none"><span style="color:#ccc;margin-right:8px">${index + 1}</span>${labels[field] || field}</a></li>`).join('\n')}
+      </ul>
+    </nav>`
+  }
+
+  const sectionsHtml = config.multi.map((field) => {
+    const val = data[field]
+    return `<section id="${field}" style="margin-bottom:24px">
+      <div style="border-bottom:1px solid #54595d;margin-bottom:12px;padding-bottom:2px">
+        <h2 style="margin:0;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${labels[field] || field}</h2>
+      </div>
+      <div style="font-size:14px;white-space:pre-wrap;color:${val ? '#d1d1d1' : '#666'};font-style:${val ? 'normal' : 'italic'}">${val ? escapeHtml(val) : i18n.noContent}</div>
+    </section>`
+  }).join('\n')
+
+  return `<!DOCTYPE html>
+<html lang="${escapeHtml(language)}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(node.name)} - ${escapeHtml(projectName)}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div style="max-width:900px;margin:0 auto;padding:40px 60px">
+    <a href="index.html" style="color:#3498db;font-size:13px">← ${i18n.backToIndex}</a>
+    <header style="margin-top:16px;margin-bottom:20px;border-bottom:1px solid #54595d;padding-bottom:5px">
+      <h1 style="margin:0;font-size:32px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${escapeHtml(node.name)}</h1>
+    </header>
+    <div style="position:relative;display:block">
+      ${infoboxHtml}
+      <div>
+        ${tocHtml}
+        ${sectionsHtml}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+export function exportToWiki(options: WikiExportOptions): void {
+  const { exportPath, projectName, nodes, language } = options
+  const i18n = getWikiI18n(language)
+  const css = getWikiCss()
+
+  if (!existsSync(exportPath)) {
+    mkdirSync(exportPath, { recursive: true })
+  }
+
+  const indexHtml = `<!DOCTYPE html>
+<html lang="${escapeHtml(language)}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(projectName)} - ${i18n.tableOfContents}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div style="max-width:900px;margin:0 auto;padding:40px 60px">
+    <header style="margin-bottom:20px;border-bottom:1px solid #54595d;padding-bottom:5px">
+      <h1 style="margin:0;font-size:32px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${escapeHtml(projectName)}</h1>
+      <div style="font-size:13px;color:#aaa">${i18n.projectWiki}</div>
+    </header>
+    ${buildWikiTreeHtml(nodes, null, i18n)}
+  </div>
+</body>
+</html>`
+
+  writeFileSync(join(exportPath, 'index.html'), indexHtml, 'utf-8')
+  writeFileSync(join(exportPath, 'style.css'), css, 'utf-8')
+
+  const fileNodes = nodes.filter((n) => n.type === 'file' && n.kind === 'setting')
+
+  for (const node of fileNodes) {
+    const pageHtml = buildSettingPageHtml(node, nodes, projectName, language, i18n)
+    writeFileSync(join(exportPath, `${node.id}.html`), pageHtml, 'utf-8')
+  }
 }

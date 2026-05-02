@@ -40,7 +40,9 @@ import {
   exportToEpub,
   exportToTxt,
   exportToMarkdown,
-  type ExportContent
+  exportToWiki,
+  type ExportContent,
+  type WikiNode
 } from './export'
 
 function createWindow(): void {
@@ -485,6 +487,89 @@ function createWindow(): void {
       return { success: true, filePath }
     } catch (error) {
       console.error('Export story failed:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    }
+  })
+
+  // Pick Wiki Export Path
+  ipcMain.handle('pick-wiki-export-path', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Select Wiki Export Folder'
+    })
+    if (canceled || filePaths.length === 0) {
+      return null
+    }
+    return filePaths[0]
+  })
+
+  // Export Wiki IPC handler
+  ipcMain.handle('export-wiki', async (_, input: {
+    projectSettingsPath: string
+    exportPath: string
+    language: string
+  }) => {
+    try {
+      const { projectSettingsPath, exportPath, language } = input
+
+      const project = await loadProject(projectSettingsPath)
+      const rawNodes = await getProjectNodes(projectSettingsPath)
+
+      const settingFileIds = new Set(
+        rawNodes.filter((n) => n.type === 'file' && n.kind === 'setting').map((n) => n.id)
+      )
+
+      const ancestorIds = new Set<string>()
+      for (const node of rawNodes) {
+        if (settingFileIds.has(node.id)) {
+          let current = node
+          while (current.parentId) {
+            ancestorIds.add(current.parentId)
+            current = rawNodes.find((n) => n.id === current.parentId) || current
+            if (!current.parentId) break
+          }
+        }
+      }
+
+      const wikiNodes: WikiNode[] = []
+      for (const node of rawNodes) {
+        if (node.kind === 'story' && node.type === 'file') continue
+        if (node.type === 'folder' && !ancestorIds.has(node.id)) continue
+
+        let content: string | null = null
+        let summary: string | null = null
+        let outline: string | null = null
+
+        if (node.type === 'file' && node.kind === 'setting') {
+          content = await readNodeContent({ projectSettingsPath, nodeId: node.id })
+        }
+
+        wikiNodes.push({
+          id: node.id,
+          parentId: node.parentId,
+          name: node.name,
+          type: node.type,
+          kind: node.kind,
+          content,
+          summary,
+          outline,
+          sortOrder: node.sortOrder
+        })
+      }
+
+      exportToWiki({
+        exportPath,
+        projectName: project.projectName,
+        nodes: wikiNodes,
+        language
+      })
+
+      return { success: true, exportPath }
+    } catch (error) {
+      console.error('Export wiki failed:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)

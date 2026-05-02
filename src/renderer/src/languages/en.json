@@ -569,6 +569,19 @@
     "selectChapterFirst": "Please select a chapter to export first",
     "chapter": "Chapter"
   },
+  "exportWiki": {
+    "title": "Compile to Wiki",
+    "noProject": "Please open a project first",
+    "language": "Export Language",
+    "languageDesc": "Select the language for the generated wiki pages",
+    "exportPath": "Export Path",
+    "pathPlaceholder": "Select a folder to export the wiki...",
+    "selectPathFirst": "Please select an export folder first",
+    "startCompile": "Compile",
+    "compiling": "Compiling...",
+    "exportSuccess": "Wiki compiled successfully: {{path}}",
+    "exportFailed": "Wiki compilation failed"
+  },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",
     "afterLoad": "After load, can transform content",

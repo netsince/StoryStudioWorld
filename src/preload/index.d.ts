@@ -77,6 +77,9 @@ declare global {
       writeReadingOrder: (projectSettingsPath: string, config: ReadingOrderConfig) => Promise<void>
       // Export Story API
       exportStory: (input: ExportStoryInput) => Promise<ExportStoryResult>
+      // Export Wiki API
+      exportWiki: (input: ExportWikiInput) => Promise<ExportWikiResult>
+      pickWikiExportPath: () => Promise<string | null>
       // Plugin Native APIs
       pluginNative: {
         fetch: (url: string, options?: {
@@ -296,5 +299,17 @@ export interface ExportStoryInput {
 export interface ExportStoryResult {
   success: boolean
   filePath?: string
+  error?: string
+}
+
+export interface ExportWikiInput {
+  projectSettingsPath: string
+  exportPath: string
+  language: string
+}
+
+export interface ExportWikiResult {
+  success: boolean
+  exportPath?: string
   error?: string
 }

@@ -13,6 +13,7 @@ import AboutPage from './AboutPage'
 import PreferencesPage from './PreferencesPage'
 import ReadingOrderPanel from '../ReadingOrderPanel'
 import ExportStoryPanel from '../ExportStoryPanel'
+import ExportWikiPanel from '../ExportWikiPanel'
 
 interface TabContentRendererProps {
   tab: Tab
@@ -129,6 +130,10 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
 
   if (tab.type === 'export-story') {
     return <ExportStoryPanel />
+  }
+
+  if (tab.type === 'export-wiki') {
+    return <ExportWikiPanel />
   }
 
   if (tab.type === 'file') {

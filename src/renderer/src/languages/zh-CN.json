@@ -569,6 +569,19 @@
     "selectChapterFirst": "请先选择要导出的章节",
     "chapter": "章"
   },
+  "exportWiki": {
+    "title": "编译为维基",
+    "noProject": "请先打开项目",
+    "language": "导出语言",
+    "languageDesc": "选择生成维基页面的语言",
+    "exportPath": "导出路径",
+    "pathPlaceholder": "选择维基导出文件夹...",
+    "selectPathFirst": "请先选择导出文件夹",
+    "startCompile": "编译",
+    "compiling": "编译中...",
+    "exportSuccess": "维基编译成功：{{path}}",
+    "exportFailed": "维基编译失败"
+  },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",
     "afterLoad": "加载后，可转换内容",

@@ -179,6 +179,18 @@ export interface ExportStoryResult {
   error?: string
 }
 
+export interface ExportWikiInput {
+  projectSettingsPath: string
+  exportPath: string
+  language: string
+}
+
+export interface ExportWikiResult {
+  success: boolean
+  exportPath?: string
+  error?: string
+}
+
 export interface PluginFetchResponse {
   ok: boolean
   status: number
@@ -311,6 +323,11 @@ const api = {
   // Export Story API
   exportStory: (input: ExportStoryInput): Promise<ExportStoryResult> =>
     ipcRenderer.invoke('export-story', input),
+  // Export Wiki API
+  exportWiki: (input: ExportWikiInput): Promise<ExportWikiResult> =>
+    ipcRenderer.invoke('export-wiki', input),
+  pickWikiExportPath: (): Promise<string | null> =>
+    ipcRenderer.invoke('pick-wiki-export-path'),
   // Plugin Native APIs
   pluginNative: {
     fetch: (url: string, options?: PluginFetchOptions): Promise<PluginFetchResponse> =>

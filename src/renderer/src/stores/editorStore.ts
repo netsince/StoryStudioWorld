@@ -89,6 +89,7 @@ interface EditorState {
   openPreferencesTab: () => void
   openReadingOrderTab: () => void
   openExportStoryTab: () => void
+  openExportWikiTab: () => void
   removeCreateProjectTabs: () => void
 
   openTabInSplit: (tab: Tab, sourceGroupId: string, direction?: 'row' | 'column') => void
@@ -332,6 +333,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     openExportStoryTab: () => {
       const tab: Tab = { id: 'export-story', title: i18n.t('exportStory.title'), type: 'export-story' }
+      set((state) => {
+        const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
+        const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
+          const exists = group.tabs.some((t) => t.id === tab.id)
+          const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+          return { ...group, tabs: nextTabs, activeTabId: tab.id }
+        })
+        return { editorTree: nextTree, focusedGroupId: targetGroupId }
+      })
+    },
+
+    openExportWikiTab: () => {
+      const tab: Tab = { id: 'export-wiki', title: i18n.t('exportWiki.title'), type: 'export-wiki' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {

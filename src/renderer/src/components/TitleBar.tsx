@@ -13,7 +13,7 @@ type MenuId = 'file' | 'edit' | 'select' | 'view' | 'goto' | 'help' | null
 
 const TitleBar: React.FC = () => {
   const { t } = useTranslation()
-  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab, openReadingOrderTab, openExportStoryTab } =
+  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab, openReadingOrderTab, openExportStoryTab, openExportWikiTab } =
     useEditorStore()
   const { hideAppLogoText } = useUiSettings()
 
@@ -145,6 +145,14 @@ const TitleBar: React.FC = () => {
       label: t('exportStory.title'),
       onSelect: () => {
         openExportStoryTab()
+        setActiveMenu(null)
+      }
+    },
+    {
+      key: 'export-wiki',
+      label: t('exportWiki.title'),
+      onSelect: () => {
+        openExportWikiTab()
         setActiveMenu(null)
       }
     },
