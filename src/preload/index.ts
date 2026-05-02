@@ -184,6 +184,7 @@ export interface ExportWikiInput {
   exportPath: string
   language: string
   includeChapters: boolean
+  i18nStrings: Record<string, string>
 }
 
 export interface ExportWikiResult {

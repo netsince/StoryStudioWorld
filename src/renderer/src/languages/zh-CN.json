@@ -585,7 +585,21 @@
     "includeChaptersDesc": "将故事章节也编译进维基，章节会与设定条目区分显示。",
     "refDisambiguation": "「{{name}}」— 存在多个匹配条目",
     "refNotFoundTitle": "「{{name}}」— 未找到",
-    "refNotFound": "未找到匹配的条目"
+    "refNotFound": "未找到匹配的条目",
+    "wiki": {
+      "tableOfContents": "目录",
+      "story": "故事",
+      "setting": "设定",
+      "backToIndex": "返回目录",
+      "summary": "简概",
+      "outline": "章纲",
+      "noContent": "暂无内容",
+      "projectWiki": "项目维基",
+      "disambiguation": "消歧义",
+      "disambiguationTitle": "{{name}}（消歧义）",
+      "disambiguationDesc": "「{{name}}」可以指以下条目：",
+      "notFound": "未找到"
+    }
   },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",

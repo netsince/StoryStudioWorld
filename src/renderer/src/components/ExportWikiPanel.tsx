@@ -50,6 +50,20 @@ const ExportWikiPanel: React.FC = () => {
       return
     }
 
+    const wikiKeys = [
+      'tableOfContents', 'story', 'setting', 'backToIndex', 'summary',
+      'outline', 'noContent', 'projectWiki', 'disambiguation',
+      'disambiguationTitle', 'disambiguationDesc', 'notFound'
+    ]
+    const i18nStrings: Record<string, string> = {}
+    for (const key of wikiKeys) {
+      i18nStrings[key] = t(`exportWiki.wiki.${key}`)
+    }
+    const categoryKeys = ['character', 'location', 'worldview', 'item', 'other', 'default']
+    for (const cat of categoryKeys) {
+      i18nStrings[`setting.category.${cat}`] = t(`setting.category.${cat}`)
+    }
+
     setIsExporting(true)
     setExportResult(null)
 
@@ -58,7 +72,8 @@ const ExportWikiPanel: React.FC = () => {
         projectSettingsPath: currentProject.projectSettingsPath,
         exportPath,
         language: exportLang,
-        includeChapters
+        includeChapters,
+        i18nStrings
       })
 
       if (result.success) {

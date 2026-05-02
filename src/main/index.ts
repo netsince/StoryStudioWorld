@@ -512,9 +512,10 @@ function createWindow(): void {
     exportPath: string
     language: string
     includeChapters: boolean
+    i18nStrings: Record<string, string>
   }) => {
     try {
-      const { projectSettingsPath, exportPath, language, includeChapters } = input
+      const { projectSettingsPath, exportPath, language, includeChapters, i18nStrings } = input
 
       const project = await loadProject(projectSettingsPath)
       const rawNodes = await getProjectNodes(projectSettingsPath)
@@ -580,7 +581,8 @@ function createWindow(): void {
         projectName: project.projectName,
         nodes: wikiNodes,
         language,
-        includeChapters
+        includeChapters,
+        i18nStrings
       })
 
       return { success: true, exportPath }

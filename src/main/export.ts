@@ -509,53 +509,7 @@ export interface WikiExportOptions {
   nodes: WikiNode[]
   language: string
   includeChapters: boolean
-}
-
-const WIKI_I18N: Record<string, Record<string, string>> = {
-  'zh-CN': {
-    tableOfContents: '目录',
-    story: '故事',
-    setting: '设定',
-    backToIndex: '返回目录',
-    summary: '简概',
-    outline: '章纲',
-    noContent: '暂无内容',
-    projectWiki: '项目维基',
-    disambiguation: '消歧义',
-    disambiguationTitle: '{{name}}（消歧义）',
-    disambiguationDesc: '"{{name}}"可以指以下条目：',
-    notFound: '未找到',
-    'setting.category.character': '人物',
-    'setting.category.location': '地点',
-    'setting.category.worldview': '世界观',
-    'setting.category.item': '物品',
-    'setting.category.other': '其他',
-    'setting.category.default': '其他'
-  },
-  'en': {
-    tableOfContents: 'Table of Contents',
-    story: 'Story',
-    setting: 'Setting',
-    backToIndex: 'Back to Index',
-    summary: 'Summary',
-    outline: 'Outline',
-    noContent: 'No content yet',
-    projectWiki: 'Project Wiki',
-    disambiguation: 'Disambiguation',
-    disambiguationTitle: '{{name}} (disambiguation)',
-    disambiguationDesc: '"{{name}}" may refer to:',
-    notFound: 'Not found',
-    'setting.category.character': 'Character',
-    'setting.category.location': 'Location',
-    'setting.category.worldview': 'Worldview',
-    'setting.category.item': 'Item',
-    'setting.category.other': 'Other',
-    'setting.category.default': 'Other'
-  }
-}
-
-function getWikiI18n(lang: string): Record<string, string> {
-  return WIKI_I18N[lang] || WIKI_I18N['en'] || WIKI_I18N['zh-CN']
+  i18nStrings: Record<string, string>
 }
 
 function getWikiCss(): string {
@@ -970,8 +924,8 @@ function buildStoryPageHtml(
 }
 
 export function exportToWiki(options: WikiExportOptions): void {
-  const { exportPath, projectName, nodes, language, includeChapters } = options
-  const i18n = getWikiI18n(language)
+  const { exportPath, projectName, nodes, language, includeChapters, i18nStrings } = options
+  const i18n = i18nStrings
   const css = getWikiCss()
 
   if (!existsSync(exportPath)) {

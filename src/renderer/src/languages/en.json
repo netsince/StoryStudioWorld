@@ -585,7 +585,21 @@
     "includeChaptersDesc": "Also compile story chapters into the wiki. Chapters will be displayed separately from setting entries.",
     "refDisambiguation": "\"{{name}}\" — Multiple matches found",
     "refNotFoundTitle": "\"{{name}}\" — Not found",
-    "refNotFound": "No matching entry found for this reference"
+    "refNotFound": "No matching entry found for this reference",
+    "wiki": {
+      "tableOfContents": "Table of Contents",
+      "story": "Story",
+      "setting": "Setting",
+      "backToIndex": "Back to Index",
+      "summary": "Summary",
+      "outline": "Outline",
+      "noContent": "No content yet",
+      "projectWiki": "Project Wiki",
+      "disambiguation": "Disambiguation",
+      "disambiguationTitle": "{{name}} (disambiguation)",
+      "disambiguationDesc": "\"{{name}}\" may refer to:",
+      "notFound": "Not found"
+    }
   },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",
