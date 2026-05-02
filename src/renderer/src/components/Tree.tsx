@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StoryNode } from '../models'
 import RenameDialog from './RenameDialog'
+import { getNodeDisplayName, isDefaultSettingCategory } from '../utils/nodeUtils'
 
 interface TreeProps {
   nodes: StoryNode[]
@@ -226,21 +227,12 @@ const Tree: React.FC<TreeProps> = ({
   )
 
   const isDefaultSettingNode = useCallback((node: StoryNode) => {
-    if (kind !== 'setting' || node.parentId !== null) return false
-    const defaultCategories = ['character', 'location', 'worldview', 'item', 'other']
-    return defaultCategories.includes(node.name)
-  }, [kind])
+    return isDefaultSettingCategory(node)
+  }, [])
 
   const getDisplayNodeName = useCallback((node: StoryNode): string => {
-    if (kind === 'setting' && node.parentId === null) {
-      const categoryKey = `setting.category.${node.name}`
-      const translated = t(categoryKey)
-      if (translated !== categoryKey) {
-        return translated
-      }
-    }
-    return node.name
-  }, [kind, t])
+    return getNodeDisplayName(node, t)
+  }, [t])
 
   const handleContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault()

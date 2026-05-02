@@ -7,6 +7,7 @@ import RightActivityBar from './components/RightActivityBar'
 import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
+import QuickOpen from './components/QuickOpen'
 import { StatusbarProvider } from './contexts/StatusbarContext'
 import { useLayoutStore } from './stores/layoutStore'
 import { useProjectStore } from './stores/projectStore'
@@ -85,6 +86,8 @@ function App(): React.JSX.Element {
           {!isZenMode && <StatusBar />}
         </div>
       </StatusbarProvider>
+
+      <QuickOpen />
     </>
   )
 }

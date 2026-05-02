@@ -404,6 +404,16 @@
     "save": "保存",
     "dontSave": "保存しない"
   },
+  "quickOpen": {
+    "placeholder": "ファイル、設定、または内容を検索... (Ctrl+P)",
+    "noResults": "一致する結果が見つかりません",
+    "typeToSearch": "キーワードを入力してファイル、設定、または内容を検索",
+    "nameMatch": "ファイル名",
+    "contentMatch": "内容",
+    "navigate": "ナビゲート",
+    "open": "開く",
+    "close": "閉じる"
+  },
   "findReplace": {
     "find": "検索",
     "replace": "置換",

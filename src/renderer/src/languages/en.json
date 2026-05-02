@@ -404,6 +404,16 @@
     "save": "Save",
     "dontSave": "Don't Save"
   },
+  "quickOpen": {
+    "placeholder": "Search files, settings or content... (Ctrl+P)",
+    "noResults": "No matching results found",
+    "typeToSearch": "Type keywords to search files, settings or content",
+    "nameMatch": "File name",
+    "contentMatch": "Content",
+    "navigate": "Navigate",
+    "open": "Open",
+    "close": "Close"
+  },
   "findReplace": {
     "find": "Find",
     "replace": "Replace",
