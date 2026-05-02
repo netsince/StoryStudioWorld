@@ -26,6 +26,8 @@ export interface PluginInfo {
 export interface PluginSettings {
   enabledPlugins: string[]
   disabledPlugins: string[]
+  /** 标记用户是否已经明确配置过插件（用于首次启动判断） */
+  hasExplicitConsent: boolean
 }
 
 class PluginLoader {
@@ -37,7 +39,7 @@ class PluginLoader {
   constructor() {
     this.pluginDir = join(app.getPath('userData'), 'plugins')
     this.settingsPath = join(this.pluginDir, 'plugin-settings.json')
-    this.settings = { enabledPlugins: [], disabledPlugins: [] }
+    this.settings = { enabledPlugins: [], disabledPlugins: [], hasExplicitConsent: false }
   }
 
   init(): void {
@@ -51,10 +53,15 @@ class PluginLoader {
     if (existsSync(this.settingsPath)) {
       try {
         const content = readFileSync(this.settingsPath, 'utf-8')
-        this.settings = JSON.parse(content)
+        const parsed = JSON.parse(content) as Partial<PluginSettings>
+        this.settings = {
+          enabledPlugins: parsed.enabledPlugins ?? [],
+          disabledPlugins: parsed.disabledPlugins ?? [],
+          hasExplicitConsent: parsed.hasExplicitConsent ?? true // 如果文件存在但没有该字段，视为旧版本，认为用户已配置
+        }
       } catch (e) {
         console.error('Failed to load plugin settings:', e)
-        this.settings = { enabledPlugins: [], disabledPlugins: [] }
+        this.settings = { enabledPlugins: [], disabledPlugins: [], hasExplicitConsent: false }
       }
     }
   }
@@ -97,13 +104,31 @@ class PluginLoader {
           }
 
           const mainPath = join(pluginPath, manifest.main)
-          const isDisabled = this.settings.disabledPlugins.includes(manifest.id)
+
+          // 安全策略：只有在用户明确同意启用，或插件被明确添加到 enabledPlugins 时才启用
+          // 首次启动时（hasExplicitConsent=false）默认禁用所有插件
+          const isExplicitlyEnabled = this.settings.enabledPlugins.includes(manifest.id)
+          const isExplicitlyDisabled = this.settings.disabledPlugins.includes(manifest.id)
+
+          // 插件启用的安全规则：
+          // 1. 如果用户明确禁用 -> 禁用
+          // 2. 如果用户明确启用 -> 启用
+          // 3. 如果用户未配置过（首次启动）-> 默认禁用（安全优先）
+          let enabled: boolean
+          if (isExplicitlyDisabled) {
+            enabled = false
+          } else if (isExplicitlyEnabled) {
+            enabled = true
+          } else {
+            // 用户未明确配置过此插件
+            enabled = this.settings.hasExplicitConsent ? false : false // 默认禁用
+          }
 
           const pluginInfo: PluginInfo = {
             manifest,
             path: pluginPath,
             mainPath,
-            enabled: !isDisabled
+            enabled
           }
 
           this.plugins.set(manifest.id, pluginInfo)
@@ -130,6 +155,11 @@ class PluginLoader {
     if (!plugin) return false
 
     plugin.enabled = enabled
+
+    // 标记用户已明确配置过插件
+    if (!this.settings.hasExplicitConsent) {
+      this.settings.hasExplicitConsent = true
+    }
 
     if (enabled) {
       this.settings.disabledPlugins = this.settings.disabledPlugins.filter(

@@ -146,6 +146,8 @@ export interface PluginInfo {
 export interface PluginSettings {
   enabledPlugins: string[]
   disabledPlugins: string[]
+  /** 标记用户是否已经明确配置过插件（用于首次启动判断） */
+  hasExplicitConsent: boolean
 }
 
 export interface PluginFetchResponse {
