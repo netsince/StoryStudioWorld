@@ -17,6 +17,8 @@ import {
   reorderStoryNode,
   readNodeContent,
   writeNodeContent,
+  getNodeSummaryAndOutline,
+  updateNodeSummaryAndOutline,
   getArchivedNodesProject,
   restoreArchivedNode,
   permanentlyDeleteProjectNode
@@ -201,6 +203,20 @@ function createWindow(): void {
     'write-node-content',
     async (_, projectSettingsPath: string, nodeId: string, content: string) => {
       return writeNodeContent({ projectSettingsPath, nodeId, content })
+    }
+  )
+
+  ipcMain.handle(
+    'get-node-summary-and-outline',
+    async (_, projectSettingsPath: string, nodeId: string) => {
+      return getNodeSummaryAndOutline(projectSettingsPath, nodeId)
+    }
+  )
+
+  ipcMain.handle(
+    'update-node-summary-and-outline',
+    async (_, projectSettingsPath: string, nodeId: string, summary: string, outline: string) => {
+      return updateNodeSummaryAndOutline(projectSettingsPath, nodeId, summary, outline)
     }
   )
 

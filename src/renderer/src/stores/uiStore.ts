@@ -21,7 +21,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set, get) => ({
   activeActivity: 'chapter',
-  activeRightActivity: 'proofread',
+  activeRightActivity: 'chapterMeta',
   isExplorerOpen: true,
   isRightSidebarOpen: false,
   isZenMode: false,

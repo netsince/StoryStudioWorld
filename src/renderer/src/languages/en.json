@@ -31,7 +31,18 @@
     "proofread": "Proofread",
     "memo": "Memo",
     "snapshot": "Snapshot",
-    "noProject": "No project loaded"
+    "noProject": "No project loaded",
+    "chapterMeta": {
+      "title": "Outline",
+      "summary": "Summary",
+      "outline": "Outline",
+      "summaryPlaceholder": "Enter chapter summary...",
+      "outlinePlaceholder": "Enter chapter outline...\nExample:\n1. Scene One\n2. Scene Two\n3. Scene Three",
+      "summaryHint": "Briefly summarize the core content of this chapter",
+      "outlineHint": "Detail the structure and plot development of this chapter",
+      "noChapter": "No chapter selected",
+      "openChapterHint": "Please open a chapter on the left to edit its summary and outline"
+    }
   },
   "sidebar": {
     "story": "Story",

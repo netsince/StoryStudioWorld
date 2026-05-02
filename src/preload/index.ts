@@ -9,6 +9,8 @@ export interface StoryNode {
   kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
+  summary: string | null
+  outline: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -216,6 +218,10 @@ const api = {
     ipcRenderer.invoke('read-node-content', projectSettingsPath, nodeId),
   writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string): Promise<void> =>
     ipcRenderer.invoke('write-node-content', projectSettingsPath, nodeId, content),
+  getNodeSummaryAndOutline: (projectSettingsPath: string, nodeId: string): Promise<{ summary: string | null; outline: string | null }> =>
+    ipcRenderer.invoke('get-node-summary-and-outline', projectSettingsPath, nodeId),
+  updateNodeSummaryAndOutline: (projectSettingsPath: string, nodeId: string, summary: string, outline: string): Promise<void> =>
+    ipcRenderer.invoke('update-node-summary-and-outline', projectSettingsPath, nodeId, summary, outline),
   getAppVersion: (): Promise<{
     version: string
     electron: string

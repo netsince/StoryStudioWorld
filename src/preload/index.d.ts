@@ -27,6 +27,16 @@ declare global {
         nodeId: string,
         content: string
       ) => Promise<void>
+      getNodeSummaryAndOutline: (
+        projectSettingsPath: string,
+        nodeId: string
+      ) => Promise<{ summary: string | null; outline: string | null }>
+      updateNodeSummaryAndOutline: (
+        projectSettingsPath: string,
+        nodeId: string,
+        summary: string,
+        outline: string
+      ) => Promise<void>
       getAppVersion: () => Promise<{
         version: string
         electron: string
@@ -110,6 +120,8 @@ export interface StoryNode {
   kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
+  summary: string | null
+  outline: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string

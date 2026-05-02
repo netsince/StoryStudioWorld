@@ -8,6 +8,7 @@ import { usePluginService, createPluginAPI, type PluginAPI } from '../services/p
 import ProofreadPanel from './ProofreadPanel'
 import MemoPanel from './MemoPanel'
 import SnapshotPanel from './SnapshotPanel'
+import ChapterMetaPanel from './ChapterMetaPanel'
 import WebViewPanel from './WebViewPanel'
 
 const isReactElement = (value: unknown): value is React.ReactElement => {
@@ -96,6 +97,8 @@ const RightPanel: React.FC = () => {
 
   const getTitle = (): string => {
     switch (activeActivity) {
+      case 'chapterMeta':
+        return t('panel.chapterMeta.title')
       case 'proofread':
         return t('panel.proofread')
       case 'memo':
@@ -113,10 +116,11 @@ const RightPanel: React.FC = () => {
     <Sidebar isOpen={isOpen} width={width} side="right" className="right-panel">
       <div className="right-panel-header">{getTitle()}</div>
       <div className="right-panel-content">
+        {activeActivity === 'chapterMeta' && <ChapterMetaPanel />}
         {activeActivity === 'proofread' && <ProofreadPanel />}
         {activeActivity === 'memo' && <MemoPanel />}
         {activeActivity === 'snapshot' && <SnapshotPanel />}
-        {!['proofread', 'memo', 'snapshot'].includes(activeActivity) && getPluginPanel()}
+        {!['chapterMeta', 'proofread', 'memo', 'snapshot'].includes(activeActivity) && getPluginPanel()}
       </div>
     </Sidebar>
   )

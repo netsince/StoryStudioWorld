@@ -157,6 +157,8 @@ export interface PluginAPI {
     moveNode: (nodeId: string, newParentId: string | null) => Promise<void>
     readNodeContent: (nodeId: string) => Promise<string | null>
     writeNodeContent: (nodeId: string, content: string) => Promise<void>
+    getNodeSummaryAndOutline: (nodeId: string) => Promise<{ summary: string | null; outline: string | null }>
+    updateNodeSummaryAndOutline: (nodeId: string, summary: string, outline: string) => Promise<void>
   }
   story: {
     getContent: (path: string) => Promise<string | null>
@@ -904,6 +906,21 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
 
         const result = await hookSystem.waterfall('content:beforeSave', content)
         await useProjectStore.getState().saveNodeContent(nodeId, result)
+      },
+      getNodeSummaryAndOutline: async (nodeId: string) => {
+        const project = useProjectStore.getState().currentProject
+        if (!project) return { summary: null, outline: null }
+        return window.api.getNodeSummaryAndOutline(project.projectSettingsPath, nodeId)
+      },
+      updateNodeSummaryAndOutline: async (nodeId: string, summary: string, outline: string) => {
+        const project = useProjectStore.getState().currentProject
+        if (!project) return
+        await window.api.updateNodeSummaryAndOutline(
+          project.projectSettingsPath,
+          nodeId,
+          summary,
+          outline
+        )
       }
     },
 

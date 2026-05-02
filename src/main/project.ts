@@ -17,6 +17,10 @@ import {
   moveNode,
   getNodeContent,
   updateNodeContent,
+  getNodeSummary,
+  updateNodeSummary,
+  getNodeOutline,
+  updateNodeOutline,
   StoryNode
 } from './db'
 
@@ -379,6 +383,32 @@ export async function writeNodeContent(input: WriteNodeContentInput): Promise<vo
   const project = await loadProject(input.projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
   updateNodeContent(db, input.nodeId, input.content)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
+export async function getNodeSummaryAndOutline(
+  projectSettingsPath: string,
+  nodeId: string
+): Promise<{ summary: string | null; outline: string | null }> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const summary = getNodeSummary(db, nodeId)
+  const outline = getNodeOutline(db, nodeId)
+  db.close()
+  return { summary, outline }
+}
+
+export async function updateNodeSummaryAndOutline(
+  projectSettingsPath: string,
+  nodeId: string,
+  summary: string,
+  outline: string
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  updateNodeSummary(db, nodeId, summary)
+  updateNodeOutline(db, nodeId, outline)
   await saveDatabase(db, project.storyDbPath)
   db.close()
 }

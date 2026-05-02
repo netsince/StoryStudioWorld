@@ -31,7 +31,18 @@
     "proofread": "校对",
     "memo": "便签",
     "snapshot": "快照",
-    "noProject": "项目未加载"
+    "noProject": "项目未加载",
+    "chapterMeta": {
+      "title": "章纲",
+      "summary": "简概",
+      "outline": "章纲",
+      "summaryPlaceholder": "输入章节简概...",
+      "outlinePlaceholder": "输入章节大纲...\n例如：\n1. 场景一\n2. 场景二\n3. 场景三",
+      "summaryHint": "简要概括本章的核心内容",
+      "outlineHint": "详细列出本章的结构和情节发展",
+      "noChapter": "未选择章节",
+      "openChapterHint": "请在左侧打开一个章节以编辑其简概和章纲"
+    }
   },
   "sidebar": {
     "story": "故事",

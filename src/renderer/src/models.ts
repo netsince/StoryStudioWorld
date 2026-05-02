@@ -1,5 +1,5 @@
 export type ActivityType = 'chapter' | 'setting' | 'plugin' | 'archive' | string
-export type RightActivityType = 'proofread' | 'memo' | 'snapshot' | string
+export type RightActivityType = 'chapterMeta' | 'proofread' | 'memo' | 'snapshot' | string
 
 export interface StoryNode {
   id: string
@@ -8,6 +8,8 @@ export interface StoryNode {
   type: 'folder' | 'file'
   kind: 'story' | 'setting'
   fileName: string | null
+  summary: string | null
+  outline: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string

@@ -11,6 +11,8 @@ export interface StoryNode {
   kind: 'story' | 'setting'
   fileName: string | null
   content: string | null
+  summary: string | null
+  outline: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -46,6 +48,8 @@ export async function initDatabase(dbPath: string): Promise<Database> {
       kind TEXT NOT NULL DEFAULT 'story' CHECK (kind IN ('story', 'setting')),
       fileName TEXT,
       content TEXT,
+      summary TEXT,
+      outline TEXT,
       sortOrder INTEGER DEFAULT 0,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL,
@@ -93,6 +97,14 @@ function migrateDatabase(db: Database): void {
     db.run('ALTER TABLE nodes ADD COLUMN content TEXT')
   }
 
+  if (!columns.includes('summary')) {
+    db.run('ALTER TABLE nodes ADD COLUMN summary TEXT')
+  }
+
+  if (!columns.includes('outline')) {
+    db.run('ALTER TABLE nodes ADD COLUMN outline TEXT')
+  }
+
   db.exec('DROP TABLE IF EXISTS node_metadata')
 }
 
@@ -111,7 +123,7 @@ export async function loadDatabase(dbPath: string): Promise<Database> {
 
 export function getNodes(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -128,7 +140,7 @@ export function getNodes(db: Database): StoryNode[] {
 
 export function getArchivedNodes(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE deletedAt IS NOT NULL
     ORDER BY deletedAt DESC
@@ -179,7 +191,7 @@ export function restoreNode(db: Database, nodeId: string, newParentId: string | 
 
 export function getNodeWithDeleted(db: Database, nodeId: string): StoryNode | null {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes WHERE id = ?
   `)
   stmt.bind([nodeId])
@@ -195,7 +207,7 @@ export function getNodeWithDeleted(db: Database, nodeId: string): StoryNode | nu
 
 export function getNode(db: Database, nodeId: string): StoryNode | null {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes WHERE id = ? AND deletedAt IS NULL
   `)
   stmt.bind([nodeId])
@@ -211,7 +223,7 @@ export function getNode(db: Database, nodeId: string): StoryNode | null {
 
 export function getChildNodes(db: Database, parentId: string | null): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     WHERE parentId IS ? AND deletedAt IS NULL
     ORDER BY sortOrder ASC, createdAt ASC
@@ -254,10 +266,13 @@ export function createNode(
   const sortOrder = getMaxSortOrder(db, parentId) + 1
   const fileName = type === 'file' ? `${name}.md` : null
 
+  // 将内容包装为JSON格式
+  const jsonContent = type === 'file' ? JSON.stringify({ content }) : null
+
   db.run(
     `INSERT INTO nodes (id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-    [id, parentId, name, type, kind, fileName, type === 'file' ? content : null, sortOrder, now, now]
+    [id, parentId, name, type, kind, fileName, jsonContent, sortOrder, now, now]
   )
 
   return getNode(db, id)!
@@ -364,7 +379,19 @@ export function reorderNode(db: Database, nodeId: string, newSortOrder: number):
 export function getNodeContent(db: Database, nodeId: string): string | null {
   const node = getNode(db, nodeId)
   if (!node || node.type !== 'file') return null
-  return node.content
+  
+  // 兼容旧数据：如果 content 不是 JSON 格式，直接返回
+  if (!node.content) return null
+  
+  try {
+    const parsed = JSON.parse(node.content)
+    return typeof parsed === 'object' && parsed !== null && 'content' in parsed 
+      ? parsed.content 
+      : node.content
+  } catch {
+    // 旧数据格式，直接返回原始内容
+    return node.content
+  }
 }
 
 export function updateNodeContent(db: Database, nodeId: string, content: string): void {
@@ -372,7 +399,37 @@ export function updateNodeContent(db: Database, nodeId: string, content: string)
   if (!node || node.type !== 'file') return
 
   const now = new Date().toISOString()
-  db.run(`UPDATE nodes SET content = ?, updatedAt = ? WHERE id = ?`, [content, now, nodeId])
+  // 将内容包装为JSON格式
+  const jsonContent = JSON.stringify({ content })
+  db.run(`UPDATE nodes SET content = ?, updatedAt = ? WHERE id = ?`, [jsonContent, now, nodeId])
+}
+
+export function getNodeSummary(db: Database, nodeId: string): string | null {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return null
+  return node.summary
+}
+
+export function updateNodeSummary(db: Database, nodeId: string, summary: string): void {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return
+
+  const now = new Date().toISOString()
+  db.run(`UPDATE nodes SET summary = ?, updatedAt = ? WHERE id = ?`, [summary, now, nodeId])
+}
+
+export function getNodeOutline(db: Database, nodeId: string): string | null {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return null
+  return node.outline
+}
+
+export function updateNodeOutline(db: Database, nodeId: string, outline: string): void {
+  const node = getNode(db, nodeId)
+  if (!node || node.type !== 'file') return
+
+  const now = new Date().toISOString()
+  db.run(`UPDATE nodes SET outline = ?, updatedAt = ? WHERE id = ?`, [outline, now, nodeId])
 }
 
 // ==================== Snapshot Functions ====================
@@ -516,7 +573,7 @@ export function restoreFromSnapshot(db: Database, snapshotId: string): boolean {
 
 export function getAllNodesWithDeleted(db: Database): StoryNode[] {
   const stmt = db.prepare(`
-    SELECT id, parentId, name, type, kind, fileName, content, sortOrder, createdAt, updatedAt, deletedAt
+    SELECT id, parentId, name, type, kind, fileName, content, summary, outline, sortOrder, createdAt, updatedAt, deletedAt
     FROM nodes
     ORDER BY sortOrder ASC, createdAt ASC
   `)
