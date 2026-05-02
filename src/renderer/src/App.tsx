@@ -8,6 +8,7 @@ import RightPanel from './components/RightPanel'
 import StatusBar from './components/StatusBar'
 import Sash from './components/Sash'
 import QuickOpen from './components/QuickOpen'
+import DebugPanel from './components/DebugPanel'
 import { StatusbarProvider } from './contexts/StatusbarContext'
 import { useLayoutStore } from './stores/layoutStore'
 import { useProjectStore } from './stores/projectStore'
@@ -88,6 +89,7 @@ function App(): React.JSX.Element {
       </StatusbarProvider>
 
       <QuickOpen />
+      <DebugPanel />
     </>
   )
 }
