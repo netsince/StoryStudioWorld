@@ -183,6 +183,7 @@ export interface ExportWikiInput {
   projectSettingsPath: string
   exportPath: string
   language: string
+  includeChapters: boolean
 }
 
 export interface ExportWikiResult {

@@ -511,9 +511,10 @@ function createWindow(): void {
     projectSettingsPath: string
     exportPath: string
     language: string
+    includeChapters: boolean
   }) => {
     try {
-      const { projectSettingsPath, exportPath, language } = input
+      const { projectSettingsPath, exportPath, language, includeChapters } = input
 
       const project = await loadProject(projectSettingsPath)
       const rawNodes = await getProjectNodes(projectSettingsPath)
@@ -522,9 +523,18 @@ function createWindow(): void {
         rawNodes.filter((n) => n.type === 'file' && n.kind === 'setting').map((n) => n.id)
       )
 
+      const storyFileIds = new Set(
+        rawNodes.filter((n) => n.type === 'file' && n.kind === 'story').map((n) => n.id)
+      )
+
+      const includedFileIds = new Set([...settingFileIds])
+      if (includeChapters) {
+        storyFileIds.forEach((id) => includedFileIds.add(id))
+      }
+
       const ancestorIds = new Set<string>()
       for (const node of rawNodes) {
-        if (settingFileIds.has(node.id)) {
+        if (includedFileIds.has(node.id)) {
           let current = node
           while (current.parentId) {
             ancestorIds.add(current.parentId)
@@ -536,15 +546,20 @@ function createWindow(): void {
 
       const wikiNodes: WikiNode[] = []
       for (const node of rawNodes) {
-        if (node.kind === 'story' && node.type === 'file') continue
+        if (node.type === 'file' && !includedFileIds.has(node.id)) continue
         if (node.type === 'folder' && !ancestorIds.has(node.id)) continue
 
         let content: string | null = null
         let summary: string | null = null
         let outline: string | null = null
 
-        if (node.type === 'file' && node.kind === 'setting') {
+        if (node.type === 'file') {
           content = await readNodeContent({ projectSettingsPath, nodeId: node.id })
+          if (node.kind === 'story') {
+            const meta = await getNodeSummaryAndOutline(projectSettingsPath, node.id)
+            summary = meta.summary
+            outline = meta.outline
+          }
         }
 
         wikiNodes.push({
@@ -564,7 +579,8 @@ function createWindow(): void {
         exportPath,
         projectName: project.projectName,
         nodes: wikiNodes,
-        language
+        language,
+        includeChapters
       })
 
       return { success: true, exportPath }

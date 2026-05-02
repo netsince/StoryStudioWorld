@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { getAppSettings } from './PreferencesPage'
+import { buildNodeDisplayPath, getNodeDisplayName } from '../../utils/nodeUtils'
+import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
 import type { StoryNode } from '../../models'
 
 interface SettingEditorProps {
@@ -41,6 +43,12 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [loading, setLoading] = useState(true)
   const [appSettings, setAppSettings] = useState(getAppSettings())
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [refPanelItems, setRefPanelItems] = useState<WikiRefItem[]>([])
+  const [refPanelTitle, setRefPanelTitle] = useState('')
+  const [refPanelIs404, setRefPanelIs404] = useState(false)
+  const [refPanelOpen, setRefPanelOpen] = useState(false)
+
+  const openTab = useEditorStore((s) => s.openTab)
   
   const currentProject = useProjectStore((s) => s.currentProject)
   const storyNodes = useProjectStore((s) => s.storyNodes)
@@ -169,6 +177,142 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       field: field
     }, groupId)
   }
+
+  const resolveWikiRef = useCallback((ref: string): { matched: WikiRefItem[] } => {
+    const fileNodes = storyNodes.filter((n) => n.type === 'file')
+    const matched: WikiRefItem[] = []
+
+    const buildBothPathParts = (node: StoryNode): string[] => {
+      const parts: string[] = []
+      let current: StoryNode | undefined = node
+      while (current) {
+        parts.unshift(current.name)
+        current = nodeMap.get(current.parentId || '')
+      }
+      return parts
+    }
+
+    const buildDisplayPathParts = (node: StoryNode): string[] => {
+      const parts: string[] = []
+      let current: StoryNode | undefined = node
+      while (current) {
+        parts.unshift(getNodeDisplayName(current, t))
+        current = nodeMap.get(current.parentId || '')
+      }
+      return parts
+    }
+
+    if (ref.includes('/')) {
+      const parts = ref.split('/').filter(Boolean)
+      const leafName = parts[parts.length - 1]
+      const candidates = fileNodes.filter((n) => n.name === leafName)
+      for (const candidate of candidates) {
+        const rawParts = buildBothPathParts(candidate)
+        const displayParts = buildDisplayPathParts(candidate)
+        let match = true
+        for (let i = 0; i < parts.length - 1; i++) {
+          const refPart = parts[i]
+          const pathIdx = rawParts.length - parts.length + i
+          if (pathIdx < 0) { match = false; break }
+          if (rawParts[pathIdx] !== refPart && displayParts[pathIdx] !== refPart) {
+            match = false
+            break
+          }
+        }
+        if (match) {
+          matched.push({ node: candidate, path: buildNodeDisplayPath(candidate, storyNodes, t) })
+        }
+      }
+    } else {
+      for (const n of fileNodes) {
+        if (n.name === ref) {
+          matched.push({ node: n, path: buildNodeDisplayPath(n, storyNodes, t) })
+        }
+      }
+    }
+
+    return { matched }
+  }, [storyNodes, t, nodeMap])
+
+  const handleRefClick = useCallback((ref: string) => {
+    const { matched } = resolveWikiRef(ref)
+
+    if (matched.length === 1) {
+      const item = matched[0]
+      openTab({
+        id: item.node.id,
+        title: item.node.name,
+        type: 'file',
+        nodeId: item.node.id,
+        kind: item.node.kind
+      })
+    } else if (matched.length > 1) {
+      setRefPanelItems(matched)
+      setRefPanelTitle(t('exportWiki.refDisambiguation', { name: ref }))
+      setRefPanelIs404(false)
+      setRefPanelOpen(true)
+    } else {
+      setRefPanelItems([])
+      setRefPanelTitle(t('exportWiki.refNotFoundTitle', { name: ref }))
+      setRefPanelIs404(true)
+      setRefPanelOpen(true)
+    }
+  }, [resolveWikiRef, openTab, t])
+
+  const handleRefPanelSelect = useCallback((item: WikiRefItem) => {
+    openTab({
+      id: item.node.id,
+      title: item.node.name,
+      type: 'file',
+      nodeId: item.node.id,
+      kind: item.node.kind
+    })
+    setRefPanelOpen(false)
+  }, [openTab])
+
+  const renderContentWithRefs = useCallback((text: string): React.ReactNode => {
+    if (!text) return null
+    const parts: React.ReactNode[] = []
+    const regex = /@\(([^)]+)\)/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    let keyIndex = 0
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+      const refName = match[1]
+      const { matched } = resolveWikiRef(refName)
+      const isRed = matched.length === 0
+      parts.push(
+        <a
+          key={`ref-${keyIndex++}`}
+          onClick={(e) => {
+            e.preventDefault()
+            handleRefClick(refName)
+          }}
+          style={{
+            color: isRed ? '#e74c3c' : '#3498db',
+            cursor: 'pointer',
+            textDecoration: 'none',
+            borderBottom: isRed ? '1px dashed #e74c3c' : 'none'
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+          onMouseOut={(e) => (e.currentTarget.style.textDecoration = isRed ? 'none' : 'none')}
+        >
+          {refName}
+        </a>
+      )
+      lastIndex = regex.lastIndex
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex))
+    }
+
+    return parts
+  }, [resolveWikiRef, handleRefClick])
 
   if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
   if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>{t('errors.fileNotFound')}</div>
@@ -376,13 +520,25 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     padding: isEditing ? '8px' : '0',
                     backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
                   }}>
-                    {data[field] || <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>}
+                    {isEditing
+                      ? (data[field] || <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>)
+                      : (data[field] ? renderContentWithRefs(data[field]) : <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>)
+                    }
                   </div>
                 </section>
               ))}
             </div>
           </div>
       </div>
+      {refPanelOpen && (
+        <WikiRefPanel
+          items={refPanelItems}
+          title={refPanelTitle}
+          is404={refPanelIs404}
+          onSelect={handleRefPanelSelect}
+          onClose={() => setRefPanelOpen(false)}
+        />
+      )}
     </div>
   )
 }

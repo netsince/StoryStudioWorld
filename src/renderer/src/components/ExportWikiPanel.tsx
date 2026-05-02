@@ -32,6 +32,7 @@ const ExportWikiPanel: React.FC = () => {
   const availableLanguages = getAvailableLanguages()
   const [exportLang, setExportLang] = useState<SupportedLanguage>(getCurrentLanguage())
   const [exportPath, setExportPath] = useState('')
+  const [includeChapters, setIncludeChapters] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null)
 
@@ -56,7 +57,8 @@ const ExportWikiPanel: React.FC = () => {
       const result = await window.api.exportWiki({
         projectSettingsPath: currentProject.projectSettingsPath,
         exportPath,
-        language: exportLang
+        language: exportLang,
+        includeChapters
       })
 
       if (result.success) {
@@ -136,6 +138,21 @@ const ExportWikiPanel: React.FC = () => {
               <FolderIcon className="export-wiki-path-btn-icon" />
             </button>
           </div>
+        </div>
+
+        <div className="export-section">
+          <label className="export-wiki-checkbox-label">
+            <input
+              type="checkbox"
+              checked={includeChapters}
+              onChange={(e) => setIncludeChapters(e.target.checked)}
+              className="export-wiki-checkbox"
+            />
+            <span>{t('exportWiki.includeChapters')}</span>
+          </label>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            {t('exportWiki.includeChaptersDesc')}
+          </p>
         </div>
 
         <div className="export-section export-actions">

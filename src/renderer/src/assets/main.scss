@@ -2606,6 +2606,22 @@ input:focus + .ssw-slider {
   height: 16px;
 }
 
+.export-wiki-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-active);
+}
+
+.export-wiki-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
 // ==================== Reading Order Panel Styles (VS Code / Monaco Tree style) ====================
 
 .reading-order-panel {

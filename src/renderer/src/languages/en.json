@@ -580,7 +580,12 @@
     "startCompile": "Compile",
     "compiling": "Compiling...",
     "exportSuccess": "Wiki compiled successfully: {{path}}",
-    "exportFailed": "Wiki compilation failed"
+    "exportFailed": "Wiki compilation failed",
+    "includeChapters": "Include story chapters",
+    "includeChaptersDesc": "Also compile story chapters into the wiki. Chapters will be displayed separately from setting entries.",
+    "refDisambiguation": "\"{{name}}\" — Multiple matches found",
+    "refNotFoundTitle": "\"{{name}}\" — Not found",
+    "refNotFound": "No matching entry found for this reference"
   },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",

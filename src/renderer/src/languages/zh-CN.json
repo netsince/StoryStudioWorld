@@ -580,7 +580,12 @@
     "startCompile": "编译",
     "compiling": "编译中...",
     "exportSuccess": "维基编译成功：{{path}}",
-    "exportFailed": "维基编译失败"
+    "exportFailed": "维基编译失败",
+    "includeChapters": "同时编译故事章节",
+    "includeChaptersDesc": "将故事章节也编译进维基，章节会与设定条目区分显示。",
+    "refDisambiguation": "「{{name}}」— 存在多个匹配条目",
+    "refNotFoundTitle": "「{{name}}」— 未找到",
+    "refNotFound": "未找到匹配的条目"
   },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",

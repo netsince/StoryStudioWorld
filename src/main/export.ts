@@ -508,6 +508,7 @@ export interface WikiExportOptions {
   projectName: string
   nodes: WikiNode[]
   language: string
+  includeChapters: boolean
 }
 
 const WIKI_I18N: Record<string, Record<string, string>> = {
@@ -519,7 +520,17 @@ const WIKI_I18N: Record<string, Record<string, string>> = {
     summary: '简概',
     outline: '章纲',
     noContent: '暂无内容',
-    projectWiki: '项目维基'
+    projectWiki: '项目维基',
+    disambiguation: '消歧义',
+    disambiguationTitle: '{{name}}（消歧义）',
+    disambiguationDesc: '"{{name}}"可以指以下条目：',
+    notFound: '未找到',
+    'setting.category.character': '人物',
+    'setting.category.location': '地点',
+    'setting.category.worldview': '世界观',
+    'setting.category.item': '物品',
+    'setting.category.other': '其他',
+    'setting.category.default': '其他'
   },
   'en': {
     tableOfContents: 'Table of Contents',
@@ -529,7 +540,17 @@ const WIKI_I18N: Record<string, Record<string, string>> = {
     summary: 'Summary',
     outline: 'Outline',
     noContent: 'No content yet',
-    projectWiki: 'Project Wiki'
+    projectWiki: 'Project Wiki',
+    disambiguation: 'Disambiguation',
+    disambiguationTitle: '{{name}} (disambiguation)',
+    disambiguationDesc: '"{{name}}" may refer to:',
+    notFound: 'Not found',
+    'setting.category.character': 'Character',
+    'setting.category.location': 'Location',
+    'setting.category.worldview': 'Worldview',
+    'setting.category.item': 'Item',
+    'setting.category.other': 'Other',
+    'setting.category.default': 'Other'
   }
 }
 
@@ -547,6 +568,8 @@ function getWikiCss(): string {
 }
 a { color: #3498db; text-decoration: none; }
 a:hover { text-decoration: underline; }
+a.redlink { color: #e74c3c; border-bottom: 1px dashed #e74c3c; }
+a.redlink:hover { text-decoration: none; }
 ul { list-style: none; padding-left: 0; }
 ul ul { padding-left: 24px; border-left: 1px solid #444; margin-left: 8px; }`
 }
@@ -584,12 +607,177 @@ function buildWikiTreeHtml(
   return html
 }
 
+function getWikiNodeDisplayName(node: WikiNode, i18n: Record<string, string>): string {
+  if (node.kind === 'setting' && node.parentId === null) {
+    const categoryKey = `setting.category.${node.name}`
+    if (i18n[categoryKey]) {
+      return i18n[categoryKey]
+    }
+  }
+  return node.name
+}
+
+function buildNodeDisplayPathParts(node: WikiNode, allNodes: WikiNode[], i18n: Record<string, string>): string[] {
+  const parts: string[] = []
+  let current: WikiNode | undefined = node
+  while (current) {
+    parts.unshift(getWikiNodeDisplayName(current, i18n))
+    current = allNodes.find((n) => n.id === current?.parentId)
+  }
+  return parts
+}
+
+function resolveWikiRefHtml(
+  ref: string,
+  nodes: WikiNode[],
+  includedNodeIds: Set<string>,
+  i18n: Record<string, string>
+): { href: string; isRed: boolean } {
+  const fileNodes = nodes.filter((n) => n.type === 'file')
+
+  if (ref.includes('/')) {
+    const parts = ref.split('/').filter(Boolean)
+    const leafName = parts[parts.length - 1]
+    const candidates = fileNodes.filter((n) => n.name === leafName)
+    const matched: WikiNode[] = []
+
+    for (const candidate of candidates) {
+      const rawParts = buildNodePathParts(candidate, nodes)
+      const displayParts = buildNodeDisplayPathParts(candidate, nodes, i18n)
+      let isMatch = true
+      for (let i = 0; i < parts.length - 1; i++) {
+        const refPart = parts[i]
+        const pathIdx = rawParts.length - parts.length + i
+        if (pathIdx < 0) { isMatch = false; break }
+        if (rawParts[pathIdx] !== refPart && displayParts[pathIdx] !== refPart) {
+          isMatch = false
+          break
+        }
+      }
+      if (isMatch) matched.push(candidate)
+    }
+
+    if (matched.length === 1) {
+      const n = matched[0]
+      if (!includedNodeIds.has(n.id)) {
+        return { href: '#', isRed: true }
+      }
+      return { href: `${n.id}.html`, isRed: false }
+    } else if (matched.length > 1) {
+      return { href: `disambig-${escapeHtml(ref.replace(/\//g, '_'))}.html`, isRed: false }
+    }
+    return { href: '#', isRed: true }
+  }
+
+  const matched = fileNodes.filter((n) => n.name === ref)
+
+  if (matched.length === 1) {
+    const n = matched[0]
+    if (!includedNodeIds.has(n.id)) {
+      return { href: '#', isRed: true }
+    }
+    return { href: `${n.id}.html`, isRed: false }
+  } else if (matched.length > 1) {
+    return { href: `disambig-${escapeHtml(ref.replace(/\//g, '_'))}.html`, isRed: false }
+  }
+  return { href: '#', isRed: true }
+}
+
+function buildNodePathParts(node: WikiNode, allNodes: WikiNode[]): string[] {
+  const parts: string[] = []
+  let current: WikiNode | undefined = node
+  while (current) {
+    parts.unshift(current.name)
+    current = allNodes.find((n) => n.id === current?.parentId)
+  }
+  return parts
+}
+
+function processWikiRefsInText(
+  rawText: string,
+  nodes: WikiNode[],
+  includedNodeIds: Set<string>,
+  i18n: Record<string, string>
+): string {
+  const segments: string[] = []
+  const regex = /@\(([^)]+)\)/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(rawText)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push(escapeHtml(rawText.slice(lastIndex, match.index)))
+    }
+    const ref = match[1]
+    const { href, isRed } = resolveWikiRefHtml(ref, nodes, includedNodeIds, i18n)
+    if (isRed) {
+      segments.push(`<a class="redlink" href="${href}">${escapeHtml(ref)}</a>`)
+    } else {
+      segments.push(`<a href="${href}">${escapeHtml(ref)}</a>`)
+    }
+    lastIndex = regex.lastIndex
+  }
+
+  if (lastIndex < rawText.length) {
+    segments.push(escapeHtml(rawText.slice(lastIndex)))
+  }
+
+  return segments.join('')
+}
+
+function buildDisambigPageHtml(
+  ref: string,
+  matchedNodes: WikiNode[],
+  nodes: WikiNode[],
+  projectName: string,
+  language: string,
+  i18n: Record<string, string>
+): string {
+  const title = i18n.disambiguationTitle.replace('{{name}}', escapeHtml(ref))
+  const desc = i18n.disambiguationDesc.replace('{{name}}', escapeHtml(ref))
+
+  const items = matchedNodes.map((n) => {
+    const pathParts = buildNodePathParts(n, nodes)
+    const path = pathParts.join(' / ')
+    const kindLabel = n.kind === 'story' ? i18n.story : i18n.setting
+    return `<li style="margin-bottom:8px">
+      <a href="${n.id}.html" style="color:#3498db;font-size:14px">${escapeHtml(n.name)}</a>
+      <span style="color:#888;font-size:12px;margin-left:8px">${kindLabel} — ${escapeHtml(path)}</span>
+    </li>`
+  }).join('\n')
+
+  return `<!DOCTYPE html>
+<html lang="${escapeHtml(language)}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - ${escapeHtml(projectName)}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div style="max-width:900px;margin:0 auto;padding:40px 60px">
+    <a href="index.html" style="color:#3498db;font-size:13px">← ${i18n.backToIndex}</a>
+    <header style="margin-top:16px;margin-bottom:20px;border-bottom:1px solid #54595d;padding-bottom:5px">
+      <h1 style="margin:0;font-size:32px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${title}</h1>
+    </header>
+    <div style="background:#2a2a2e;border:1px solid #54595d;padding:12px 16px;margin-bottom:24px;font-size:13px;color:#aaa">
+      ${i18n.disambiguation}: ${desc}
+    </div>
+    <ul style="list-style:none;padding:0">
+      ${items}
+    </ul>
+  </div>
+</body>
+</html>`
+}
+
 function buildSettingPageHtml(
   node: WikiNode,
   nodes: WikiNode[],
   projectName: string,
   language: string,
-  i18n: Record<string, string>
+  i18n: Record<string, string>,
+  includedNodeIds: Set<string>
 ): string {
   let data: Record<string, string> = {}
   try {
@@ -688,7 +876,7 @@ function buildSettingPageHtml(
       <div style="border-bottom:1px solid #54595d;margin-bottom:12px;padding-bottom:2px">
         <h2 style="margin:0;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${labels[field] || field}</h2>
       </div>
-      <div style="font-size:14px;white-space:pre-wrap;color:${val ? '#d1d1d1' : '#666'};font-style:${val ? 'normal' : 'italic'}">${val ? escapeHtml(val) : i18n.noContent}</div>
+      <div style="font-size:14px;white-space:pre-wrap;color:${val ? '#d1d1d1' : '#666'};font-style:${val ? 'normal' : 'italic'}">${val ? processWikiRefsInText(val, nodes, includedNodeIds, i18n) : i18n.noContent}</div>
     </section>`
   }).join('\n')
 
@@ -718,14 +906,79 @@ function buildSettingPageHtml(
 </html>`
 }
 
+function buildStoryPageHtml(
+  node: WikiNode,
+  nodes: WikiNode[],
+  projectName: string,
+  language: string,
+  i18n: Record<string, string>,
+  includedNodeIds: Set<string>
+): string {
+  let metaHtml = ''
+  if (node.summary || node.outline) {
+    metaHtml = `<aside style="width:280px;background:#2a2a2e;border:1px solid #54595d;padding:8px;font-size:13px;float:right;margin-left:24px;margin-bottom:20px">
+      <div style="text-align:center;font-weight:bold;padding:8px;background:#3a3a3e;margin-bottom:8px;border:1px solid #54595d">${escapeHtml(node.name)}</div>
+      <table style="width:100%;border-collapse:collapse">
+        <tbody>
+          ${node.summary ? `<tr style="border-bottom:1px solid #444"><th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${i18n.summary}</th><td style="padding:6px 4px;white-space:pre-wrap">${escapeHtml(node.summary)}</td></tr>` : ''}
+          ${node.outline ? `<tr style="border-bottom:1px solid #444"><th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${i18n.outline}</th><td style="padding:6px 4px;white-space:pre-wrap">${escapeHtml(node.outline)}</td></tr>` : ''}
+        </tbody>
+      </table>
+    </aside>`
+  }
+
+  const contentHtml = node.content
+    ? processWikiRefsInText(node.content, nodes, includedNodeIds, i18n)
+        .split('\n')
+        .map((line) => {
+          if (line.startsWith('<')) return line
+          if (line.startsWith('# ')) return `<h2 style="font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;border-bottom:1px solid #54595d;padding-bottom:2px;margin-top:24px;margin-bottom:12px">${escapeHtml(line.slice(2))}</h2>`
+          if (line.startsWith('## ')) return `<h3 style="font-size:18px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:20px;margin-bottom:8px">${escapeHtml(line.slice(3))}</h3>`
+          if (line.startsWith('### ')) return `<h4 style="font-size:16px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:16px;margin-bottom:8px">${escapeHtml(line.slice(4))}</h4>`
+          if (line.startsWith('- ') || line.startsWith('* '))
+            return `<p style="padding-left:1em">• ${escapeHtml(line.slice(2))}</p>`
+          if (line.trim()) return `<p style="margin:4px 0">${line}</p>`
+          return ''
+        })
+        .filter(Boolean)
+        .join('\n')
+    : `<p style="color:#666;font-style:italic">${i18n.noContent}</p>`
+
+  return `<!DOCTYPE html>
+<html lang="${escapeHtml(language)}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(node.name)} - ${escapeHtml(projectName)}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div style="max-width:900px;margin:0 auto;padding:40px 60px">
+    <a href="index.html" style="color:#3498db;font-size:13px">← ${i18n.backToIndex}</a>
+    <header style="margin-top:16px;margin-bottom:20px;border-bottom:1px solid #54595d;padding-bottom:5px">
+      <h1 style="margin:0;font-size:32px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${escapeHtml(node.name)}</h1>
+    </header>
+    <div style="position:relative;display:block">
+      ${metaHtml}
+      <div style="font-size:14px;line-height:1.8;white-space:pre-wrap;color:#d1d1d1">
+        ${contentHtml}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
 export function exportToWiki(options: WikiExportOptions): void {
-  const { exportPath, projectName, nodes, language } = options
+  const { exportPath, projectName, nodes, language, includeChapters } = options
   const i18n = getWikiI18n(language)
   const css = getWikiCss()
 
   if (!existsSync(exportPath)) {
     mkdirSync(exportPath, { recursive: true })
   }
+
+  const includedNodeIds = new Set(nodes.filter((n) => n.type === 'file').map((n) => n.id))
 
   const indexHtml = `<!DOCTYPE html>
 <html lang="${escapeHtml(language)}">
@@ -749,10 +1002,33 @@ export function exportToWiki(options: WikiExportOptions): void {
   writeFileSync(join(exportPath, 'index.html'), indexHtml, 'utf-8')
   writeFileSync(join(exportPath, 'style.css'), css, 'utf-8')
 
-  const fileNodes = nodes.filter((n) => n.type === 'file' && n.kind === 'setting')
-
-  for (const node of fileNodes) {
-    const pageHtml = buildSettingPageHtml(node, nodes, projectName, language, i18n)
+  const settingNodes = nodes.filter((n) => n.type === 'file' && n.kind === 'setting')
+  for (const node of settingNodes) {
+    const pageHtml = buildSettingPageHtml(node, nodes, projectName, language, i18n, includedNodeIds)
     writeFileSync(join(exportPath, `${node.id}.html`), pageHtml, 'utf-8')
+  }
+
+  if (includeChapters) {
+    const storyNodes = nodes.filter((n) => n.type === 'file' && n.kind === 'story')
+    for (const node of storyNodes) {
+      const pageHtml = buildStoryPageHtml(node, nodes, projectName, language, i18n, includedNodeIds)
+      writeFileSync(join(exportPath, `${node.id}.html`), pageHtml, 'utf-8')
+    }
+  }
+
+  const fileNodes = nodes.filter((n) => n.type === 'file')
+  const nameMap = new Map<string, WikiNode[]>()
+  for (const n of fileNodes) {
+    const existing = nameMap.get(n.name) || []
+    existing.push(n)
+    nameMap.set(n.name, existing)
+  }
+
+  for (const [name, matched] of nameMap.entries()) {
+    if (matched.length > 1) {
+      const disambigKey = name.replace(/\//g, '_')
+      const pageHtml = buildDisambigPageHtml(name, matched, nodes, projectName, language, i18n)
+      writeFileSync(join(exportPath, `disambig-${disambigKey}.html`), pageHtml, 'utf-8')
+    }
   }
 }
