@@ -117,11 +117,32 @@ export interface WebViewInfo {
   onMessage?: (message: unknown) => void
 }
 
+export interface ToolDefinition {
+  id: string
+  name: string
+  description: string
+  schema?: object
+  handler: (...args: unknown[]) => unknown | Promise<unknown>
+}
+
+export interface ToolInfo {
+  pluginId: string
+  id: string
+  name: string
+  description: string
+  schema?: object
+}
+
 export interface PluginAPI {
   commands: {
     register: (id: string, handler: (...args: unknown[]) => void) => () => void
     execute: (id: string, ...args: unknown[]) => Promise<void>
     getCommands: () => string[]
+  }
+  tools: {
+    register: (tool: ToolDefinition) => () => void
+    getAll: () => ToolInfo[]
+    invoke: (fullId: string, ...args: unknown[]) => Promise<unknown>
   }
   ui: {
     addActivityItem: (item: Omit<ActivityItem, 'pluginId'>) => () => void
@@ -305,6 +326,12 @@ class PluginStorage {
 
 const contentChangeCallbacks = new Set<(content: string) => void>()
 const tabChangeCallbacks = new Set<(tab: Tab | null) => void>()
+
+// 全局工具注册表：插件间共享的工具
+interface RegisteredTool extends ToolDefinition {
+  pluginId: string
+}
+const toolsRegistry = new Map<string, RegisteredTool>()
 
 export const triggerContentChange = (content: string): void => {
   contentChangeCallbacks.forEach((cb) => {
@@ -633,9 +660,42 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         return commandService.registerCommand(fullId, handler, pluginId)
       },
       execute: (id: string, ...args: unknown[]) => commandService.executeCommand(id, ...args),
-      getCommands: () => {
-        const commands: string[] = []
-        return commands
+      getCommands: () => commandService.getAllCommands()
+    },
+
+    tools: {
+      register: (tool: ToolDefinition) => {
+        const fullId = `${pluginId}.${tool.id}`
+        const registeredTool: RegisteredTool = {
+          ...tool,
+          pluginId
+        }
+        toolsRegistry.set(fullId, registeredTool)
+        return () => {
+          toolsRegistry.delete(fullId)
+        }
+      },
+      getAll: () => {
+        return Array.from(toolsRegistry.entries()).map(([fullId, tool]) => ({
+          pluginId: tool.pluginId,
+          id: tool.id,
+          name: tool.name,
+          description: tool.description,
+          schema: tool.schema
+        }))
+      },
+      invoke: async (fullId: string, ...args: unknown[]) => {
+        const tool = toolsRegistry.get(fullId)
+        if (!tool) {
+          throw new Error(`Tool '${fullId}' not found`)
+        }
+        try {
+          const result = tool.handler(...args)
+          return result instanceof Promise ? await result : result
+        } catch (error) {
+          console.error(`Tool '${fullId}' execution failed:`, error)
+          throw error
+        }
       }
     },
 
@@ -1045,7 +1105,10 @@ export const usePluginService = create<PluginState>((set, get) => ({
       // 3. 清理所有插件注册的钩子
       hookSystem.clear()
 
-      // 4. 重新加载插件列表
+      // 4. 清理所有插件注册的工具
+      toolsRegistry.clear()
+
+      // 5. 重新加载插件列表
       await get().loadPlugins()
 
       console.log('[PluginService] Plugins reloaded successfully')
@@ -1162,6 +1225,13 @@ export const usePluginService = create<PluginState>((set, get) => ({
 
     // 清理插件注册的命令
     commandService.unregisterByGroup(pluginId)
+
+    // 清理插件注册的工具
+    toolsRegistry.forEach((tool, fullId) => {
+      if (tool.pluginId === pluginId) {
+        toolsRegistry.delete(fullId)
+      }
+    })
 
     new PluginStorage(pluginId).clear()
   },
