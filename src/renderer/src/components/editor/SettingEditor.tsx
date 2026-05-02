@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { getAppSettings } from './PreferencesPage'
+import type { StoryNode } from '../../models'
 
 interface SettingEditorProps {
   nodeId: string
@@ -50,21 +51,28 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
   const openTabInSplit = useEditorStore((s) => s.openTabInSplit)
 
-  const node = useMemo(() => storyNodes.find(n => n.id === nodeId), [storyNodes, nodeId])
-  
+  // 使用 Map 缓存节点查找，优化性能
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, StoryNode>()
+    storyNodes.forEach(n => map.set(n.id, n))
+    return map
+  }, [storyNodes])
+
+  const node = useMemo(() => nodeMap.get(nodeId), [nodeMap, nodeId])
+
   const category = useMemo(() => {
     if (!node) return 'default'
-    let current = node
-    while (current.parentId) {
-      const parent = storyNodes.find(n => n.id === current.parentId)
+    let current: StoryNode | undefined = node
+    while (current?.parentId) {
+      const parent = nodeMap.get(current.parentId)
       if (!parent) break
       current = parent
     }
-    if (FIELD_CONFIG[current.name as keyof typeof FIELD_CONFIG]) {
+    if (current && FIELD_CONFIG[current.name as keyof typeof FIELD_CONFIG]) {
       return current.name
     }
     return 'default'
-  }, [node, storyNodes])
+  }, [node, nodeMap])
 
   const config = FIELD_CONFIG[category as keyof typeof FIELD_CONFIG] || FIELD_CONFIG.default
 

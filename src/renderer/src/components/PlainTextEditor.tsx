@@ -615,9 +615,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     // 保存命令
     const unregisterSave = commandService.registerCommand(
       Commands.SAVE,
-      () => {
+      async () => {
         if (onSave) {
-          onSave()
+          await onSave()
           lastSavedTextRef.current = textRef.current
           const now = new Date()
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`

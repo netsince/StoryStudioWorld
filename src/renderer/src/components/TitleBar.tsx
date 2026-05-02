@@ -13,7 +13,7 @@ type MenuId = 'file' | 'edit' | 'select' | 'view' | 'goto' | 'help' | null
 
 const TitleBar: React.FC = () => {
   const { t } = useTranslation()
-  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab, openReadingOrderTab } =
+  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab, openReadingOrderTab, openExportStoryTab } =
     useEditorStore()
   const { hideAppLogoText } = useUiSettings()
 
@@ -137,6 +137,19 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'separator4',
+      label: '---',
+      onSelect: () => {}
+    },
+    {
+      key: 'export-story',
+      label: t('exportStory.title'),
+      onSelect: () => {
+        openExportStoryTab()
+        setActiveMenu(null)
+      }
+    },
+    {
+      key: 'separator5',
       label: '---',
       onSelect: () => {}
     },

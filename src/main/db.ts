@@ -1,5 +1,7 @@
 import initSqlJs, { Database } from 'sql.js'
 import { randomUUID } from 'crypto'
+import { mkdir, writeFile } from 'fs/promises'
+import { dirname } from 'path'
 
 export const STORY_DB_FILE = 'story.db'
 
@@ -111,8 +113,6 @@ function migrateDatabase(db: Database): void {
 export async function saveDatabase(db: Database, dbPath: string): Promise<void> {
   const data = db.export()
   const buffer = Buffer.from(data)
-  const { mkdir, writeFile } = await import('fs/promises')
-  const { dirname } = await import('path')
   await mkdir(dirname(dbPath), { recursive: true })
   await writeFile(dbPath, buffer)
 }

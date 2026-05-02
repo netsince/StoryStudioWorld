@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ProjectData, RecentProject, StoryNode } from '../models'
 import { LAST_PROJECT_SETTINGS_PATH_KEY } from '../constants/storage'
 import { useEditorStore } from './editorStore'
+import { useReadingOrderStore } from './readingOrderStore'
 import i18n from '../i18n'
 
 export interface CreateProjectInput {
@@ -81,6 +82,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     void loadStoryNodes(project.projectSettingsPath).then(() => {
       void get().initSettingNodes()
     })
+    // 加载阅读编排数据
+    void useReadingOrderStore.getState().loadReadingOrder(project.projectSettingsPath)
     useEditorStore.getState().removeCreateProjectTabs()
   }
 

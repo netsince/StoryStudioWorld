@@ -34,6 +34,14 @@ import {
   compareWithCurrent
 } from './snapshot'
 import { pluginLoader } from './pluginLoader'
+import {
+  exportToDocx,
+  exportToPdf,
+  exportToEpub,
+  exportToTxt,
+  exportToMarkdown,
+  type ExportContent
+} from './export'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -370,13 +378,14 @@ function createWindow(): void {
     format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
     mode: 'single' | 'readingOrder'
     nodeId: string | null
+    nodeName: string
     fileName: string
   }) => {
     try {
-      const { projectSettingsPath, format, mode, nodeId, fileName } = input
+      const { projectSettingsPath, format, mode, nodeId, nodeName, fileName } = input
       const projectDir = dirname(projectSettingsPath)
 
-      // 显示保存对话框
+      // 显示保存对话框 - 使用用户选择的格式
       const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
         defaultPath: `${fileName || 'exported-story'}.${format}`,
         filters: [
@@ -388,13 +397,18 @@ function createWindow(): void {
         return { success: false, error: 'Export cancelled' }
       }
 
-      let content = ''
+      // 获取项目信息
+      const project = await loadProject(projectSettingsPath)
+      const contents: ExportContent[] = []
 
       if (mode === 'single' && nodeId) {
         // 导出单章
         const nodeContent = await readNodeContent({ projectSettingsPath, nodeId })
         if (nodeContent) {
-          content = nodeContent
+          contents.push({
+            title: nodeName || 'Untitled',
+            content: nodeContent
+          })
         }
       } else if (mode === 'readingOrder') {
         // 按照阅读编排导出
@@ -406,30 +420,50 @@ function createWindow(): void {
           for (const item of readingOrder.items) {
             const nodeContent = await readNodeContent({ projectSettingsPath, nodeId: item.nodeId })
             if (nodeContent) {
-              content += `\n\n# ${item.title}\n\n`
-              content += nodeContent
+              contents.push({
+                title: item.title,
+                content: nodeContent
+              })
             }
           }
         }
       }
 
-      if (!content) {
+      if (contents.length === 0) {
         return { success: false, error: 'No content to export' }
       }
 
-      // 根据格式处理内容
-      if (format === 'md' || format === 'txt') {
-        writeFileSync(filePath, content, 'utf-8')
-      } else {
-        // 对于 PDF, EPUB, DOCX 格式，目前先保存为 Markdown 格式
-        // 后续可以添加格式转换库
-        const mdFilePath = filePath.replace(new RegExp(`\\.${format}$`), '.md')
-        writeFileSync(mdFilePath, content, 'utf-8')
-        return {
-          success: true,
-          filePath: mdFilePath,
-          message: `Exported as Markdown (.${format} format requires additional conversion libraries)`
-        }
+      // 根据格式选择导出方式
+      switch (format) {
+        case 'docx':
+          await exportToDocx({
+            filePath,
+            contents,
+            projectName: project.projectName
+          })
+          break
+        case 'pdf':
+          await exportToPdf({
+            filePath,
+            contents,
+            projectName: project.projectName
+          })
+          break
+        case 'epub':
+          await exportToEpub({
+            filePath,
+            contents,
+            projectName: project.projectName
+          })
+          break
+        case 'txt':
+          exportToTxt(filePath, contents)
+          break
+        case 'md':
+          exportToMarkdown(filePath, contents)
+          break
+        default:
+          return { success: false, error: `Unsupported format: ${format}` }
       }
 
       return { success: true, filePath }

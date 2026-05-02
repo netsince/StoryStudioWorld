@@ -169,6 +169,7 @@ export interface ExportStoryInput {
   format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
   mode: 'single' | 'readingOrder'
   nodeId: string | null
+  nodeName: string
   fileName: string
 }
 

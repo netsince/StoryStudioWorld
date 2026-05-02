@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Tab, ProjectData } from '../../models'
 import { useProjectStore } from '../../stores/projectStore'
@@ -73,7 +73,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
     void loadContent()
   }, [tab.id, tab.nodeId, tab.type, currentProject])
 
-  const handleEditorChange = (content: string): void => {
+  const handleEditorChange = useCallback((content: string): void => {
     setEditorContent(content)
     triggerContentChange(content)
     if (tab.type === 'file') {
@@ -82,15 +82,15 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
         setDraft(tab.nodeId, content)
       }
     }
-  }
+  }, [tab.type, tab.id, tab.nodeId, groupId, setDirtyTab, setDraft])
 
-  const handleSave = async (): Promise<void> => {
+  const handleSave = useCallback(async (): Promise<void> => {
     if (tab.type === 'file' && tab.nodeId && currentProject) {
       await saveNodeContent(tab.nodeId, editorContent)
       setDirtyTab(groupId, tab.id, false)
       clearDraft(tab.nodeId)
     }
-  }
+  }, [tab.type, tab.nodeId, currentProject, editorContent, saveNodeContent, setDirtyTab, groupId, tab.id, clearDraft])
 
   if (tab.type === 'welcome') {
     return (

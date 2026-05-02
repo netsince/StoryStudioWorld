@@ -2179,19 +2179,28 @@ input:focus + .ssw-slider {
   flex-shrink: 0;
 }
 
-.export-story-title {
-  font-size: 14px;
-  font-weight: 600;
+.export-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-active);
+}
+
+.export-header-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-color);
 }
 
 .export-story-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .export-story-empty {
@@ -2205,13 +2214,14 @@ input:focus + .ssw-slider {
   text-align: center;
 }
 
-.export-story-empty-icon {
-  font-size: 48px;
+.export-empty-icon {
+  width: 48px;
+  height: 48px;
   margin-bottom: 16px;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
-.export-story-empty-text {
+.export-empty-text {
   font-size: 14px;
   color: var(--text-active);
 }
@@ -2219,93 +2229,123 @@ input:focus + .ssw-slider {
 .export-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .export-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.export-format-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-}
-
-.export-format-btn {
+// Format Selector - Horizontal button group
+.export-format-selector {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   gap: 6px;
-  padding: 16px 8px;
-  background-color: rgba(255, 255, 255, 0.03);
+  flex-wrap: wrap;
+}
+
+.export-format-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
+  font-size: 13px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: var(--hover-bg);
     border-color: rgba(255, 255, 255, 0.15);
     color: var(--text-main);
   }
 
   &.active {
-    background-color: rgba(0, 122, 204, 0.15);
+    background-color: rgba(0, 122, 204, 0.12);
     border-color: var(--accent-color);
     color: var(--text-active);
   }
 }
 
 .export-format-icon {
-  font-size: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 .export-format-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
-.export-mode-options {
+// Mode Selector
+.export-mode-selector {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
-.export-mode-radio {
+.export-mode-option {
   display: flex;
   align-items: center;
   gap: 10px;
-  cursor: pointer;
-  padding: 12px;
-  background-color: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  background-color: transparent;
   border: 1px solid var(--border-color);
   border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
   transition: all 0.15s ease;
+  text-align: left;
+  font-size: 13px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--hover-bg);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
-  input[type="radio"] {
-    margin: 0;
-  }
-
-  .radio-label {
-    font-size: 13px;
-    color: var(--text-main);
+  &.active {
+    background-color: rgba(0, 122, 204, 0.08);
+    border-color: var(--accent-color);
+    color: var(--text-active);
   }
 }
 
+.export-mode-radio {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--text-muted);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  .export-mode-option.active & {
+    border-color: var(--accent-color);
+  }
+}
+
+.radio-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: transparent;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+
+  &.active {
+    background-color: var(--accent-color);
+  }
+}
+
+// Select and Input
 .export-select {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background-color: var(--bg-base);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -2321,9 +2361,16 @@ input:focus + .ssw-slider {
   }
 }
 
+.export-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .export-input {
-  width: 100%;
-  padding: 10px 12px;
+  flex: 1;
+  padding: 8px 10px;
+  padding-right: 50px;
   background-color: var(--bg-base);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -2344,72 +2391,92 @@ input:focus + .ssw-slider {
   }
 }
 
-.export-reading-order-info {
-  background-color: rgba(255, 255, 255, 0.03);
+.export-file-ext {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+// Info Box
+.export-info-box {
+  background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.export-info-text {
+.export-info-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.export-stats-number {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent-color);
+  line-height: 1;
+}
+
+.export-stats-label {
   font-size: 13px;
-  color: var(--text-main);
-
-  p {
-    margin: 0 0 8px;
-  }
-}
-
-.export-chapter-list {
-  margin: 8px 0 0;
-  padding-left: 20px;
-  font-size: 12px;
   color: var(--text-muted);
-
-  li {
-    margin-bottom: 4px;
-  }
 }
 
-.export-more {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.export-warning {
+.export-info-warning {
+  font-size: 13px;
   color: #f14c4c;
-  margin: 0;
+  padding: 8px 0;
 }
 
-.export-goto-btn {
-  padding: 8px 16px;
-  background-color: var(--accent-color);
-  border: none;
-  border-radius: 6px;
-  color: white;
+.export-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--accent-color);
   font-size: 12px;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   align-self: flex-start;
 
   &:hover {
-    background-color: var(--accent-hover);
-    transform: translateY(-1px);
+    background-color: rgba(0, 122, 204, 0.1);
+    border-color: var(--accent-color);
   }
+}
+
+.export-link-icon {
+  width: 14px;
+  height: 14px;
+}
+
+// Actions
+.export-actions {
+  margin-top: 8px;
 }
 
 .export-btn-primary {
   width: 100%;
-  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
   background-color: var(--accent-color);
   border: none;
   border-radius: 6px;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -2417,7 +2484,11 @@ input:focus + .ssw-slider {
   &:hover:not(:disabled) {
     background-color: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   &:disabled {
@@ -2426,8 +2497,30 @@ input:focus + .ssw-slider {
   }
 }
 
+.export-btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.export-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Result
 .export-result {
-  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.5;
@@ -2443,6 +2536,17 @@ input:focus + .ssw-slider {
     border: 1px solid rgba(241, 76, 76, 0.3);
     color: #f14c4c;
   }
+}
+
+.export-result-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 // ==================== Reading Order Panel Styles (VS Code / Monaco Tree style) ====================
