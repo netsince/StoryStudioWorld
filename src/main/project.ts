@@ -514,7 +514,7 @@ export async function getGalleryImages(projectSettingsPath: string, nodeId: stri
       const buffer = await readFile(filePath)
       const base64 = buffer.toString('base64')
       const ext = item.fileName.split('.').pop()?.toLowerCase()
-      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : ext === 'bmp' ? 'image/bmp' : 'image/jpeg'
       result.push({ ...item, dataUrl: `data:${mime};base64,${base64}` })
     } catch {
       result.push({ ...item, dataUrl: '' })
@@ -548,7 +548,7 @@ export async function uploadGalleryImage(
   const buffer = await readFile(destPath)
   const base64 = buffer.toString('base64')
   const ext = fileName.split('.').pop()?.toLowerCase()
-  const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+  const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : ext === 'bmp' ? 'image/bmp' : 'image/jpeg'
 
   return { ...item, dataUrl: `data:${mime};base64,${base64}` }
 }

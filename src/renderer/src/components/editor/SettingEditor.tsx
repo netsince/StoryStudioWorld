@@ -151,18 +151,6 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   }, [node?.updatedAt])
 
   useEffect(() => {
-    if (!hasLoaded || !nodeId) return
-    const draft = draftsByNodeId[nodeId]
-    if (typeof draft === 'string') {
-      try {
-        setData(JSON.parse(draft))
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }, [nodeId, draftsByNodeId, hasLoaded])
-
-  useEffect(() => {
     if (!isEditing) {
       setAppSettings(getAppSettings())
     }
