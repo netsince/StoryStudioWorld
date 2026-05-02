@@ -246,6 +246,7 @@ interface PluginState {
   isLoading: boolean
 
   loadPlugins: () => Promise<void>
+  reloadPlugins: () => Promise<void>
   loadPlugin: (pluginInfo: { manifest: PluginManifest; path: string; mainPath: string }) => Promise<void>
   unloadPlugin: (pluginId: string) => void
   setPluginEnabled: (pluginId: string, enabled: boolean) => void
@@ -990,11 +991,46 @@ export const usePluginService = create<PluginState>((set, get) => ({
     set({ isLoading: true })
     try {
       const pluginList = await window.api.getPlugins()
+      // 先将插件列表存入状态（不加载），只加载被启用的插件
+      set({ plugins: pluginList.map((p) => ({ ...p, loaded: false })) })
+      // 只加载被启用的插件
       for (const plugin of pluginList) {
-        await get().loadPlugin(plugin)
+        if (plugin.enabled) {
+          await get().loadPlugin(plugin)
+        }
       }
     } catch (e) {
       console.error('Failed to load plugins:', e)
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  reloadPlugins: async () => {
+    set({ isLoading: true })
+    try {
+      // 1. 卸载所有已加载的插件
+      const loadedPlugins = get().plugins.filter((p) => p.loaded)
+      for (const plugin of loadedPlugins) {
+        get().unloadPlugin(plugin.manifest.id)
+      }
+
+      // 2. 清空所有插件相关状态
+      set({
+        plugins: [],
+        activityItems: [],
+        rightActivityItems: [],
+        statusBarItems: [],
+        webViews: [],
+        notifications: []
+      })
+
+      // 3. 重新加载插件列表
+      await get().loadPlugins()
+
+      console.log('[PluginService] Plugins reloaded successfully')
+    } catch (e) {
+      console.error('Failed to reload plugins:', e)
     } finally {
       set({ isLoading: false })
     }
@@ -1063,7 +1099,7 @@ export const usePluginService = create<PluginState>((set, get) => ({
             {
               manifest,
               path,
-              enabled: true,
+              enabled: true, // 加载成功，标记为启用
               loaded: true
             }
           ]

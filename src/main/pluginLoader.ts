@@ -120,8 +120,8 @@ class PluginLoader {
           } else if (isExplicitlyEnabled) {
             enabled = true
           } else {
-            // 用户未明确配置过此插件
-            enabled = this.settings.hasExplicitConsent ? false : false // 默认禁用
+            // 用户未明确配置过此插件，默认禁用（安全优先）
+            enabled = false
           }
 
           const pluginInfo: PluginInfo = {
