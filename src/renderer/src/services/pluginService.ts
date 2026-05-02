@@ -1025,7 +1025,10 @@ export const usePluginService = create<PluginState>((set, get) => ({
         notifications: []
       })
 
-      // 3. 重新加载插件列表
+      // 3. 清理所有插件注册的钩子
+      hookSystem.clear()
+
+      // 4. 重新加载插件列表
       await get().loadPlugins()
 
       console.log('[PluginService] Plugins reloaded successfully')
@@ -1136,8 +1139,12 @@ export const usePluginService = create<PluginState>((set, get) => ({
       ),
       activityItems: state.activityItems.filter((i) => i.pluginId !== pluginId),
       rightActivityItems: state.rightActivityItems.filter((i) => i.pluginId !== pluginId),
-      statusBarItems: state.statusBarItems.filter((i) => i.pluginId !== pluginId)
+      statusBarItems: state.statusBarItems.filter((i) => i.pluginId !== pluginId),
+      webViews: state.webViews.filter((w) => w.pluginId !== pluginId)
     }))
+
+    // 清理插件注册的命令
+    commandService.unregisterByGroup(pluginId)
 
     new PluginStorage(pluginId).clear()
   },

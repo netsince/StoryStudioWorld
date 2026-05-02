@@ -5,6 +5,7 @@ import type { StoryNode } from '../models'
 import { useProjectStore } from '../stores/projectStore'
 import { useEditorStore } from '../stores/editorStore'
 import { buildNodeDisplayPath } from '../utils/nodeUtils'
+import { commandService, Commands } from '../services/commandService'
 
 interface SearchResult {
   node: StoryNode
@@ -122,6 +123,14 @@ const QuickOpen: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // 注册快速打开命令
+  useEffect(() => {
+    const unregister = commandService.registerCommand(Commands.QUICK_OPEN, () => {
+      setIsVisible(true)
+    })
+    return () => unregister()
   }, [])
 
   // 聚焦输入框

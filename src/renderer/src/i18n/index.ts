@@ -49,8 +49,21 @@ i18n
   .init({
     resources,
     lng: savedLanguage || undefined,
-    fallbackLng: 'zh-CN',
+    fallbackLng: ['en', 'zh-CN'],
     debug: false,
+    saveMissing: true,
+    missingKeyHandler: (lngs, ns, key) => {
+      const langChain = Array.isArray(lngs) ? lngs : [lngs]
+      for (let i = 0; i < langChain.length - 1; i++) {
+        const fromLang = langChain[i]
+        const toLang = langChain[i + 1]
+        console.error(`[i18n] Missing key "${key}" in "${fromLang}", fallback to "${toLang}"`)
+      }
+      console.error(`[i18n] Missing key "${key}" in all fallbacks, display ID directly`)
+    },
+    parseMissingKeyHandler: (key) => {
+      return key
+    },
     interpolation: {
       escapeValue: false
     },

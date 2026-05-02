@@ -349,7 +349,8 @@
     "zenMode": "禅",
     "devTools": "开发者工具",
     "back": "返回",
-    "forward": "前进"
+    "forward": "前进",
+    "quickOpen": "快速打开"
   },
   "about": {
     "title": "关于",

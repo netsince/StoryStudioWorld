@@ -349,7 +349,8 @@
     "zenMode": "Zen",
     "devTools": "Developer Tools",
     "back": "Back",
-    "forward": "Forward"
+    "forward": "Forward",
+    "quickOpen": "Quick Open"
   },
   "about": {
     "title": "About",

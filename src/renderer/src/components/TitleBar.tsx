@@ -300,6 +300,19 @@ const TitleBar: React.FC = () => {
 
   const gotoMenuItems: ContextMenuItem[] = [
     {
+      key: 'quick-open',
+      label: `${t('menu.quickOpen')} (Ctrl+P)`,
+      onSelect: () => {
+        commandService.executeCommand(Commands.QUICK_OPEN)
+        setActiveMenu(null)
+      }
+    },
+    {
+      key: 'separator-quickopen',
+      label: '---',
+      onSelect: () => {}
+    },
+    {
       key: 'welcome',
       label: t('welcome.title'),
       onSelect: () => {

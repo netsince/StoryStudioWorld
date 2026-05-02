@@ -141,5 +141,8 @@ export const Commands = {
   NAV_FORWARD: 'navigation.forward',
 
   // 视图
-  ZEN_MODE: 'view.zenMode'
+  ZEN_MODE: 'view.zenMode',
+
+  // 快速打开
+  QUICK_OPEN: 'workbench.quickOpen'
 } as const

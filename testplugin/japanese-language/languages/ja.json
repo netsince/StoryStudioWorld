@@ -349,7 +349,8 @@
     "zenMode": "Zen",
     "devTools": "開発者ツール",
     "back": "戻る",
-    "forward": "進む"
+    "forward": "進む",
+    "quickOpen": "クイックオープン"
   },
   "about": {
     "title": "について",
