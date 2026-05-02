@@ -526,6 +526,17 @@
     "sameLevelReorderOnly": "Can only reorder within the same level",
     "cannotCreateInReservedCategory": "Cannot create files directly in system reserved categories"
   },
+  "readingOrder": {
+    "title": "Reading Order",
+    "noProject": "Please open a project first",
+    "emptyList": "Reading list is empty",
+    "emptyHint": "Drag chapters from the file tree here",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "clearAll": "Clear All",
+    "confirmClear": "Are you sure you want to clear the reading order list?",
+    "dragHint": "Tip: Drag chapters from the file tree on the left to add"
+  },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",
     "afterLoad": "After load, can transform content",

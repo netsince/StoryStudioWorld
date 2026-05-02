@@ -133,9 +133,20 @@ const Tree: React.FC<TreeProps> = ({
   }, [visibleNodes])
 
   const handleDragStart = useCallback((e: React.DragEvent, nodeId: string) => {
+    const node = getNodeById(nodeId)
+    if (node) {
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        type: 'story-node',
+        nodeId: node.id,
+        title: node.name,
+        nodeType: node.type,
+        kind: node.kind
+      }))
+    }
     setDraggingNodeId(nodeId)
-    e.dataTransfer.effectAllowed = 'move'
-  }, [])
+    // 支持移动和复制（阅读编排需要复制）
+    e.dataTransfer.effectAllowed = 'copyMove'
+  }, [getNodeById])
 
   const handleDragOver = useCallback(
     (e: React.DragEvent, nodeId: string) => {

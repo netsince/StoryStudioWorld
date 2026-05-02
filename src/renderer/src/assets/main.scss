@@ -2159,6 +2159,205 @@ input:focus + .ssw-slider {
   color: #4ec9b0;
 }
 
+// ==================== Reading Order Panel Styles (VS Code / Monaco Tree style) ====================
+
+.reading-order-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-sidebar);
+}
+
+.reading-order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-sidebar);
+  flex-shrink: 0;
+}
+
+.reading-order-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-active);
+}
+
+.reading-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reading-order-unsaved {
+  color: var(--accent-color);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.reading-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  font-size: 12px;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+    color: var(--text-active);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.reading-order-hint {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background-color: var(--bg-base);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+// 阅读编排树 - 使用 monaco-tree 样式
+.reading-order-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  background-color: var(--bg-base);
+  
+  &.drag-over {
+    background-color: rgba(0, 122, 204, 0.05);
+  }
+}
+
+.reading-order-tree-item {
+  cursor: grab;
+  user-select: none;
+  
+  &:hover {
+    background-color: var(--list-hover-bg, #2a2d2e) !important;
+  }
+  
+  &.dragging {
+    cursor: grabbing;
+  }
+}
+
+// 空列表状态
+.reading-order-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.reading-order-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.reading-order-empty-text {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text-active);
+}
+
+.reading-order-empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 200px;
+}
+
+.reading-order-empty-hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+// 阅读编排项的操作按钮
+.reading-order-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  padding-right: 8px;
+
+  .reading-order-tree-item:hover & {
+    opacity: 1;
+  }
+}
+
+.reading-order-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  transition: all 0.1s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+    color: var(--text-active);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  &.delete {
+    font-size: 14px;
+    font-weight: bold;
+
+    &:hover {
+      background-color: rgba(232, 17, 35, 0.2);
+      color: #e81123;
+    }
+  }
+}
+
+.reading-order-drop-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--accent-color, #007acc);
+  z-index: 10;
+  pointer-events: none;
+}
+
 // ==================== Chapter Meta Panel ====================
 
 .chapter-meta-panel {

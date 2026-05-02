@@ -526,6 +526,17 @@
     "sameLevelReorderOnly": "只能同层级排序",
     "cannotCreateInReservedCategory": "不能在系统保留分类下直接创建文件"
   },
+  "readingOrder": {
+    "title": "阅读编排",
+    "noProject": "请先打开项目",
+    "emptyList": "阅读列表为空",
+    "emptyHint": "从文件树拖拽章节到此处",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "clearAll": "清空列表",
+    "confirmClear": "确定要清空阅读编排列表吗？",
+    "dragHint": "提示：从左侧文件树拖拽章节到此处添加"
+  },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",
     "afterLoad": "加载后，可转换内容",

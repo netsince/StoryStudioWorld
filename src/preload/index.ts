@@ -152,6 +152,18 @@ export interface PluginSettings {
   hasExplicitConsent: boolean
 }
 
+export interface ReadingOrderItem {
+  id: string
+  nodeId: string
+  title: string
+  order: number
+}
+
+export interface ReadingOrderConfig {
+  items: ReadingOrderItem[]
+  updatedAt: string
+}
+
 export interface PluginFetchResponse {
   ok: boolean
   status: number
@@ -263,6 +275,11 @@ const api = {
   openPluginsFolder: (): void => ipcRenderer.send('open-plugins-folder'),
   readPluginFile: (filePath: string): Promise<{ success: boolean; content?: string; error?: string }> =>
     ipcRenderer.invoke('read-plugin-file', filePath),
+  // Reading Order APIs
+  readReadingOrder: (projectSettingsPath: string): Promise<ReadingOrderConfig | null> =>
+    ipcRenderer.invoke('read-reading-order', projectSettingsPath),
+  writeReadingOrder: (projectSettingsPath: string, config: ReadingOrderConfig): Promise<void> =>
+    ipcRenderer.invoke('write-reading-order', projectSettingsPath, config),
   // Plugin Native APIs
   pluginNative: {
     fetch: (url: string, options?: PluginFetchOptions): Promise<PluginFetchResponse> =>

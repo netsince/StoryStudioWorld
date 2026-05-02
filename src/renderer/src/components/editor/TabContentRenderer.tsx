@@ -11,6 +11,7 @@ import CreateProjectForm, { CreateProjectInput } from './CreateProjectForm'
 import WelcomePage from './WelcomePage'
 import AboutPage from './AboutPage'
 import PreferencesPage from './PreferencesPage'
+import ReadingOrderPanel from '../ReadingOrderPanel'
 
 interface TabContentRendererProps {
   tab: Tab
@@ -119,6 +120,10 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
 
   if (tab.type === 'archive') {
     return <ArchiveView kind={tab.id === 'setting-archive' ? 'setting' : 'story'} />
+  }
+
+  if (tab.type === 'reading-order') {
+    return <ReadingOrderPanel />
   }
 
   if (tab.type === 'file') {

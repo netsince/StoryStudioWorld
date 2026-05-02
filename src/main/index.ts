@@ -1,10 +1,11 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import type { ReadingOrderConfig } from '../preload/index'
 import {
   createProject,
   createStoryNode,
@@ -326,6 +327,40 @@ function createWindow(): void {
       return { success: true, content }
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  // Reading Order IPC handlers
+  const getReadingOrderPath = (projectSettingsPath: string): string => {
+    const projectDir = dirname(projectSettingsPath)
+    return join(projectDir, 'storystudioworld.readingorder.json')
+  }
+
+  ipcMain.handle('read-reading-order', async (_, projectSettingsPath: string): Promise<ReadingOrderConfig | null> => {
+    try {
+      const readingOrderPath = getReadingOrderPath(projectSettingsPath)
+      if (!existsSync(readingOrderPath)) {
+        return null
+      }
+      const content = readFileSync(readingOrderPath, 'utf-8')
+      return JSON.parse(content) as ReadingOrderConfig
+    } catch (e) {
+      console.error('Failed to read reading order:', e)
+      return null
+    }
+  })
+
+  ipcMain.handle('write-reading-order', async (_, projectSettingsPath: string, config: ReadingOrderConfig): Promise<void> => {
+    try {
+      const readingOrderPath = getReadingOrderPath(projectSettingsPath)
+      const projectDir = dirname(readingOrderPath)
+      if (!existsSync(projectDir)) {
+        mkdirSync(projectDir, { recursive: true })
+      }
+      writeFileSync(readingOrderPath, JSON.stringify(config, null, 2), 'utf-8')
+    } catch (e) {
+      console.error('Failed to write reading order:', e)
+      throw e
     }
   })
 

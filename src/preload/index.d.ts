@@ -68,6 +68,48 @@ declare global {
       getPluginDir: () => Promise<string>
       openPluginsFolder: () => void
       readPluginFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>
+      // Reading Order APIs
+      readReadingOrder: (projectSettingsPath: string) => Promise<ReadingOrderConfig | null>
+      writeReadingOrder: (projectSettingsPath: string, config: ReadingOrderConfig) => Promise<void>
+      // Plugin Native APIs
+      pluginNative: {
+        fetch: (url: string, options?: {
+          method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+          headers?: Record<string, string>
+          body?: string
+          timeout?: number
+        }) => Promise<{
+          ok: boolean
+          status: number
+          statusText: string
+          headers: Record<string, string>
+          body: string
+        }>
+        fetchStream: (
+          url: string,
+          callbacks: {
+            onStart?: (info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }) => void
+            onChunk?: (chunk: string) => void
+            onError?: (error: { message: string }) => void
+            onEnd?: () => void
+          },
+          options?: {
+            method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+            headers?: Record<string, string>
+            body?: string
+            timeout?: number
+            streamId?: string
+          }
+        ) => { abort: () => void; streamId: string }
+        readFile: (path: string, encoding?: BufferEncoding) => Promise<{ success: boolean; content?: string; error?: string }>
+        writeFile: (path: string, content: string) => Promise<{ success: boolean; error?: string }>
+        exists: (path: string) => Promise<boolean>
+        mkdir: (path: string) => Promise<{ success: boolean; error?: string }>
+        readdir: (path: string) => Promise<{ success: boolean; entries?: string[]; error?: string }>
+        unlink: (path: string) => Promise<{ success: boolean; error?: string }>
+        exec: (command: string, cwd?: string) => Promise<{ stdout: string; stderr: string; error?: string }>
+        getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => Promise<string>
+      }
     }
   }
 }
@@ -222,4 +264,16 @@ export interface PluginSettings {
   disabledPlugins: string[]
   /** 标记用户是否已经明确配置过插件（用于首次启动判断） */
   hasExplicitConsent: boolean
+}
+
+export interface ReadingOrderItem {
+  id: string
+  nodeId: string
+  title: string
+  order: number
+}
+
+export interface ReadingOrderConfig {
+  items: ReadingOrderItem[]
+  updatedAt: string
 }

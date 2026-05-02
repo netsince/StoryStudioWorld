@@ -13,7 +13,7 @@ type MenuId = 'file' | 'edit' | 'select' | 'view' | 'goto' | 'help' | null
 
 const TitleBar: React.FC = () => {
   const { t } = useTranslation()
-  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab } =
+  const { openWelcomeTab, openCreateProjectTab, openAboutTab, openPreferencesTab, openReadingOrderTab } =
     useEditorStore()
   const { hideAppLogoText } = useUiSettings()
 
@@ -124,6 +124,19 @@ const TitleBar: React.FC = () => {
     },
     {
       key: 'separator3',
+      label: '---',
+      onSelect: () => {}
+    },
+    {
+      key: 'reading-order',
+      label: t('readingOrder.title'),
+      onSelect: () => {
+        openReadingOrderTab()
+        setActiveMenu(null)
+      }
+    },
+    {
+      key: 'separator4',
       label: '---',
       onSelect: () => {}
     },

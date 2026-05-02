@@ -33,13 +33,27 @@ export interface RecentProject {
 export interface Tab {
   id: string
   title: string
-  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences' | 'archive'
+  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences' | 'archive' | 'reading-order'
   path?: string
   nodeId?: string
   kind?: 'story' | 'setting'
   field?: string
   isDirty?: boolean
   isPinned?: boolean
+}
+
+// 阅读编排项
+export interface ReadingOrderItem {
+  id: string
+  nodeId: string
+  title: string
+  order: number
+}
+
+// 阅读编排配置
+export interface ReadingOrderConfig {
+  items: ReadingOrderItem[]
+  updatedAt: string
 }
 
 export interface EditorGroupNode {
