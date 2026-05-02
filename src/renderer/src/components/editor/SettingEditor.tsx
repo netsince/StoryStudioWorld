@@ -7,7 +7,7 @@ import { buildNodeDisplayPath, getNodeDisplayName } from '../../utils/nodeUtils'
 import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
 import SettingGallery from './SettingGallery'
 import type { StoryNode } from '../../models'
-import type { GalleryImageItem } from '../../../preload/index'
+import type { GalleryImageItem } from '../../../../preload/index'
 
 interface SettingEditorProps {
   nodeId: string
@@ -149,6 +149,18 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     }
     reloadContent()
   }, [node?.updatedAt])
+
+  useEffect(() => {
+    if (!hasLoaded || !nodeId) return
+    const draft = draftsByNodeId[nodeId]
+    if (typeof draft === 'string') {
+      try {
+        setData(JSON.parse(draft))
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [nodeId, draftsByNodeId, hasLoaded])
 
   useEffect(() => {
     if (!isEditing) {
