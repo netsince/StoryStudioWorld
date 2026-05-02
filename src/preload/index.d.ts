@@ -7,6 +7,10 @@ declare global {
       minimize: () => void
       maximize: () => void
       close: () => void
+      // 窗口生命周期事件监听
+      onWindowFocus: (callback: () => void) => (() => void)
+      onWindowBlur: (callback: () => void) => (() => void)
+      onWindowRestore: (callback: () => void) => (() => void)
       openProject: () => Promise<string | null>
       pickProjectPath: () => Promise<string | null>
       loadProject: (projectSettingsPath: string) => Promise<ProjectData>

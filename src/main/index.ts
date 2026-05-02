@@ -63,6 +63,22 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  // 窗口焦点管理 - 优化后台挂起恢复性能
+  mainWindow.on('focus', () => {
+    // 通知渲染进程窗口已获得焦点
+    mainWindow.webContents.send('window-focus')
+  })
+
+  mainWindow.on('blur', () => {
+    // 通知渲染进程窗口已失去焦点
+    mainWindow.webContents.send('window-blur')
+  })
+
+  // 窗口恢复时强制刷新以解决可能的渲染问题
+  mainWindow.on('restore', () => {
+    mainWindow.webContents.send('window-restore')
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }

@@ -215,6 +215,19 @@ const api = {
   minimize: (): void => ipcRenderer.send('window-minimize'),
   maximize: (): void => ipcRenderer.send('window-maximize'),
   close: (): void => ipcRenderer.send('window-close'),
+  // 窗口生命周期事件监听
+  onWindowFocus: (callback: () => void): (() => void) => {
+    ipcRenderer.on('window-focus', callback)
+    return () => ipcRenderer.removeListener('window-focus', callback)
+  },
+  onWindowBlur: (callback: () => void): (() => void) => {
+    ipcRenderer.on('window-blur', callback)
+    return () => ipcRenderer.removeListener('window-blur', callback)
+  },
+  onWindowRestore: (callback: () => void): (() => void) => {
+    ipcRenderer.on('window-restore', callback)
+    return () => ipcRenderer.removeListener('window-restore', callback)
+  },
   openProject: (): Promise<string | null> => ipcRenderer.invoke('open-project-dialog'),
   pickProjectPath: (): Promise<string | null> => ipcRenderer.invoke('pick-project-path-dialog'),
   loadProject: (projectSettingsPath: string): Promise<ProjectData> =>

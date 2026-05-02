@@ -12,6 +12,7 @@ import {
   getAutoIndentSettings
 } from './editor/PreferencesPage'
 import { useEditorStatusBar } from '../hooks/useEditorStatusBar'
+import { getPageLifecycleManager, throttleWhenVisible } from '../utils/pageLifecycle'
 
 interface PlainTextEditorProps {
   content: string
@@ -180,11 +181,26 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const textRef = useRef(text)
   textRef.current = text
 
+  // 页面生命周期管理
+  const pageLifecycleRef = useRef(getPageLifecycleManager())
+  const pendingAutoSaveRef = useRef(false)
+
   // 使用 useCallback 避免无限渲染循环
   const handleMatchesChange = useCallback((matches: MatchRange[], currentIdx: number) => {
     setHighlightMatches(matches)
     setCurrentMatchIndex(currentIdx)
   }, [])
+
+  // 节流的滚动位置保存函数 - 必须在 handleScroll 之前定义
+  const throttledSaveScrollPositionRef = useRef(
+    throttleWhenVisible((id: string, position: { scrollTop: number; scrollLeft: number }) => {
+      setTabScrollPosition(id, position)
+      if (scrollDebugEnabledRef.current) {
+        scrollEventSeqRef.current += 1
+        debugScroll('save', { seq: scrollEventSeqRef.current })
+      }
+    }, 150)
+  )
 
   // 同步滚动 - textarea 滚动时更新高亮层
   const handleScroll = useCallback(() => {
@@ -198,20 +214,20 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       overlay.scrollLeft = textarea.scrollLeft
     }
 
-    // 用 tabId 保存滚动位置
+    // 用 tabId 保存滚动位置 - 使用节流避免频繁更新
     if (tabId) {
       // content 同步触发的“被动滚动重置”不应覆盖原有的滚动记忆
       if (pendingRestoreScrollRef.current) return
-      setTabScrollPosition(tabId, {
+
+      // 页面不可见时跳过保存，减少后台资源消耗
+      if (!pageLifecycleRef.current.isPageVisible()) return
+
+      throttledSaveScrollPositionRef.current(tabId, {
         scrollTop: textarea.scrollTop,
         scrollLeft: textarea.scrollLeft
       })
-      if (scrollDebugEnabledRef.current) {
-        scrollEventSeqRef.current += 1
-        debugScroll('save', { seq: scrollEventSeqRef.current })
-      }
     }
-  }, [tabId, debugScroll, setTabScrollPosition])
+  }, [tabId])
 
   // 历史记录用于撤销/重做
   const historyRef = useRef<string[]>([])
@@ -683,25 +699,68 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     updateStatusBarStats({ chars, words, readingTime, charsWithoutSpaces, paragraphs })
   }, [text, updateStatusBarStats])
 
-  // 自动保存逻辑
+  // 执行自动保存
+  const executeAutoSave = useCallback(() => {
+    if (onSave && textRef.current !== lastSavedTextRef.current) {
+      lastSavedTextRef.current = textRef.current
+      onSave()
+
+      const now = new Date()
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+      updateLastSaved(timeStr)
+    }
+    pendingAutoSaveRef.current = false
+  }, [onSave, updateLastSaved])
+
+  // 自动保存逻辑 - 优化后台性能
   const scheduleAutoSave = useCallback(() => {
     const autoSaveSettings = getAutoSaveSettings()
     if (!autoSaveSettings.enabled) return
+
+    // 如果页面不可见，标记有待保存内容但不设置定时器
+    if (!pageLifecycleRef.current.isPageVisible()) {
+      pendingAutoSaveRef.current = true
+      return
+    }
 
     if (autoSaveTimerRef.current) {
       window.clearTimeout(autoSaveTimerRef.current)
     }
     autoSaveTimerRef.current = window.setTimeout(() => {
-      if (onSave && textRef.current !== lastSavedTextRef.current) {
-        lastSavedTextRef.current = textRef.current
-        onSave()
-
-        const now = new Date()
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        updateLastSaved(timeStr)
-      }
+      executeAutoSave()
     }, autoSaveSettings.interval)
-  }, [onSave, updateLastSaved])
+  }, [executeAutoSave])
+
+  // 监听页面生命周期变化
+  useEffect(() => {
+    const manager = pageLifecycleRef.current
+
+    // 页面隐藏时：清除自动保存定时器
+    const onHide = (): void => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current)
+        autoSaveTimerRef.current = null
+        pendingAutoSaveRef.current = true
+      }
+    }
+
+    // 页面显示时：执行待保存的内容
+    const onShow = (): void => {
+      if (pendingAutoSaveRef.current) {
+        executeAutoSave()
+      }
+      // 恢复焦点到编辑器
+      if (isActive && textareaRef.current) {
+        textareaRef.current.focus()
+      }
+    }
+
+    manager.setCallbacks({ onHide, onShow })
+
+    return () => {
+      manager.setCallbacks({})
+    }
+  }, [executeAutoSave, isActive])
 
   // 组件卸载时清理计时器
   useEffect(() => {
