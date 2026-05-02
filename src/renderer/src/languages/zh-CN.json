@@ -598,8 +598,22 @@
       "disambiguation": "消歧义",
       "disambiguationTitle": "{{name}}（消歧义）",
       "disambiguationDesc": "「{{name}}」可以指以下条目：",
-      "notFound": "未找到"
+      "notFound": "未找到",
+      "gallery": "图库"
     }
+  },
+  "gallery": {
+    "tabContent": "内容",
+    "tabGallery": "图库",
+    "upload": "上传图片",
+    "empty": "暂无图片，点击上传添加图片。",
+    "imageBroken": "图片未找到",
+    "themeImage": "主题图",
+    "setTheme": "设为主题图",
+    "unsetTheme": "取消主题图",
+    "remove": "删除",
+    "addCaption": "添加说明...",
+    "captionPlaceholder": "输入说明文字..."
   },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",

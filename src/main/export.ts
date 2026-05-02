@@ -501,6 +501,15 @@ export interface WikiNode {
   summary: string | null
   outline: string | null
   sortOrder: number
+  gallery: WikiGalleryItem[]
+}
+
+export interface WikiGalleryItem {
+  id: string
+  fileName: string
+  caption: string | null
+  isTheme: boolean
+  dataUrl: string
 }
 
 export interface WikiExportOptions {
@@ -797,10 +806,16 @@ function buildSettingPageHtml(
   const config = FIELD_CONFIG[category] || FIELD_CONFIG.default
 
   let infoboxHtml = ''
-  if (config.single.length > 0) {
+  const themeImg = node.gallery.find((g) => g.isTheme)
+  const themeImgHtml = themeImg && themeImg.dataUrl
+    ? `<div style="margin-bottom:8px"><img src="images/${node.id}_${themeImg.id}.jpg" alt="${escapeHtml(themeImg.caption || node.name)}" style="width:100%;display:block;border-radius:2px" />${themeImg.caption ? `<div style="font-size:11px;color:#888;text-align:center;padding:4px 0">${escapeHtml(themeImg.caption)}</div>` : ''}</div>`
+    : ''
+
+  if (config.single.length > 0 || themeImg) {
     infoboxHtml = `<aside style="width:280px;background:#2a2a2e;border:1px solid #54595d;padding:8px;font-size:13px;float:right;margin-left:24px;margin-bottom:20px">
       <div style="text-align:center;font-weight:bold;padding:8px;background:#3a3a3e;margin-bottom:8px;border:1px solid #54595d">${escapeHtml(node.name)}</div>
-      <table style="width:100%;border-collapse:collapse">
+      ${themeImgHtml}
+      ${config.single.length > 0 ? `<table style="width:100%;border-collapse:collapse">
         <tbody>
           ${config.single.map((field) => {
             const val = data[field]
@@ -810,7 +825,7 @@ function buildSettingPageHtml(
             </tr>`
           }).join('\n')}
         </tbody>
-      </table>
+      </table>` : ''}
     </aside>`
   }
 
@@ -855,6 +870,19 @@ function buildSettingPageHtml(
         ${sectionsHtml}
       </div>
     </div>
+    ${node.gallery.length > 0 ? `
+    <div style="margin-top:40px;border-top:1px solid #54595d;padding-top:20px">
+      <h2 style="margin:0 0 16px;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${i18n.gallery || 'Gallery'}</h2>
+      <div style="column-count:3;column-gap:12px">
+        ${node.gallery.map((img) => {
+          if (!img.dataUrl) return ''
+          return `<div style="break-inside:avoid;margin-bottom:12px;border:1px solid #54595d;border-radius:4px;overflow:hidden">
+            <img src="images/${node.id}_${img.id}.jpg" alt="${escapeHtml(img.caption || img.fileName)}" style="width:100%;display:block" />
+            ${img.caption ? `<div style="padding:6px 8px;font-size:12px;color:#aaa">${escapeHtml(img.caption)}</div>` : ''}
+          </div>`
+        }).join('\n')}
+      </div>
+    </div>` : ''}
   </div>
 </body>
 </html>`
@@ -955,6 +983,25 @@ export function exportToWiki(options: WikiExportOptions): void {
 
   writeFileSync(join(exportPath, 'index.html'), indexHtml, 'utf-8')
   writeFileSync(join(exportPath, 'style.css'), css, 'utf-8')
+
+  const imagesDir = join(exportPath, 'images')
+  if (!existsSync(imagesDir)) {
+    mkdirSync(imagesDir, { recursive: true })
+  }
+
+  const allFileNodes = nodes.filter((n) => n.type === 'file')
+  for (const node of allFileNodes) {
+    for (const img of node.gallery) {
+      if (!img.dataUrl) continue
+      try {
+        const base64Match = img.dataUrl.match(/^data:image\/[^;]+;base64,(.+)$/)
+        if (base64Match) {
+          const buffer = Buffer.from(base64Match[1], 'base64')
+          writeFileSync(join(imagesDir, `${node.id}_${img.id}.jpg`), buffer)
+        }
+      } catch { /* ignore image save errors */ }
+    }
+  }
 
   const settingNodes = nodes.filter((n) => n.type === 'file' && n.kind === 'setting')
   for (const node of settingNodes) {

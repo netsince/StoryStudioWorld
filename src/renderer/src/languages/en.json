@@ -598,8 +598,22 @@
       "disambiguation": "Disambiguation",
       "disambiguationTitle": "{{name}} (disambiguation)",
       "disambiguationDesc": "\"{{name}}\" may refer to:",
-      "notFound": "Not found"
+      "notFound": "Not found",
+      "gallery": "Gallery"
     }
+  },
+  "gallery": {
+    "tabContent": "Content",
+    "tabGallery": "Gallery",
+    "upload": "Upload Image",
+    "empty": "No images yet. Click upload to add images.",
+    "imageBroken": "Image not found",
+    "themeImage": "Theme",
+    "setTheme": "Set as theme image",
+    "unsetTheme": "Unset theme image",
+    "remove": "Remove",
+    "addCaption": "Add caption...",
+    "captionPlaceholder": "Enter caption..."
   },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",

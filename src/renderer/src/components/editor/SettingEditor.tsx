@@ -5,7 +5,9 @@ import { useEditorStore } from '../../stores/editorStore'
 import { getAppSettings } from './PreferencesPage'
 import { buildNodeDisplayPath, getNodeDisplayName } from '../../utils/nodeUtils'
 import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
+import SettingGallery from './SettingGallery'
 import type { StoryNode } from '../../models'
+import type { GalleryImageItem } from '../../../preload/index'
 
 interface SettingEditorProps {
   nodeId: string
@@ -39,10 +41,12 @@ const FIELD_CONFIG = {
 const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId }) => {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'content' | 'gallery'>('content')
   const [data, setData] = useState<SettingData>({})
   const [loading, setLoading] = useState(true)
   const [appSettings, setAppSettings] = useState(getAppSettings())
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [themeImage, setThemeImage] = useState<GalleryImageItem | null>(null)
   const [refPanelItems, setRefPanelItems] = useState<WikiRefItem[]>([])
   const [refPanelTitle, setRefPanelTitle] = useState('')
   const [refPanelIs404, setRefPanelIs404] = useState(false)
@@ -151,6 +155,20 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       setAppSettings(getAppSettings())
     }
   }, [isEditing])
+
+  useEffect(() => {
+    if (!currentProject || !nodeId) return
+    const loadTheme = async () => {
+      try {
+        const imgs = await window.api.gallery.getImages(currentProject.projectSettingsPath, nodeId)
+        const theme = imgs.find((img) => img.isTheme)
+        setThemeImage(theme || null)
+      } catch {
+        setThemeImage(null)
+      }
+    }
+    loadTheme()
+  }, [currentProject, nodeId, activeTab])
 
   const handleSave = async (newData: SettingData) => {
     if (!currentProject || !nodeId) return
@@ -366,6 +384,24 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
           </button>
         </header>
 
+        <div className="wiki-tabs">
+          <button
+            className={`wiki-tab ${activeTab === 'content' ? 'active' : ''}`}
+            onClick={() => setActiveTab('content')}
+          >
+            {t('gallery.tabContent')}
+          </button>
+          <button
+            className={`wiki-tab ${activeTab === 'gallery' ? 'active' : ''}`}
+            onClick={() => setActiveTab('gallery')}
+          >
+            {t('gallery.tabGallery')}
+          </button>
+        </div>
+
+        {activeTab === 'gallery' ? (
+          <SettingGallery nodeId={nodeId} />
+        ) : (
         <div style={{ position: 'relative', display: 'block' }}>
            {config.single.length > 0 && (
              <aside className="wiki-infobox" style={{ 
@@ -388,6 +424,20 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                }}>
                  {node.name}
                </div>
+               {themeImage && themeImage.dataUrl && (
+                 <div style={{ marginBottom: '8px' }}>
+                   <img
+                     src={themeImage.dataUrl}
+                     alt={themeImage.caption || node.name}
+                     style={{ width: '100%', display: 'block', borderRadius: '2px' }}
+                   />
+                   {themeImage.caption && (
+                     <div style={{ fontSize: '11px', color: '#888', textAlign: 'center', padding: '4px 0' }}>
+                       {themeImage.caption}
+                     </div>
+                   )}
+                 </div>
+               )}
                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                  <tbody>
                    {config.single.map((field: string) => (
@@ -529,6 +579,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
               ))}
             </div>
           </div>
+        )}
       </div>
       {refPanelOpen && (
         <WikiRefPanel

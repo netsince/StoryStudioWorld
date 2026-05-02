@@ -80,6 +80,21 @@ export async function initDatabase(dbPath: string): Promise<Database> {
 
   db.run(`CREATE INDEX IF NOT EXISTS idx_snapshots_createdAt ON snapshots(createdAt)`)
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS gallery (
+      id TEXT PRIMARY KEY,
+      nodeId TEXT NOT NULL,
+      fileName TEXT NOT NULL,
+      caption TEXT,
+      sortOrder INTEGER DEFAULT 0,
+      isTheme INTEGER DEFAULT 0,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY (nodeId) REFERENCES nodes(id) ON DELETE CASCADE
+    )
+  `)
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_gallery_nodeId ON gallery(nodeId)`)
+
   migrateDatabase(db)
 
   return db
@@ -585,4 +600,108 @@ export function getAllNodesWithDeleted(db: Database): StoryNode[] {
   stmt.free()
 
   return nodes
+}
+
+// ==================== Gallery Functions ====================
+
+export interface GalleryItem {
+  id: string
+  nodeId: string
+  fileName: string
+  caption: string | null
+  sortOrder: number
+  isTheme: boolean
+  createdAt: string
+}
+
+export function getGalleryByNodeId(db: Database, nodeId: string): GalleryItem[] {
+  const stmt = db.prepare(`
+    SELECT id, nodeId, fileName, caption, sortOrder, isTheme, createdAt
+    FROM gallery
+    WHERE nodeId = ?
+    ORDER BY sortOrder ASC, createdAt ASC
+  `)
+  stmt.bind([nodeId])
+
+  const items: GalleryItem[] = []
+  while (stmt.step()) {
+    const row = stmt.getAsObject()
+    items.push({
+      id: row.id as string,
+      nodeId: row.nodeId as string,
+      fileName: row.fileName as string,
+      caption: row.caption as string | null,
+      sortOrder: row.sortOrder as number,
+      isTheme: (row.isTheme as number) === 1,
+      createdAt: row.createdAt as string
+    })
+  }
+  stmt.free()
+  return items
+}
+
+export function createGalleryItem(db: Database, nodeId: string, fileName: string, sortOrder: number): GalleryItem {
+  const id = randomUUID()
+  const createdAt = new Date().toISOString()
+
+  db.run(
+    `INSERT INTO gallery (id, nodeId, fileName, caption, sortOrder, isTheme, createdAt)
+     VALUES (?, ?, ?, NULL, ?, 0, ?)`,
+    [id, nodeId, fileName, sortOrder, createdAt]
+  )
+
+  return {
+    id,
+    nodeId,
+    fileName,
+    caption: null,
+    sortOrder,
+    isTheme: false,
+    createdAt
+  }
+}
+
+export function updateGalleryCaption(db: Database, itemId: string, caption: string): void {
+  db.run(`UPDATE gallery SET caption = ? WHERE id = ?`, [caption, itemId])
+}
+
+export function updateGallerySortOrder(db: Database, itemId: string, sortOrder: number): void {
+  db.run(`UPDATE gallery SET sortOrder = ? WHERE id = ?`, [sortOrder, itemId])
+}
+
+export function setGalleryTheme(db: Database, nodeId: string, itemId: string): void {
+  db.run(`UPDATE gallery SET isTheme = 0 WHERE nodeId = ?`, [nodeId])
+  db.run(`UPDATE gallery SET isTheme = 1 WHERE id = ?`, [itemId])
+}
+
+export function unsetGalleryTheme(db: Database, nodeId: string): void {
+  db.run(`UPDATE gallery SET isTheme = 0 WHERE nodeId = ?`, [nodeId])
+}
+
+export function deleteGalleryItem(db: Database, itemId: string): void {
+  db.run(`DELETE FROM gallery WHERE id = ?`, [itemId])
+}
+
+export function getGalleryItem(db: Database, itemId: string): GalleryItem | null {
+  const stmt = db.prepare(`
+    SELECT id, nodeId, fileName, caption, sortOrder, isTheme, createdAt
+    FROM gallery WHERE id = ?
+  `)
+  stmt.bind([itemId])
+
+  if (stmt.step()) {
+    const row = stmt.getAsObject()
+    stmt.free()
+    return {
+      id: row.id as string,
+      nodeId: row.nodeId as string,
+      fileName: row.fileName as string,
+      caption: row.caption as string | null,
+      sortOrder: row.sortOrder as number,
+      isTheme: (row.isTheme as number) === 1,
+      createdAt: row.createdAt as string
+    }
+  }
+  stmt.free()
+  return null
 }

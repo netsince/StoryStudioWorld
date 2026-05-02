@@ -193,6 +193,17 @@ export interface ExportWikiResult {
   error?: string
 }
 
+export interface GalleryImageItem {
+  id: string
+  nodeId: string
+  fileName: string
+  caption: string | null
+  sortOrder: number
+  isTheme: boolean
+  createdAt: string
+  dataUrl: string
+}
+
 export interface PluginFetchResponse {
   ok: boolean
   status: number
@@ -330,6 +341,23 @@ const api = {
     ipcRenderer.invoke('export-wiki', input),
   pickWikiExportPath: (): Promise<string | null> =>
     ipcRenderer.invoke('pick-wiki-export-path'),
+  // Gallery API
+  gallery: {
+    getImages: (projectSettingsPath: string, nodeId: string): Promise<GalleryImageItem[]> =>
+      ipcRenderer.invoke('gallery:get-images', { projectSettingsPath, nodeId }),
+    uploadImage: (projectSettingsPath: string, nodeId: string): Promise<GalleryImageItem | null> =>
+      ipcRenderer.invoke('gallery:upload-image', { projectSettingsPath, nodeId }),
+    updateCaption: (projectSettingsPath: string, itemId: string, caption: string): Promise<void> =>
+      ipcRenderer.invoke('gallery:update-caption', { projectSettingsPath, itemId, caption }),
+    reorder: (projectSettingsPath: string, itemIds: string[]): Promise<void> =>
+      ipcRenderer.invoke('gallery:reorder', { projectSettingsPath, itemIds }),
+    setTheme: (projectSettingsPath: string, nodeId: string, itemId: string): Promise<void> =>
+      ipcRenderer.invoke('gallery:set-theme', { projectSettingsPath, nodeId, itemId }),
+    unsetTheme: (projectSettingsPath: string, nodeId: string): Promise<void> =>
+      ipcRenderer.invoke('gallery:unset-theme', { projectSettingsPath, nodeId }),
+    remove: (projectSettingsPath: string, itemId: string): Promise<void> =>
+      ipcRenderer.invoke('gallery:remove', { projectSettingsPath, itemId }),
+  },
   // Plugin Native APIs
   pluginNative: {
     fetch: (url: string, options?: PluginFetchOptions): Promise<PluginFetchResponse> =>

@@ -2622,6 +2622,206 @@ input:focus + .ssw-slider {
   cursor: pointer;
 }
 
+// ==================== Setting Gallery Styles ====================
+
+.wiki-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #54595d;
+  padding-left: 8px;
+}
+
+.wiki-tab {
+  padding: 6px 16px;
+  background-color: transparent;
+  color: #888;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: 'Linux Libertine', 'Georgia', 'Times', serif;
+  position: relative;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: #ccc;
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  &.active {
+    color: #fff;
+    background-color: #2a2a2e;
+    border-color: #54595d;
+    border-bottom: 1px solid #2a2a2e;
+  }
+}
+
+.setting-gallery {
+  padding-bottom: 20px;
+}
+
+.setting-gallery-toolbar {
+  margin-bottom: 16px;
+}
+
+.setting-gallery-upload-btn {
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color, #454545);
+  border-radius: 4px;
+  color: var(--accent-color, #3498db);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 122, 204, 0.1);
+    border-color: var(--accent-color, #3498db);
+  }
+}
+
+.setting-gallery-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.setting-gallery-masonry {
+  column-count: 3;
+  column-gap: 12px;
+}
+
+.setting-gallery-item {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color, #454545);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--panel-bg, #252526);
+  cursor: grab;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+
+  &.dragging {
+    opacity: 0.5;
+  }
+
+  &.is-theme {
+    border-color: var(--accent-color, #3498db);
+  }
+}
+
+.setting-gallery-item-image {
+  position: relative;
+
+  img {
+    width: 100%;
+    display: block;
+  }
+}
+
+.setting-gallery-item-broken {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted, #666);
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.setting-gallery-theme-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 8px;
+  background: var(--accent-color, #3498db);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 2px;
+}
+
+.setting-gallery-caption {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text-main, #ccc);
+  cursor: pointer;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &:hover .setting-gallery-caption-actions {
+    opacity: 1;
+  }
+}
+
+.setting-gallery-caption-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setting-gallery-caption-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.setting-gallery-inline-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-muted, #888);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-active, #fff);
+  }
+
+  &.delete:hover {
+    color: #e74c3c;
+  }
+
+  &.theme-active {
+    color: var(--accent-color, #3498db);
+    opacity: 1;
+  }
+}
+
+.setting-gallery-caption-edit {
+  padding: 4px 6px;
+
+  input {
+    width: 100%;
+    padding: 2px 4px;
+    background: var(--editor-bg, #1e1e1e);
+    border: 1px solid var(--accent-color, #3498db);
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+    border-radius: 2px;
+  }
+}
+
 // ==================== Reading Order Panel Styles (VS Code / Monaco Tree style) ====================
 
 .reading-order-panel {

@@ -22,7 +22,14 @@ import {
   updateNodeSummaryAndOutline,
   getArchivedNodesProject,
   restoreArchivedNode,
-  permanentlyDeleteProjectNode
+  permanentlyDeleteProjectNode,
+  getGalleryImages,
+  uploadGalleryImage,
+  updateGalleryImageCaption,
+  reorderGalleryImages,
+  setGalleryThemeImage,
+  unsetGalleryThemeImage,
+  removeGalleryImage
 } from './project'
 import { proofreadText } from './proofread'
 import { getAllMemos, createMemo, updateMemo, deleteMemo } from './memo'
@@ -42,7 +49,8 @@ import {
   exportToMarkdown,
   exportToWiki,
   type ExportContent,
-  type WikiNode
+  type WikiNode,
+  type WikiGalleryItem
 } from './export'
 
 function createWindow(): void {
@@ -553,6 +561,7 @@ function createWindow(): void {
         let content: string | null = null
         let summary: string | null = null
         let outline: string | null = null
+        let gallery: WikiGalleryItem[] = []
 
         if (node.type === 'file') {
           content = await readNodeContent({ projectSettingsPath, nodeId: node.id })
@@ -561,6 +570,16 @@ function createWindow(): void {
             summary = meta.summary
             outline = meta.outline
           }
+          try {
+            const galleryImages = await getGalleryImages(projectSettingsPath, node.id)
+            gallery = galleryImages.map((img) => ({
+              id: img.id,
+              fileName: img.fileName,
+              caption: img.caption,
+              isTheme: img.isTheme,
+              dataUrl: img.dataUrl
+            }))
+          } catch { /* ignore gallery errors */ }
         }
 
         wikiNodes.push({
@@ -572,7 +591,8 @@ function createWindow(): void {
           content,
           summary,
           outline,
-          sortOrder: node.sortOrder
+          sortOrder: node.sortOrder,
+          gallery
         })
       }
 
@@ -593,6 +613,54 @@ function createWindow(): void {
         error: error instanceof Error ? error.message : String(error)
       }
     }
+  })
+
+  // Gallery IPC Handlers
+  ipcMain.handle('gallery:get-images', async (_, { projectSettingsPath, nodeId }) => {
+    try {
+      return await getGalleryImages(projectSettingsPath, nodeId)
+    } catch (error) {
+      console.error('Get gallery images failed:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle('gallery:upload-image', async (_, { projectSettingsPath, nodeId }) => {
+    try {
+      const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        title: 'Select Image',
+        filters: [
+          { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'] }
+        ]
+      })
+      if (canceled || filePaths.length === 0) return null
+
+      return await uploadGalleryImage(projectSettingsPath, nodeId, filePaths[0])
+    } catch (error) {
+      console.error('Upload gallery image failed:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('gallery:update-caption', async (_, { projectSettingsPath, itemId, caption }) => {
+    await updateGalleryImageCaption(projectSettingsPath, itemId, caption)
+  })
+
+  ipcMain.handle('gallery:reorder', async (_, { projectSettingsPath, itemIds }) => {
+    await reorderGalleryImages(projectSettingsPath, itemIds)
+  })
+
+  ipcMain.handle('gallery:set-theme', async (_, { projectSettingsPath, nodeId, itemId }) => {
+    await setGalleryThemeImage(projectSettingsPath, nodeId, itemId)
+  })
+
+  ipcMain.handle('gallery:unset-theme', async (_, { projectSettingsPath, nodeId }) => {
+    await unsetGalleryThemeImage(projectSettingsPath, nodeId)
+  })
+
+  ipcMain.handle('gallery:remove', async (_, { projectSettingsPath, itemId }) => {
+    await removeGalleryImage(projectSettingsPath, itemId)
   })
 
   // Plugin Native APIs

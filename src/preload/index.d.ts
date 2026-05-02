@@ -80,6 +80,16 @@ declare global {
       // Export Wiki API
       exportWiki: (input: ExportWikiInput) => Promise<ExportWikiResult>
       pickWikiExportPath: () => Promise<string | null>
+      // Gallery API
+      gallery: {
+        getImages: (projectSettingsPath: string, nodeId: string) => Promise<GalleryImageItem[]>
+        uploadImage: (projectSettingsPath: string, nodeId: string) => Promise<GalleryImageItem | null>
+        updateCaption: (projectSettingsPath: string, itemId: string, caption: string) => Promise<void>
+        reorder: (projectSettingsPath: string, itemIds: string[]) => Promise<void>
+        setTheme: (projectSettingsPath: string, nodeId: string, itemId: string) => Promise<void>
+        unsetTheme: (projectSettingsPath: string, nodeId: string) => Promise<void>
+        remove: (projectSettingsPath: string, itemId: string) => Promise<void>
+      }
       // Plugin Native APIs
       pluginNative: {
         fetch: (url: string, options?: {
@@ -314,4 +324,15 @@ export interface ExportWikiResult {
   success: boolean
   exportPath?: string
   error?: string
+}
+
+export interface GalleryImageItem {
+  id: string
+  nodeId: string
+  fileName: string
+  caption: string | null
+  sortOrder: number
+  isTheme: boolean
+  createdAt: string
+  dataUrl: string
 }

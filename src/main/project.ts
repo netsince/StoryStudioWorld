@@ -1,5 +1,6 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join, normalize } from 'path'
+import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'fs'
 import {
   STORY_DB_FILE,
   initDatabase,
@@ -21,7 +22,16 @@ import {
   updateNodeSummary,
   getNodeOutline,
   updateNodeOutline,
-  StoryNode
+  StoryNode,
+  getGalleryByNodeId,
+  createGalleryItem,
+  updateGalleryCaption,
+  updateGallerySortOrder,
+  setGalleryTheme,
+  unsetGalleryTheme,
+  deleteGalleryItem,
+  getGalleryItem,
+  type GalleryItem
 } from './db'
 
 export const PROJECT_SETTINGS_FILE = 'storystudioworld.sswprojectsetting'
@@ -476,4 +486,153 @@ export function buildNodeTree(nodes: StoryNode[]): Map<string | null, StoryNode[
   }
 
   return tree
+}
+
+// ==================== Gallery Functions ====================
+
+function getAttachmentsDir(projectSettingsPath: string): string {
+  const projectDir = dirname(projectSettingsPath)
+  return join(projectDir, 'attachments')
+}
+
+function getGalleryFilePath(projectSettingsPath: string, itemId: string, fileName: string): string {
+  return join(getAttachmentsDir(projectSettingsPath), `${itemId}_${fileName}`)
+}
+
+export async function getGalleryImages(projectSettingsPath: string, nodeId: string): Promise<(GalleryItem & { dataUrl: string })[]> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const items = getGalleryByNodeId(db, nodeId)
+  db.close()
+
+  const attachmentsDir = getAttachmentsDir(projectSettingsPath)
+  const result: (GalleryItem & { dataUrl: string })[] = []
+
+  for (const item of items) {
+    const filePath = join(attachmentsDir, `${item.id}_${item.fileName}`)
+    try {
+      const buffer = await readFile(filePath)
+      const base64 = buffer.toString('base64')
+      const ext = item.fileName.split('.').pop()?.toLowerCase()
+      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+      result.push({ ...item, dataUrl: `data:${mime};base64,${base64}` })
+    } catch {
+      result.push({ ...item, dataUrl: '' })
+    }
+  }
+
+  return result
+}
+
+export async function uploadGalleryImage(
+  projectSettingsPath: string,
+  nodeId: string,
+  sourceFilePath: string
+): Promise<GalleryItem & { dataUrl: string }> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const existing = getGalleryByNodeId(db, nodeId)
+  const sortOrder = existing.length
+  const fileName = basename(sourceFilePath)
+  const item = createGalleryItem(db, nodeId, fileName, sortOrder)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+
+  const attachmentsDir = getAttachmentsDir(projectSettingsPath)
+  if (!existsSync(attachmentsDir)) {
+    mkdirSync(attachmentsDir, { recursive: true })
+  }
+  const destPath = join(attachmentsDir, `${item.id}_${fileName}`)
+  copyFileSync(sourceFilePath, destPath)
+
+  const buffer = await readFile(destPath)
+  const base64 = buffer.toString('base64')
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+
+  return { ...item, dataUrl: `data:${mime};base64,${base64}` }
+}
+
+export async function updateGalleryImageCaption(
+  projectSettingsPath: string,
+  itemId: string,
+  caption: string
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  updateGalleryCaption(db, itemId, caption)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
+export async function reorderGalleryImages(
+  projectSettingsPath: string,
+  itemIds: string[]
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  for (let i = 0; i < itemIds.length; i++) {
+    updateGallerySortOrder(db, itemIds[i], i)
+  }
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
+export async function setGalleryThemeImage(
+  projectSettingsPath: string,
+  nodeId: string,
+  itemId: string
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  setGalleryTheme(db, nodeId, itemId)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
+export async function unsetGalleryThemeImage(
+  projectSettingsPath: string,
+  nodeId: string
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  unsetGalleryTheme(db, nodeId)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+}
+
+export async function removeGalleryImage(
+  projectSettingsPath: string,
+  itemId: string
+): Promise<void> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const item = getGalleryItem(db, itemId)
+  deleteGalleryItem(db, itemId)
+  await saveDatabase(db, project.storyDbPath)
+  db.close()
+
+  if (item) {
+    const filePath = getGalleryFilePath(projectSettingsPath, item.id, item.fileName)
+    try { unlinkSync(filePath) } catch { /* ignore */ }
+  }
+}
+
+export async function getGalleryImageBuffer(
+  projectSettingsPath: string,
+  itemId: string
+): Promise<Buffer | null> {
+  const project = await loadProject(projectSettingsPath)
+  const db = await loadDatabase(project.storyDbPath)
+  const item = getGalleryItem(db, itemId)
+  db.close()
+
+  if (!item) return null
+
+  const filePath = getGalleryFilePath(projectSettingsPath, item.id, item.fileName)
+  try {
+    return await readFile(filePath)
+  } catch {
+    return null
+  }
 }
