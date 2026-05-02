@@ -26,6 +26,7 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.isComposing) return
       if (event.key === 'Escape') {
         event.preventDefault()
         onCancel()

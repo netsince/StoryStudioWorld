@@ -108,6 +108,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const pendingEnterAfterCompositionRef = useRef(false)
+  const compositionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(isActive ?? false)
 
@@ -820,12 +821,35 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     [onChange, saveHistory, scheduleAutoSave]
   )
 
+  const handleBlur = useCallback(() => {
+    if (isComposingRef.current) {
+      isComposingRef.current = false
+      pendingEnterAfterCompositionRef.current = false
+    }
+    if (compositionTimerRef.current) {
+      clearTimeout(compositionTimerRef.current)
+      compositionTimerRef.current = null
+    }
+    saveSelection()
+  }, [saveSelection])
+
   const handleCompositionStart = (): void => {
     isComposingRef.current = true
+    if (compositionTimerRef.current) clearTimeout(compositionTimerRef.current)
+    compositionTimerRef.current = setTimeout(() => {
+      if (isComposingRef.current) {
+        isComposingRef.current = false
+        pendingEnterAfterCompositionRef.current = false
+      }
+    }, 5000)
   }
 
   const handleCompositionEnd = (): void => {
     isComposingRef.current = false
+    if (compositionTimerRef.current) {
+      clearTimeout(compositionTimerRef.current)
+      compositionTimerRef.current = null
+    }
 
     if (!pendingEnterAfterCompositionRef.current) return
     pendingEnterAfterCompositionRef.current = false
@@ -1219,7 +1243,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
-          onBlur={saveSelection}
+          onBlur={handleBlur}
           onScroll={handleScroll}
           placeholder={_placeholder}
           spellCheck={false}

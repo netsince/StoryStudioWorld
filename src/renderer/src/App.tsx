@@ -34,6 +34,26 @@ function App(): React.JSX.Element {
     void useProjectStore.getState().restoreLastProjectOrWelcome()
   }, [])
 
+  useEffect(() => {
+    let lastEscapeTime = 0
+    const handleGlobalKeyDown = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape' || e.isComposing) return
+      const now = Date.now()
+      if (now - lastEscapeTime < 300) {
+        const active = document.activeElement as HTMLElement | null
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          active.blur()
+          requestAnimationFrame(() => {
+            active.focus()
+          })
+        }
+      }
+      lastEscapeTime = now
+    }
+    document.addEventListener('keydown', handleGlobalKeyDown, true)
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown, true)
+  }, [])
+
   return (
     <>
       <svg style={{ display: 'none' }}>

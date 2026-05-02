@@ -176,6 +176,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
     if (!isVisible) return
 
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.isComposing) return
       if (e.key === 'Escape') {
         onClose()
         return

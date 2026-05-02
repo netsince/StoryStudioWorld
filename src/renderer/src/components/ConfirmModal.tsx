@@ -31,6 +31,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.isComposing) return
       if (e.key === 'Escape') onCancel()
       if (e.key === 'Enter') {
         e.preventDefault()
