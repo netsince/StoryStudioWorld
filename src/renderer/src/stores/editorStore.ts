@@ -88,6 +88,7 @@ interface EditorState {
   openAboutTab: () => void
   openPreferencesTab: () => void
   openReadingOrderTab: () => void
+  openExportStoryTab: () => void
   removeCreateProjectTabs: () => void
 
   openTabInSplit: (tab: Tab, sourceGroupId: string, direction?: 'row' | 'column') => void
@@ -318,6 +319,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     openReadingOrderTab: () => {
       const tab: Tab = { id: 'reading-order', title: i18n.t('readingOrder.title'), type: 'reading-order' }
+      set((state) => {
+        const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
+        const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
+          const exists = group.tabs.some((t) => t.id === tab.id)
+          const nextTabs = exists ? group.tabs : [...group.tabs, tab]
+          return { ...group, tabs: nextTabs, activeTabId: tab.id }
+        })
+        return { editorTree: nextTree, focusedGroupId: targetGroupId }
+      })
+    },
+
+    openExportStoryTab: () => {
+      const tab: Tab = { id: 'export-story', title: i18n.t('exportStory.title'), type: 'export-story' }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {

@@ -25,7 +25,8 @@
   "activity": {
     "write": "编写",
     "setting": "设定",
-    "plugin": "插件"
+    "plugin": "插件",
+    "export": "导出"
   },
   "panel": {
     "proofread": "校对",
@@ -536,6 +537,35 @@
     "clearAll": "清空列表",
     "confirmClear": "确定要清空阅读编排列表吗？",
     "dragHint": "提示：从左侧文件树拖拽章节到此处添加"
+  },
+  "exportStory": {
+    "title": "导出故事",
+    "noProject": "请先打开项目",
+    "format": "导出格式",
+    "formats": {
+      "txt": "TXT",
+      "md": "Markdown",
+      "pdf": "PDF",
+      "epub": "EPUB",
+      "docx": "Word"
+    },
+    "mode": "导出方式",
+    "singleChapter": "导出单章",
+    "readingOrderMode": "按编排策略导出",
+    "selectChapter": "选择章节",
+    "pleaseSelect": "请选择",
+    "readingOrderEmpty": "阅读编排列表为空，请先设置编排策略",
+    "willExportChapters": "将导出 {{count}} 个章节",
+    "andMore": "...等 {{count}} 个",
+    "gotoReadingOrder": "前往编排策略",
+    "fileName": "文件名",
+    "fileNamePlaceholder": "输入导出文件名（可选）",
+    "startExport": "开始导出",
+    "exporting": "导出中...",
+    "exportSuccess": "导出成功：{{path}}",
+    "exportFailed": "导出失败",
+    "selectChapterFirst": "请先选择要导出的章节",
+    "chapter": "章"
   },
   "hooks": {
     "beforeSave": "保存前，可修改内容或阻止保存",

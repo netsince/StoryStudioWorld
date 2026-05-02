@@ -25,7 +25,8 @@
   "activity": {
     "write": "執筆",
     "setting": "設定",
-    "plugin": "プラグイン"
+    "plugin": "プラグイン",
+    "export": "エクスポート"
   },
   "panel": {
     "proofread": "校正",
@@ -536,6 +537,35 @@
     "clearAll": "リストをクリア",
     "confirmClear": "読書順序リストをクリアしてもよろしいですか？",
     "dragHint": "ヒント：左側のファイルツリーから章をここにドラッグして追加"
+  },
+  "exportStory": {
+    "title": "ストーリーをエクスポート",
+    "noProject": "プロジェクトを開いてください",
+    "format": "エクスポート形式",
+    "formats": {
+      "txt": "TXT",
+      "md": "Markdown",
+      "pdf": "PDF",
+      "epub": "EPUB",
+      "docx": "Word"
+    },
+    "mode": "エクスポートモード",
+    "singleChapter": "単一の章をエクスポート",
+    "readingOrderMode": "読書順序に従ってエクスポート",
+    "selectChapter": "章を選択",
+    "pleaseSelect": "選択してください",
+    "readingOrderEmpty": "読書順序リストが空です。先に読書順序を設定してください。",
+    "willExportChapters": "{{count}}個の章をエクスポートします",
+    "andMore": "...他{{count}}個",
+    "gotoReadingOrder": "読書順序を設定",
+    "fileName": "ファイル名",
+    "fileNamePlaceholder": "エクスポートするファイル名を入力（オプション）",
+    "startExport": "エクスポート開始",
+    "exporting": "エクスポート中...",
+    "exportSuccess": "エクスポート成功：{{path}}",
+    "exportFailed": "エクスポートに失敗しました",
+    "selectChapterFirst": "エクスポートする章を選択してください",
+    "chapter": "章"
   },
   "hooks": {
     "beforeSave": "保存前、内容を変更または保存を阻止可能",

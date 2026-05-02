@@ -71,6 +71,8 @@ declare global {
       // Reading Order APIs
       readReadingOrder: (projectSettingsPath: string) => Promise<ReadingOrderConfig | null>
       writeReadingOrder: (projectSettingsPath: string, config: ReadingOrderConfig) => Promise<void>
+      // Export Story API
+      exportStory: (input: ExportStoryInput) => Promise<ExportStoryResult>
       // Plugin Native APIs
       pluginNative: {
         fetch: (url: string, options?: {
@@ -276,4 +278,18 @@ export interface ReadingOrderItem {
 export interface ReadingOrderConfig {
   items: ReadingOrderItem[]
   updatedAt: string
+}
+
+export interface ExportStoryInput {
+  projectSettingsPath: string
+  format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
+  mode: 'single' | 'readingOrder'
+  nodeId: string | null
+  fileName: string
+}
+
+export interface ExportStoryResult {
+  success: boolean
+  filePath?: string
+  error?: string
 }

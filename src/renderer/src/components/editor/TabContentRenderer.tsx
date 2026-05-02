@@ -12,6 +12,7 @@ import WelcomePage from './WelcomePage'
 import AboutPage from './AboutPage'
 import PreferencesPage from './PreferencesPage'
 import ReadingOrderPanel from '../ReadingOrderPanel'
+import ExportStoryPanel from '../ExportStoryPanel'
 
 interface TabContentRendererProps {
   tab: Tab
@@ -124,6 +125,10 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
 
   if (tab.type === 'reading-order') {
     return <ReadingOrderPanel />
+  }
+
+  if (tab.type === 'export-story') {
+    return <ExportStoryPanel />
   }
 
   if (tab.type === 'file') {

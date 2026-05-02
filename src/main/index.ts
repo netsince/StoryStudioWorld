@@ -364,6 +364,84 @@ function createWindow(): void {
     }
   })
 
+  // Export Story IPC handler
+  ipcMain.handle('export-story', async (_, input: {
+    projectSettingsPath: string
+    format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
+    mode: 'single' | 'readingOrder'
+    nodeId: string | null
+    fileName: string
+  }) => {
+    try {
+      const { projectSettingsPath, format, mode, nodeId, fileName } = input
+      const projectDir = dirname(projectSettingsPath)
+
+      // 显示保存对话框
+      const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: `${fileName || 'exported-story'}.${format}`,
+        filters: [
+          { name: format.toUpperCase(), extensions: [format] }
+        ]
+      })
+
+      if (canceled || !filePath) {
+        return { success: false, error: 'Export cancelled' }
+      }
+
+      let content = ''
+
+      if (mode === 'single' && nodeId) {
+        // 导出单章
+        const nodeContent = await readNodeContent({ projectSettingsPath, nodeId })
+        if (nodeContent) {
+          content = nodeContent
+        }
+      } else if (mode === 'readingOrder') {
+        // 按照阅读编排导出
+        const readingOrderPath = join(projectDir, 'storystudioworld.readingorder.json')
+        if (existsSync(readingOrderPath)) {
+          const readingOrderContent = readFileSync(readingOrderPath, 'utf-8')
+          const readingOrder = JSON.parse(readingOrderContent) as ReadingOrderConfig
+
+          for (const item of readingOrder.items) {
+            const nodeContent = await readNodeContent({ projectSettingsPath, nodeId: item.nodeId })
+            if (nodeContent) {
+              content += `\n\n# ${item.title}\n\n`
+              content += nodeContent
+            }
+          }
+        }
+      }
+
+      if (!content) {
+        return { success: false, error: 'No content to export' }
+      }
+
+      // 根据格式处理内容
+      if (format === 'md' || format === 'txt') {
+        writeFileSync(filePath, content, 'utf-8')
+      } else {
+        // 对于 PDF, EPUB, DOCX 格式，目前先保存为 Markdown 格式
+        // 后续可以添加格式转换库
+        const mdFilePath = filePath.replace(new RegExp(`\\.${format}$`), '.md')
+        writeFileSync(mdFilePath, content, 'utf-8')
+        return {
+          success: true,
+          filePath: mdFilePath,
+          message: `Exported as Markdown (.${format} format requires additional conversion libraries)`
+        }
+      }
+
+      return { success: true, filePath }
+    } catch (error) {
+      console.error('Export story failed:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    }
+  })
+
   // Plugin Native APIs
   const execAsync = promisify(exec)
 

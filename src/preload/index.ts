@@ -164,6 +164,20 @@ export interface ReadingOrderConfig {
   updatedAt: string
 }
 
+export interface ExportStoryInput {
+  projectSettingsPath: string
+  format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
+  mode: 'single' | 'readingOrder'
+  nodeId: string | null
+  fileName: string
+}
+
+export interface ExportStoryResult {
+  success: boolean
+  filePath?: string
+  error?: string
+}
+
 export interface PluginFetchResponse {
   ok: boolean
   status: number
@@ -280,6 +294,9 @@ const api = {
     ipcRenderer.invoke('read-reading-order', projectSettingsPath),
   writeReadingOrder: (projectSettingsPath: string, config: ReadingOrderConfig): Promise<void> =>
     ipcRenderer.invoke('write-reading-order', projectSettingsPath, config),
+  // Export Story API
+  exportStory: (input: ExportStoryInput): Promise<ExportStoryResult> =>
+    ipcRenderer.invoke('export-story', input),
   // Plugin Native APIs
   pluginNative: {
     fetch: (url: string, options?: PluginFetchOptions): Promise<PluginFetchResponse> =>

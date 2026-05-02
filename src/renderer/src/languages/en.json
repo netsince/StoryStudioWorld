@@ -25,7 +25,8 @@
   "activity": {
     "write": "Write",
     "setting": "Setting",
-    "plugin": "Plugin"
+    "plugin": "Plugin",
+    "export": "Export"
   },
   "panel": {
     "proofread": "Proofread",
@@ -536,6 +537,35 @@
     "clearAll": "Clear All",
     "confirmClear": "Are you sure you want to clear the reading order list?",
     "dragHint": "Tip: Drag chapters from the file tree on the left to add"
+  },
+  "exportStory": {
+    "title": "Export Story",
+    "noProject": "Please open a project first",
+    "format": "Export Format",
+    "formats": {
+      "txt": "TXT",
+      "md": "Markdown",
+      "pdf": "PDF",
+      "epub": "EPUB",
+      "docx": "Word"
+    },
+    "mode": "Export Mode",
+    "singleChapter": "Export Single Chapter",
+    "readingOrderMode": "Export by Reading Order",
+    "selectChapter": "Select Chapter",
+    "pleaseSelect": "Please select",
+    "readingOrderEmpty": "Reading order list is empty. Please set up reading order first.",
+    "willExportChapters": "Will export {{count}} chapters",
+    "andMore": "...and {{count}} more",
+    "gotoReadingOrder": "Go to Reading Order",
+    "fileName": "File Name",
+    "fileNamePlaceholder": "Enter export file name (optional)",
+    "startExport": "Start Export",
+    "exporting": "Exporting...",
+    "exportSuccess": "Export successful: {{path}}",
+    "exportFailed": "Export failed",
+    "selectChapterFirst": "Please select a chapter to export first",
+    "chapter": "Chapter"
   },
   "hooks": {
     "beforeSave": "Before save, can modify content or prevent saving",
