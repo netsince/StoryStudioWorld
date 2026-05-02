@@ -1304,38 +1304,17 @@ input:focus + .ssw-slider {
 .create-project-page {
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at top left, rgba(0, 122, 204, 0.18), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(48, 207, 208, 0.12), transparent 28%);
-}
-
-.create-project-shell {
-  width: min(720px, 100%);
-  padding: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  background: rgba(23, 23, 24, 0.88);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
-  box-sizing: border-box;
-}
-
-.create-project-title {
-  color: var(--text-active);
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.create-project-subtitle {
-  color: var(--text-muted);
-  line-height: 1.7;
-  margin-bottom: 24px;
+  text-align: center;
+  padding: 40px 20px;
 }
 
 .create-project-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
+  width: 100%;
+  max-width: 480px;
+  text-align: left;
 }
 
 .form-field {
@@ -1355,11 +1334,11 @@ input:focus + .ssw-slider {
 .form-field textarea {
   width: 100%;
   box-sizing: border-box;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-base);
   color: var(--text-main);
-  padding: 11px 12px;
+  padding: 10px 12px;
   font-size: 14px;
   outline: none;
   transition:
@@ -1369,13 +1348,13 @@ input:focus + .ssw-slider {
 
 .form-field input:focus,
 .form-field textarea:focus {
-  border-color: rgba(0, 122, 204, 0.9);
-  box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.16);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 .form-field textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
 }
 
 .path-picker-row {
@@ -1391,6 +1370,7 @@ input:focus + .ssw-slider {
 .create-project-actions {
   display: flex;
   justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .recent-section {

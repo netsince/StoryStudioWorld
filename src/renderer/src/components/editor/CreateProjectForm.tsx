@@ -35,68 +35,62 @@ const CreateProjectForm: React.FC<{
 
   return (
     <div key="create-project" className="editor-content create-project-page">
-      <div className="create-project-shell">
-        <div className="create-project-title">{t('welcome.newProject')}</div>
-        <div className="create-project-subtitle">
-          {t('createProject.subtitle')}
-        </div>
+      <div className="project-title">{t('welcome.newProject')}</div>
+      <form className="create-project-form" onSubmit={(event) => void handleSubmit(event)}>
+        <label className="form-field">
+          <span>{t('createProject.projectName')}</span>
+          <input
+            value={form.projectName}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, projectName: event.target.value }))
+            }
+            placeholder={t('createProject.projectNamePlaceholder')}
+          />
+        </label>
 
-        <form className="create-project-form" onSubmit={(event) => void handleSubmit(event)}>
-          <label className="form-field">
-            <span>{t('createProject.projectName')}</span>
+        <label className="form-field">
+          <span>{t('createProject.projectDescription')}</span>
+          <textarea
+            value={form.description}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, description: event.target.value }))
+            }
+            placeholder={t('createProject.projectDescriptionPlaceholder')}
+            rows={5}
+          />
+        </label>
+
+        <label className="form-field">
+          <span>{t('createProject.path')}</span>
+          <div className="path-picker-row">
             <input
-              value={form.projectName}
+              value={form.projectPath}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, projectName: event.target.value }))
+                setForm((prev) => ({ ...prev, projectPath: event.target.value }))
               }
-              placeholder={t('createProject.projectNamePlaceholder')}
+              placeholder={t('createProject.pathPlaceholder')}
             />
-          </label>
-
-          <label className="form-field">
-            <span>{t('createProject.projectDescription')}</span>
-            <textarea
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, description: event.target.value }))
-              }
-              placeholder={t('createProject.projectDescriptionPlaceholder')}
-              rows={5}
-            />
-          </label>
-
-          <label className="form-field">
-            <span>{t('createProject.path')}</span>
-            <div className="path-picker-row">
-              <input
-                value={form.projectPath}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, projectPath: event.target.value }))
+            <button
+              type="button"
+              className="action-button secondary inline-button"
+              onClick={async () => {
+                const path = await onPickProjectPath()
+                if (path) {
+                  setForm((prev) => ({ ...prev, projectPath: path }))
                 }
-                placeholder={t('createProject.pathPlaceholder')}
-              />
-              <button
-                type="button"
-                className="action-button secondary inline-button"
-                onClick={async () => {
-                  const path = await onPickProjectPath()
-                  if (path) {
-                    setForm((prev) => ({ ...prev, projectPath: path }))
-                  }
-                }}
-              >
-                {t('welcome.selectLocation')}
-              </button>
-            </div>
-          </label>
-
-          <div className="create-project-actions">
-            <button type="submit" className="action-button" disabled={isSubmittingProject}>
-              {isSubmittingProject ? t('createProject.creating') : t('welcome.create')}
+              }}
+            >
+              {t('welcome.selectLocation')}
             </button>
           </div>
-        </form>
-      </div>
+        </label>
+
+        <div className="create-project-actions">
+          <button type="submit" className="action-button" disabled={isSubmittingProject}>
+            {isSubmittingProject ? t('createProject.creating') : t('welcome.create')}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
