@@ -25,8 +25,8 @@ export interface DiffNode {
 
 function getPath(node: StoryNode, nodesMap: Map<string, StoryNode>): string {
   const parts: string[] = []
-  let current: StoryNode | undefined = node
-  
+  const current: StoryNode | undefined = node
+
   // Start from parent to avoid including own name in path
   if (current.parentId) {
     let parent = nodesMap.get(current.parentId)
@@ -36,7 +36,7 @@ function getPath(node: StoryNode, nodesMap: Map<string, StoryNode>): string {
       parent = nodesMap.get(parent.parentId)
     }
   }
-  
+
   return parts.join(' / ')
 }
 
@@ -90,7 +90,10 @@ export async function getAllSnapshots(projectSettingsPath: string): Promise<Snap
   }
 }
 
-export async function getSnapshot(projectSettingsPath: string, snapshotId: string): Promise<Snapshot | null> {
+export async function getSnapshot(
+  projectSettingsPath: string,
+  snapshotId: string
+): Promise<Snapshot | null> {
   const project = await loadProject(projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
@@ -101,7 +104,10 @@ export async function getSnapshot(projectSettingsPath: string, snapshotId: strin
   }
 }
 
-export async function deleteSnapshot(projectSettingsPath: string, snapshotId: string): Promise<boolean> {
+export async function deleteSnapshot(
+  projectSettingsPath: string,
+  snapshotId: string
+): Promise<boolean> {
   const project = await loadProject(projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
@@ -114,7 +120,10 @@ export async function deleteSnapshot(projectSettingsPath: string, snapshotId: st
   }
 }
 
-export async function restoreSnapshot(projectSettingsPath: string, snapshotId: string): Promise<boolean> {
+export async function restoreSnapshot(
+  projectSettingsPath: string,
+  snapshotId: string
+): Promise<boolean> {
   const project = await loadProject(projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
 
@@ -128,8 +137,8 @@ export async function restoreSnapshot(projectSettingsPath: string, snapshotId: s
 }
 
 export function computeDiff(before: StoryNode[], after: StoryNode[]): DiffResult {
-  const beforeMap = new Map(before.map(n => [n.id, n]))
-  const afterMap = new Map(after.map(n => [n.id, n]))
+  const beforeMap = new Map(before.map((n) => [n.id, n]))
+  const afterMap = new Map(after.map((n) => [n.id, n]))
 
   const result: DiffResult = {
     story: { added: [], modified: [], deleted: [] },

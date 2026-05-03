@@ -1,31 +1,42 @@
-import { defineConfig } from 'eslint/config'
-import tseslint from '@electron-toolkit/eslint-config-ts'
+import { defineConfig, globalIgnores } from 'eslint/config'
+import eslintJs from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import eslintReact from '@eslint-react/eslint-plugin'
 import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
-import eslintPluginReact from 'eslint-plugin-react'
-import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
-import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
+import globals from 'globals'
 
 export default defineConfig(
-  { ignores: ['**/node_modules', '**/dist', '**/out', '**/build', '**/参考/**'] },
-  tseslint.configs.recommended,
-  eslintPluginReact.configs.flat.recommended,
-  eslintPluginReact.configs.flat['jsx-runtime'],
+  globalIgnores([
+    '**/node_modules',
+    '**/dist',
+    '**/out',
+    '**/build',
+    '**/参考/**',
+    'testplugin/**'
+  ]),
+  eslintJs.configs.recommended,
+  ...tseslint.configs.recommended,
+  eslintReact.configs['recommended-typescript'],
   {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node
+      }
+    },
     settings: {
-      react: {
-        version: 'detect'
+      'eslint-react': {
+        additionalHooks: {
+          use: ['use']
+        }
       }
     }
   },
   {
-    files: ['**/*.{ts,tsx}'],
-    plugins: {
-      'react-hooks': eslintPluginReactHooks,
-      'react-refresh': eslintPluginReactRefresh
-    },
     rules: {
-      ...eslintPluginReactHooks.configs.recommended.rules,
-      ...eslintPluginReactRefresh.configs.vite.rules
+      '@eslint-react/no-nested-component-definitions': 'off',
+      '@eslint-react/static-components': 'warn',
+      '@eslint-react/unsupported-syntax': 'warn'
     }
   },
   eslintConfigPrettier

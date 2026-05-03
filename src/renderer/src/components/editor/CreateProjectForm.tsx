@@ -41,9 +41,7 @@ const CreateProjectForm: React.FC<{
           <span>{t('createProject.projectName')}</span>
           <input
             value={form.projectName}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, projectName: event.target.value }))
-            }
+            onChange={(event) => setForm((prev) => ({ ...prev, projectName: event.target.value }))}
             placeholder={t('createProject.projectNamePlaceholder')}
           />
         </label>
@@ -52,9 +50,7 @@ const CreateProjectForm: React.FC<{
           <span>{t('createProject.projectDescription')}</span>
           <textarea
             value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
+            onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
             placeholder={t('createProject.projectDescriptionPlaceholder')}
             rows={5}
           />

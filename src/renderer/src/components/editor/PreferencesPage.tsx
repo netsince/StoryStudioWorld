@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getAvailableLanguages, setLanguage, getCurrentLanguage, type LanguageMetadata, type SupportedLanguage } from '../../i18n'
+import {
+  getAvailableLanguages,
+  setLanguage,
+  getCurrentLanguage,
+  type LanguageMetadata,
+  type SupportedLanguage
+} from '../../i18n'
 
 const SETTINGS_KEY = 'ssw:app-settings'
 
@@ -107,7 +113,7 @@ const PreferencesPage: React.FC = () => {
         availableFonts.push(font)
       }
     })
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setSystemFonts(
       availableFonts.map((name) => ({
         name,
@@ -167,7 +173,9 @@ const PreferencesPage: React.FC = () => {
       case 'editor':
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.editor')}</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>
+              {t('preferences.editor')}
+            </h3>
 
             {/* Preview */}
             <div
@@ -386,7 +394,9 @@ const PreferencesPage: React.FC = () => {
               </div>
               {settings.autoSaveEnabled && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('preferences.saveInterval')}:</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {t('preferences.saveInterval')}:
+                  </span>
                   <select
                     value={settings.autoSaveInterval}
                     onChange={(e) => applySettings({ autoSaveInterval: parseInt(e.target.value) })}
@@ -445,7 +455,9 @@ const PreferencesPage: React.FC = () => {
       case 'interface':
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.interface')}</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>
+              {t('preferences.interface')}
+            </h3>
 
             <div style={{ marginBottom: '24px' }}>
               <label
@@ -539,7 +551,9 @@ const PreferencesPage: React.FC = () => {
       case 'localization':
         return (
           <div style={{ padding: '24px', paddingBottom: '48px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>{t('preferences.localization')}</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>
+              {t('preferences.localization')}
+            </h3>
 
             {/* Language Selection */}
             <div style={{ marginBottom: '24px' }}>
@@ -573,7 +587,9 @@ const PreferencesPage: React.FC = () => {
                       backgroundColor:
                         currentLang === lang.code ? 'var(--bg-hover)' : 'transparent',
                       borderBottom:
-                        idx < availableLanguages.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                        idx < availableLanguages.length - 1
+                          ? '1px solid var(--border-subtle)'
+                          : 'none',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center'
@@ -649,10 +665,9 @@ const PreferencesPage: React.FC = () => {
 export default PreferencesPage
 
 export type { TabBehavior }
-// eslint-disable-next-line react-refresh/only-export-components
+
 export const getAppSettings = (): AppSettings => loadSettings()
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const applyAppSettings = (settings: AppSettings): void => {
   if (settings.editorFontFamily) {
     document.documentElement.style.setProperty('--editor-font-family', settings.editorFontFamily)
@@ -668,19 +683,16 @@ export const applyAppSettings = (settings: AppSettings): void => {
   }
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getTabBehavior = (): TabBehavior => {
   const settings = loadSettings()
   return settings.editorTabBehavior
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getAutoSaveSettings = (): { enabled: boolean; interval: number } => {
   const settings = loadSettings()
   return { enabled: settings.autoSaveEnabled, interval: settings.autoSaveInterval * 1000 }
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getAutoIndentSettings = (): { enabled: boolean; indent: string } => {
   try {
     const saved = localStorage.getItem('ssw:app-settings')
@@ -697,7 +709,6 @@ export const getAutoIndentSettings = (): { enabled: boolean; indent: string } =>
   }
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const getActivityBarSettings = (): { hideLabel: boolean } => {
   try {
     const saved = localStorage.getItem('ssw:app-settings')

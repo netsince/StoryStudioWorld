@@ -170,12 +170,16 @@ export function getArchivedNodes(db: Database): StoryNode[] {
   return nodes
 }
 
-export function restoreNode(db: Database, nodeId: string, newParentId: string | null | undefined = undefined): void {
+export function restoreNode(
+  db: Database,
+  nodeId: string,
+  newParentId: string | null | undefined = undefined
+): void {
   const node = getNodeWithDeleted(db, nodeId)
   if (!node) return
 
   const now = new Date().toISOString()
-  
+
   // If we have a parent and it's archived, restore it first
   if (node.parentId) {
     const parent = getNodeWithDeleted(db, node.parentId)
@@ -185,7 +189,11 @@ export function restoreNode(db: Database, nodeId: string, newParentId: string | 
   }
 
   if (newParentId !== undefined) {
-    db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ?, parentId = ? WHERE id = ?`, [now, newParentId, nodeId])
+    db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ?, parentId = ? WHERE id = ?`, [
+      now,
+      newParentId,
+      nodeId
+    ])
   } else {
     db.run(`UPDATE nodes SET deletedAt = NULL, updatedAt = ? WHERE id = ?`, [now, nodeId])
   }
@@ -394,14 +402,14 @@ export function reorderNode(db: Database, nodeId: string, newSortOrder: number):
 export function getNodeContent(db: Database, nodeId: string): string | null {
   const node = getNode(db, nodeId)
   if (!node || node.type !== 'file') return null
-  
+
   // 兼容旧数据：如果 content 不是 JSON 格式，直接返回
   if (!node.content) return null
-  
+
   try {
     const parsed = JSON.parse(node.content)
-    return typeof parsed === 'object' && parsed !== null && 'content' in parsed 
-      ? parsed.content 
+    return typeof parsed === 'object' && parsed !== null && 'content' in parsed
+      ? parsed.content
       : node.content
   } catch {
     // 旧数据格式，直接返回原始内容
@@ -469,8 +477,8 @@ export function createSnapshot(
   const id = randomUUID()
   const createdAt = new Date().toISOString()
   const nodeCount = nodes.length
-  const storyCount = nodes.filter(n => n.kind === 'story').length
-  const settingCount = nodes.filter(n => n.kind === 'setting').length
+  const storyCount = nodes.filter((n) => n.kind === 'story').length
+  const settingCount = nodes.filter((n) => n.kind === 'setting').length
 
   db.run(
     `INSERT INTO snapshots (id, name, description, createdAt, nodeCount, storyCount, settingCount, nodesJson)
@@ -640,7 +648,12 @@ export function getGalleryByNodeId(db: Database, nodeId: string): GalleryItem[] 
   return items
 }
 
-export function createGalleryItem(db: Database, nodeId: string, fileName: string, sortOrder: number): GalleryItem {
+export function createGalleryItem(
+  db: Database,
+  nodeId: string,
+  fileName: string,
+  sortOrder: number
+): GalleryItem {
   const id = randomUUID()
   const createdAt = new Date().toISOString()
 

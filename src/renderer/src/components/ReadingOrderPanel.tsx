@@ -62,28 +62,31 @@ const ReadingOrderPanel: React.FC = () => {
   }, [currentProject, hasUnsavedChanges, saveReadingOrder])
 
   // 处理拖拽进入
-  const handleDragOver = useCallback((e: React.DragEvent, itemId?: string): void => {
-    e.preventDefault()
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, itemId?: string): void => {
+      e.preventDefault()
 
-    // 根据是否有正在拖拽的 item 判断是内部拖拽还是外部拖拽
-    // 注意：dragOver 事件中无法读取 getData，所以用 draggingId 状态判断
-    const isInternalDrag = dragState.draggingId !== null
-    e.dataTransfer.dropEffect = isInternalDrag ? 'move' : 'copy'
+      // 根据是否有正在拖拽的 item 判断是内部拖拽还是外部拖拽
+      // 注意：dragOver 事件中无法读取 getData，所以用 draggingId 状态判断
+      const isInternalDrag = dragState.draggingId !== null
+      e.dataTransfer.dropEffect = isInternalDrag ? 'move' : 'copy'
 
-    if (itemId) {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const relativeY = e.clientY - rect.top
-      const position: 'before' | 'after' = relativeY < rect.height / 2 ? 'before' : 'after'
+      if (itemId) {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        const relativeY = e.clientY - rect.top
+        const position: 'before' | 'after' = relativeY < rect.height / 2 ? 'before' : 'after'
 
-      setDragState((prev) => ({
-        ...prev,
-        dragOverId: itemId,
-        dragOverPosition: position
-      }))
-    } else {
-      setIsDragOver(true)
-    }
-  }, [dragState.draggingId])
+        setDragState((prev) => ({
+          ...prev,
+          dragOverId: itemId,
+          dragOverPosition: position
+        }))
+      } else {
+        setIsDragOver(true)
+      }
+    },
+    [dragState.draggingId]
+  )
 
   const handleDragLeave = useCallback((e: React.DragEvent): void => {
     e.preventDefault()
@@ -111,130 +114,153 @@ const ReadingOrderPanel: React.FC = () => {
   }, [])
 
   // 处理放置（从文件树拖拽章节）
-  const handleDrop = useCallback((e: React.DragEvent, targetItemId?: string): void => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetItemId?: string): void => {
+      e.preventDefault()
+      e.stopPropagation()
 
-    const data = e.dataTransfer.getData('application/json')
-    if (!data) {
-      setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
-      setIsDragOver(false)
-      return
-    }
+      const data = e.dataTransfer.getData('application/json')
+      if (!data) {
+        setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
+        setIsDragOver(false)
+        return
+      }
 
-    try {
-      const parsed = JSON.parse(data)
-      if (parsed.type === 'story-node') {
-        // 检查是否已存在
-        if (items.some((item) => item.nodeId === parsed.nodeId)) {
-          setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
-          setIsDragOver(false)
-          return
-        }
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.type === 'story-node') {
+          // 检查是否已存在
+          if (items.some((item) => item.nodeId === parsed.nodeId)) {
+            setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
+            setIsDragOver(false)
+            return
+          }
 
-        if (targetItemId) {
-          // 放置到特定位置
-          const targetIndex = items.findIndex((item) => item.id === targetItemId)
-          if (targetIndex !== -1) {
-            const insertIndex = dragState.dragOverPosition === 'after' ? targetIndex + 1 : targetIndex
-            // 先添加到最后，然后移动
-            addItem(parsed.nodeId, parsed.title)
-            const newItems = useReadingOrderStore.getState().items
-            const newItemIndex = newItems.length - 1
-            if (newItemIndex !== insertIndex && newItemIndex !== insertIndex - 1) {
-              moveItem(newItemIndex, insertIndex > newItemIndex ? insertIndex - 1 : insertIndex)
+          if (targetItemId) {
+            // 放置到特定位置
+            const targetIndex = items.findIndex((item) => item.id === targetItemId)
+            if (targetIndex !== -1) {
+              const insertIndex =
+                dragState.dragOverPosition === 'after' ? targetIndex + 1 : targetIndex
+              // 先添加到最后，然后移动
+              addItem(parsed.nodeId, parsed.title)
+              const newItems = useReadingOrderStore.getState().items
+              const newItemIndex = newItems.length - 1
+              if (newItemIndex !== insertIndex && newItemIndex !== insertIndex - 1) {
+                moveItem(newItemIndex, insertIndex > newItemIndex ? insertIndex - 1 : insertIndex)
+              }
+            } else {
+              addItem(parsed.nodeId, parsed.title)
             }
           } else {
+            // 添加到末尾
             addItem(parsed.nodeId, parsed.title)
           }
-        } else {
-          // 添加到末尾
-          addItem(parsed.nodeId, parsed.title)
-        }
 
-        // 触发保存
-        if (currentProject) {
-          scheduleSave(currentProject.projectSettingsPath)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to parse drop data:', error)
-    }
-
-    setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
-    setIsDragOver(false)
-  }, [items, addItem, moveItem, currentProject, dragState.dragOverPosition])
-
-  // 处理内部拖拽（排序）
-  const handleInternalDragStart = useCallback((e: React.DragEvent, item: ReadingOrderItem): void => {
-    setDragState((prev) => ({ ...prev, draggingId: item.id }))
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'reading-order-item',
-      itemId: item.id
-    }))
-    e.dataTransfer.effectAllowed = 'move'
-  }, [])
-
-  const handleInternalDrop = useCallback((e: React.DragEvent, targetItemId: string): void => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    const data = e.dataTransfer.getData('application/json')
-    if (!data) {
-      setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
-      return
-    }
-
-    try {
-      const parsed = JSON.parse(data)
-      if (parsed.type === 'reading-order-item') {
-        const fromIndex = items.findIndex((item) => item.id === parsed.itemId)
-        const toIndex = items.findIndex((item) => item.id === targetItemId)
-
-        if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-          const adjustedIndex = dragState.dragOverPosition === 'after' && toIndex > fromIndex
-            ? toIndex
-            : dragState.dragOverPosition === 'after' && toIndex < fromIndex
-              ? toIndex + 1
-              : dragState.dragOverPosition === 'before' && toIndex > fromIndex
-                ? toIndex - 1
-                : toIndex
-          moveItem(fromIndex, adjustedIndex)
-
+          // 触发保存
           if (currentProject) {
             scheduleSave(currentProject.projectSettingsPath)
           }
         }
+      } catch (error) {
+        console.error('Failed to parse drop data:', error)
       }
-    } catch (error) {
-      console.error('Failed to parse drop data:', error)
-    }
 
-    setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
-  }, [items, moveItem, currentProject, dragState.dragOverPosition])
+      setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
+      setIsDragOver(false)
+    },
+    [items, addItem, moveItem, currentProject, dragState.dragOverPosition]
+  )
+
+  // 处理内部拖拽（排序）
+  const handleInternalDragStart = useCallback(
+    (e: React.DragEvent, item: ReadingOrderItem): void => {
+      setDragState((prev) => ({ ...prev, draggingId: item.id }))
+      e.dataTransfer.setData(
+        'application/json',
+        JSON.stringify({
+          type: 'reading-order-item',
+          itemId: item.id
+        })
+      )
+      e.dataTransfer.effectAllowed = 'move'
+    },
+    []
+  )
+
+  const handleInternalDrop = useCallback(
+    (e: React.DragEvent, targetItemId: string): void => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      const data = e.dataTransfer.getData('application/json')
+      if (!data) {
+        setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
+        return
+      }
+
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.type === 'reading-order-item') {
+          const fromIndex = items.findIndex((item) => item.id === parsed.itemId)
+          const toIndex = items.findIndex((item) => item.id === targetItemId)
+
+          if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+            const adjustedIndex =
+              dragState.dragOverPosition === 'after' && toIndex > fromIndex
+                ? toIndex
+                : dragState.dragOverPosition === 'after' && toIndex < fromIndex
+                  ? toIndex + 1
+                  : dragState.dragOverPosition === 'before' && toIndex > fromIndex
+                    ? toIndex - 1
+                    : toIndex
+            moveItem(fromIndex, adjustedIndex)
+
+            if (currentProject) {
+              scheduleSave(currentProject.projectSettingsPath)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse drop data:', error)
+      }
+
+      setDragState({ draggingId: null, dragOverId: null, dragOverPosition: null })
+    },
+    [items, moveItem, currentProject, dragState.dragOverPosition]
+  )
 
   // 上移/下移
-  const handleMoveUp = useCallback((id: string): void => {
-    reorderItem(id, 'up')
-    if (currentProject) {
-      scheduleSave(currentProject.projectSettingsPath)
-    }
-  }, [reorderItem, currentProject])
+  const handleMoveUp = useCallback(
+    (id: string): void => {
+      reorderItem(id, 'up')
+      if (currentProject) {
+        scheduleSave(currentProject.projectSettingsPath)
+      }
+    },
+    [reorderItem, currentProject]
+  )
 
-  const handleMoveDown = useCallback((id: string): void => {
-    reorderItem(id, 'down')
-    if (currentProject) {
-      scheduleSave(currentProject.projectSettingsPath)
-    }
-  }, [reorderItem, currentProject])
+  const handleMoveDown = useCallback(
+    (id: string): void => {
+      reorderItem(id, 'down')
+      if (currentProject) {
+        scheduleSave(currentProject.projectSettingsPath)
+      }
+    },
+    [reorderItem, currentProject]
+  )
 
   // 删除
-  const handleRemove = useCallback((id: string): void => {
-    removeItem(id)
-    if (currentProject) {
-      scheduleSave(currentProject.projectSettingsPath)
-    }
-  }, [removeItem, currentProject])
+  const handleRemove = useCallback(
+    (id: string): void => {
+      removeItem(id)
+      if (currentProject) {
+        scheduleSave(currentProject.projectSettingsPath)
+      }
+    },
+    [removeItem, currentProject]
+  )
 
   // 清空
   const handleClear = useCallback((): void => {
@@ -268,9 +294,7 @@ const ReadingOrderPanel: React.FC = () => {
       <div className="reading-order-header">
         <div className="reading-order-title">{t('readingOrder.title')}</div>
         <div className="reading-order-actions">
-          {hasUnsavedChanges && (
-            <span className="reading-order-unsaved">*</span>
-          )}
+          {hasUnsavedChanges && <span className="reading-order-unsaved">*</span>}
           <button
             className="reading-order-btn"
             onClick={handleSave}
@@ -291,9 +315,7 @@ const ReadingOrderPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="reading-order-hint">
-        {t('readingOrder.dragHint')}
-      </div>
+      <div className="reading-order-hint">{t('readingOrder.dragHint')}</div>
 
       {/* monaco-tree 样式的阅读编排列表 */}
       <div
@@ -405,7 +427,13 @@ const ReadingOrderPanel: React.FC = () => {
                 </span>
 
                 {/* File icon - VS Code style */}
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginRight: '4px' }}>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  style={{ flexShrink: 0, marginRight: '4px' }}
+                >
                   <path
                     d="M3.5 1h5.79l3.21 3.21V14.5a1.5 1.5 0 0 1-1.5 1.5h-7.5a1.5 1.5 0 0 1-1.5-1.5v-12A1.5 1.5 0 0 1 3.5 1z"
                     fill="#75BEFF"

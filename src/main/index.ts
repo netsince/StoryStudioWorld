@@ -260,9 +260,12 @@ function createWindow(): void {
     return getArchivedNodesProject(projectSettingsPath)
   })
 
-  ipcMain.handle('restore-archived-node', async (_, projectSettingsPath: string, nodeId: string, newParentId: string | null = null) => {
-    return restoreArchivedNode(projectSettingsPath, nodeId, newParentId)
-  })
+  ipcMain.handle(
+    'restore-archived-node',
+    async (_, projectSettingsPath: string, nodeId: string, newParentId: string | null = null) => {
+      return restoreArchivedNode(projectSettingsPath, nodeId, newParentId)
+    }
+  )
 
   ipcMain.handle(
     'permanently-delete-node',
@@ -312,9 +315,12 @@ function createWindow(): void {
   })
 
   // Snapshot IPC handlers
-  ipcMain.handle('create-snapshot', async (_, projectSettingsPath: string, name: string, description?: string) => {
-    return createSnapshot({ projectSettingsPath, name, description })
-  })
+  ipcMain.handle(
+    'create-snapshot',
+    async (_, projectSettingsPath: string, name: string, description?: string) => {
+      return createSnapshot({ projectSettingsPath, name, description })
+    }
+  )
 
   ipcMain.handle('get-all-snapshots', async (_, projectSettingsPath: string) => {
     return getAllSnapshots(projectSettingsPath)
@@ -328,9 +334,12 @@ function createWindow(): void {
     return restoreSnapshot(projectSettingsPath, snapshotId)
   })
 
-  ipcMain.handle('compare-with-current', async (_, projectSettingsPath: string, snapshotId: string) => {
-    return compareWithCurrent(projectSettingsPath, snapshotId)
-  })
+  ipcMain.handle(
+    'compare-with-current',
+    async (_, projectSettingsPath: string, snapshotId: string) => {
+      return compareWithCurrent(projectSettingsPath, snapshotId)
+    }
+  )
 
   // Plugin IPC handlers
   ipcMain.handle('get-plugins', async () => {
@@ -371,137 +380,150 @@ function createWindow(): void {
     return join(projectDir, 'storystudioworld.readingorder.json')
   }
 
-  ipcMain.handle('read-reading-order', async (_, projectSettingsPath: string): Promise<ReadingOrderConfig | null> => {
-    try {
-      const readingOrderPath = getReadingOrderPath(projectSettingsPath)
-      if (!existsSync(readingOrderPath)) {
+  ipcMain.handle(
+    'read-reading-order',
+    async (_, projectSettingsPath: string): Promise<ReadingOrderConfig | null> => {
+      try {
+        const readingOrderPath = getReadingOrderPath(projectSettingsPath)
+        if (!existsSync(readingOrderPath)) {
+          return null
+        }
+        const content = readFileSync(readingOrderPath, 'utf-8')
+        return JSON.parse(content) as ReadingOrderConfig
+      } catch (e) {
+        console.error('Failed to read reading order:', e)
         return null
       }
-      const content = readFileSync(readingOrderPath, 'utf-8')
-      return JSON.parse(content) as ReadingOrderConfig
-    } catch (e) {
-      console.error('Failed to read reading order:', e)
-      return null
     }
-  })
+  )
 
-  ipcMain.handle('write-reading-order', async (_, projectSettingsPath: string, config: ReadingOrderConfig): Promise<void> => {
-    try {
-      const readingOrderPath = getReadingOrderPath(projectSettingsPath)
-      const projectDir = dirname(readingOrderPath)
-      if (!existsSync(projectDir)) {
-        mkdirSync(projectDir, { recursive: true })
+  ipcMain.handle(
+    'write-reading-order',
+    async (_, projectSettingsPath: string, config: ReadingOrderConfig): Promise<void> => {
+      try {
+        const readingOrderPath = getReadingOrderPath(projectSettingsPath)
+        const projectDir = dirname(readingOrderPath)
+        if (!existsSync(projectDir)) {
+          mkdirSync(projectDir, { recursive: true })
+        }
+        writeFileSync(readingOrderPath, JSON.stringify(config, null, 2), 'utf-8')
+      } catch (e) {
+        console.error('Failed to write reading order:', e)
+        throw e
       }
-      writeFileSync(readingOrderPath, JSON.stringify(config, null, 2), 'utf-8')
-    } catch (e) {
-      console.error('Failed to write reading order:', e)
-      throw e
     }
-  })
+  )
 
   // Export Story IPC handler
-  ipcMain.handle('export-story', async (_, input: {
-    projectSettingsPath: string
-    format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
-    mode: 'single' | 'readingOrder'
-    nodeId: string | null
-    nodeName: string
-    fileName: string
-  }) => {
-    try {
-      const { projectSettingsPath, format, mode, nodeId, nodeName, fileName } = input
-      const projectDir = dirname(projectSettingsPath)
-
-      // 显示保存对话框 - 使用用户选择的格式
-      const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-        defaultPath: `${fileName || 'exported-story'}.${format}`,
-        filters: [
-          { name: format.toUpperCase(), extensions: [format] }
-        ]
-      })
-
-      if (canceled || !filePath) {
-        return { success: false, error: 'Export cancelled' }
+  ipcMain.handle(
+    'export-story',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        format: 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
+        mode: 'single' | 'readingOrder'
+        nodeId: string | null
+        nodeName: string
+        fileName: string
       }
+    ) => {
+      try {
+        const { projectSettingsPath, format, mode, nodeId, nodeName, fileName } = input
+        const projectDir = dirname(projectSettingsPath)
 
-      // 获取项目信息
-      const project = await loadProject(projectSettingsPath)
-      const contents: ExportContent[] = []
+        // 显示保存对话框 - 使用用户选择的格式
+        const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+          defaultPath: `${fileName || 'exported-story'}.${format}`,
+          filters: [{ name: format.toUpperCase(), extensions: [format] }]
+        })
 
-      if (mode === 'single' && nodeId) {
-        // 导出单章
-        const nodeContent = await readNodeContent({ projectSettingsPath, nodeId })
-        if (nodeContent) {
-          contents.push({
-            title: nodeName || 'Untitled',
-            content: nodeContent
-          })
+        if (canceled || !filePath) {
+          return { success: false, error: 'Export cancelled' }
         }
-      } else if (mode === 'readingOrder') {
-        // 按照阅读编排导出
-        const readingOrderPath = join(projectDir, 'storystudioworld.readingorder.json')
-        if (existsSync(readingOrderPath)) {
-          const readingOrderContent = readFileSync(readingOrderPath, 'utf-8')
-          const readingOrder = JSON.parse(readingOrderContent) as ReadingOrderConfig
 
-          for (const item of readingOrder.items) {
-            const nodeContent = await readNodeContent({ projectSettingsPath, nodeId: item.nodeId })
-            if (nodeContent) {
-              contents.push({
-                title: item.title,
-                content: nodeContent
+        // 获取项目信息
+        const project = await loadProject(projectSettingsPath)
+        const contents: ExportContent[] = []
+
+        if (mode === 'single' && nodeId) {
+          // 导出单章
+          const nodeContent = await readNodeContent({ projectSettingsPath, nodeId })
+          if (nodeContent) {
+            contents.push({
+              title: nodeName || 'Untitled',
+              content: nodeContent
+            })
+          }
+        } else if (mode === 'readingOrder') {
+          // 按照阅读编排导出
+          const readingOrderPath = join(projectDir, 'storystudioworld.readingorder.json')
+          if (existsSync(readingOrderPath)) {
+            const readingOrderContent = readFileSync(readingOrderPath, 'utf-8')
+            const readingOrder = JSON.parse(readingOrderContent) as ReadingOrderConfig
+
+            for (const item of readingOrder.items) {
+              const nodeContent = await readNodeContent({
+                projectSettingsPath,
+                nodeId: item.nodeId
               })
+              if (nodeContent) {
+                contents.push({
+                  title: item.title,
+                  content: nodeContent
+                })
+              }
             }
           }
         }
-      }
 
-      if (contents.length === 0) {
-        return { success: false, error: 'No content to export' }
-      }
+        if (contents.length === 0) {
+          return { success: false, error: 'No content to export' }
+        }
 
-      // 根据格式选择导出方式
-      switch (format) {
-        case 'docx':
-          await exportToDocx({
-            filePath,
-            contents,
-            projectName: project.projectName
-          })
-          break
-        case 'pdf':
-          await exportToPdf({
-            filePath,
-            contents,
-            projectName: project.projectName
-          })
-          break
-        case 'epub':
-          await exportToEpub({
-            filePath,
-            contents,
-            projectName: project.projectName
-          })
-          break
-        case 'txt':
-          exportToTxt(filePath, contents)
-          break
-        case 'md':
-          exportToMarkdown(filePath, contents)
-          break
-        default:
-          return { success: false, error: `Unsupported format: ${format}` }
-      }
+        // 根据格式选择导出方式
+        switch (format) {
+          case 'docx':
+            await exportToDocx({
+              filePath,
+              contents,
+              projectName: project.projectName
+            })
+            break
+          case 'pdf':
+            await exportToPdf({
+              filePath,
+              contents,
+              projectName: project.projectName
+            })
+            break
+          case 'epub':
+            await exportToEpub({
+              filePath,
+              contents,
+              projectName: project.projectName
+            })
+            break
+          case 'txt':
+            exportToTxt(filePath, contents)
+            break
+          case 'md':
+            exportToMarkdown(filePath, contents)
+            break
+          default:
+            return { success: false, error: `Unsupported format: ${format}` }
+        }
 
-      return { success: true, filePath }
-    } catch (error) {
-      console.error('Export story failed:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
+        return { success: true, filePath }
+      } catch (error) {
+        console.error('Export story failed:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
       }
     }
-  })
+  )
 
   // Pick Wiki Export Path
   ipcMain.handle('pick-wiki-export-path', async () => {
@@ -516,105 +538,113 @@ function createWindow(): void {
   })
 
   // Export Wiki IPC handler
-  ipcMain.handle('export-wiki', async (_, input: {
-    projectSettingsPath: string
-    exportPath: string
-    language: string
-    includeChapters: boolean
-    i18nStrings: Record<string, string>
-  }) => {
-    try {
-      const { projectSettingsPath, exportPath, language, includeChapters, i18nStrings } = input
-
-      const project = await loadProject(projectSettingsPath)
-      const rawNodes = await getProjectNodes(projectSettingsPath)
-
-      const settingFileIds = new Set(
-        rawNodes.filter((n) => n.type === 'file' && n.kind === 'setting').map((n) => n.id)
-      )
-
-      const storyFileIds = new Set(
-        rawNodes.filter((n) => n.type === 'file' && n.kind === 'story').map((n) => n.id)
-      )
-
-      const includedFileIds = new Set([...settingFileIds])
-      if (includeChapters) {
-        storyFileIds.forEach((id) => includedFileIds.add(id))
+  ipcMain.handle(
+    'export-wiki',
+    async (
+      _,
+      input: {
+        projectSettingsPath: string
+        exportPath: string
+        language: string
+        includeChapters: boolean
+        i18nStrings: Record<string, string>
       }
+    ) => {
+      try {
+        const { projectSettingsPath, exportPath, language, includeChapters, i18nStrings } = input
 
-      const ancestorIds = new Set<string>()
-      for (const node of rawNodes) {
-        if (includedFileIds.has(node.id)) {
-          let current = node
-          while (current.parentId) {
-            ancestorIds.add(current.parentId)
-            current = rawNodes.find((n) => n.id === current.parentId) || current
-            if (!current.parentId) break
-          }
-        }
-      }
+        const project = await loadProject(projectSettingsPath)
+        const rawNodes = await getProjectNodes(projectSettingsPath)
 
-      const wikiNodes: WikiNode[] = []
-      for (const node of rawNodes) {
-        if (node.type === 'file' && !includedFileIds.has(node.id)) continue
-        if (node.type === 'folder' && !ancestorIds.has(node.id)) continue
+        const settingFileIds = new Set(
+          rawNodes.filter((n) => n.type === 'file' && n.kind === 'setting').map((n) => n.id)
+        )
 
-        let content: string | null = null
-        let summary: string | null = null
-        let outline: string | null = null
-        let gallery: WikiGalleryItem[] = []
+        const storyFileIds = new Set(
+          rawNodes.filter((n) => n.type === 'file' && n.kind === 'story').map((n) => n.id)
+        )
 
-        if (node.type === 'file') {
-          content = await readNodeContent({ projectSettingsPath, nodeId: node.id })
-          if (node.kind === 'story') {
-            const meta = await getNodeSummaryAndOutline(projectSettingsPath, node.id)
-            summary = meta.summary
-            outline = meta.outline
-          }
-          try {
-            const galleryImages = await getGalleryImages(projectSettingsPath, node.id)
-            gallery = galleryImages.map((img) => ({
-              id: img.id,
-              fileName: img.fileName,
-              caption: img.caption,
-              isTheme: img.isTheme,
-              dataUrl: img.dataUrl
-            }))
-          } catch { /* ignore gallery errors */ }
+        const includedFileIds = new Set([...settingFileIds])
+        if (includeChapters) {
+          storyFileIds.forEach((id) => includedFileIds.add(id))
         }
 
-        wikiNodes.push({
-          id: node.id,
-          parentId: node.parentId,
-          name: node.name,
-          type: node.type,
-          kind: node.kind,
-          content,
-          summary,
-          outline,
-          sortOrder: node.sortOrder,
-          gallery
+        const ancestorIds = new Set<string>()
+        for (const node of rawNodes) {
+          if (includedFileIds.has(node.id)) {
+            let current = node
+            while (current.parentId) {
+              ancestorIds.add(current.parentId)
+              current = rawNodes.find((n) => n.id === current.parentId) || current
+              if (!current.parentId) break
+            }
+          }
+        }
+
+        const wikiNodes: WikiNode[] = []
+        for (const node of rawNodes) {
+          if (node.type === 'file' && !includedFileIds.has(node.id)) continue
+          if (node.type === 'folder' && !ancestorIds.has(node.id)) continue
+
+          let content: string | null = null
+          let summary: string | null = null
+          let outline: string | null = null
+          let gallery: WikiGalleryItem[] = []
+
+          if (node.type === 'file') {
+            content = await readNodeContent({ projectSettingsPath, nodeId: node.id })
+            if (node.kind === 'story') {
+              const meta = await getNodeSummaryAndOutline(projectSettingsPath, node.id)
+              summary = meta.summary
+              outline = meta.outline
+            }
+            try {
+              const galleryImages = await getGalleryImages(projectSettingsPath, node.id)
+              gallery = galleryImages.map((img) => ({
+                id: img.id,
+                fileName: img.fileName,
+                caption: img.caption,
+                isTheme: img.isTheme,
+                dataUrl: img.dataUrl
+              }))
+            } catch {
+              /* ignore gallery errors */
+            }
+          }
+
+          wikiNodes.push({
+            id: node.id,
+            parentId: node.parentId,
+            name: node.name,
+            type: node.type,
+            kind: node.kind,
+            content,
+            summary,
+            outline,
+            sortOrder: node.sortOrder,
+            gallery
+          })
+        }
+
+        exportToWiki({
+          exportPath,
+          projectName: project.projectName,
+          nodes: wikiNodes,
+          language,
+          includeChapters,
+          i18nStrings
         })
-      }
 
-      exportToWiki({
-        exportPath,
-        projectName: project.projectName,
-        nodes: wikiNodes,
-        language,
-        includeChapters,
-        i18nStrings
-      })
-
-      return { success: true, exportPath }
-    } catch (error) {
-      console.error('Export wiki failed:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
+        return { success: true, exportPath }
+      } catch (error) {
+        console.error('Export wiki failed:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
       }
     }
-  })
+  )
 
   // Gallery IPC Handlers
   ipcMain.handle('gallery:get-images', async (_, { projectSettingsPath, nodeId }) => {
@@ -667,147 +697,165 @@ function createWindow(): void {
   // Plugin Native APIs
   const execAsync = promisify(exec)
 
-  ipcMain.handle('plugin-native:fetch', async (_, url: string, options?: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
-    headers?: Record<string, string>
-    body?: string
-    timeout?: number
-  }) => {
-    try {
-      const controller = new AbortController()
-      const timeout = options?.timeout || 30000
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-      const fetchOptions: RequestInit = {
-        method: options?.method || 'GET',
-        headers: options?.headers,
-        body: options?.body,
-        signal: controller.signal
+  ipcMain.handle(
+    'plugin-native:fetch',
+    async (
+      _,
+      url: string,
+      options?: {
+        method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+        headers?: Record<string, string>
+        body?: string
+        timeout?: number
       }
+    ) => {
+      try {
+        const controller = new AbortController()
+        const timeout = options?.timeout || 30000
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-      const response = await fetch(url, fetchOptions)
-      clearTimeout(timeoutId)
-
-      const headers: Record<string, string> = {}
-      response.headers.forEach((value, key) => {
-        headers[key] = value
-      })
-
-      const body = await response.text()
-
-      return {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-        body
-      }
-    } catch (e) {
-      return {
-        ok: false,
-        status: 0,
-        statusText: e instanceof Error ? e.message : String(e),
-        headers: {},
-        body: ''
-      }
-    }
-  })
-
-  ipcMain.handle('plugin-native:fetchStream', async (event, streamId: string, url: string, options?: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
-    headers?: Record<string, string>
-    body?: string
-    timeout?: number
-  }) => {
-    try {
-      const controller = new AbortController()
-      const timeout = options?.timeout || 120000
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-      const fetchOptions: RequestInit = {
-        method: options?.method || 'GET',
-        headers: options?.headers,
-        body: options?.body,
-        signal: controller.signal
-      }
-
-      const response = await fetch(url, fetchOptions)
-      clearTimeout(timeoutId)
-
-      const headers: Record<string, string> = {}
-      response.headers.forEach((value, key) => {
-        headers[key] = value
-      })
-
-      event.sender.send(`plugin-native:fetchStream:${streamId}:start`, {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        headers
-      })
-
-      if (!response.ok) {
-        const errorBody = await response.text()
-        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
-          message: `HTTP ${response.status}: ${errorBody}`
-        })
-        return { started: false }
-      }
-
-      if (!response.body) {
-        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
-          message: 'Response body is null'
-        })
-        return { started: false }
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-
-      const pump = async (): Promise<void> => {
-        const { done, value } = await reader.read()
-
-        if (done) {
-          event.sender.send(`plugin-native:fetchStream:${streamId}:end`)
-          return
+        const fetchOptions: RequestInit = {
+          method: options?.method || 'GET',
+          headers: options?.headers,
+          body: options?.body,
+          signal: controller.signal
         }
 
-        const chunk = decoder.decode(value, { stream: true })
-        event.sender.send(`plugin-native:fetchStream:${streamId}:chunk`, { chunk })
+        const response = await fetch(url, fetchOptions)
+        clearTimeout(timeoutId)
 
-        return pump()
-      }
-
-      pump().catch((err) => {
-        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
-          message: err instanceof Error ? err.message : String(err)
+        const headers: Record<string, string> = {}
+        response.headers.forEach((value, key) => {
+          headers[key] = value
         })
-      })
 
-      return { started: true }
-    } catch (e) {
-      event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
-        message: e instanceof Error ? e.message : String(e)
-      })
-      return { started: false }
+        const body = await response.text()
+
+        return {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+          body
+        }
+      } catch (e) {
+        return {
+          ok: false,
+          status: 0,
+          statusText: e instanceof Error ? e.message : String(e),
+          headers: {},
+          body: ''
+        }
+      }
     }
-  })
+  )
+
+  ipcMain.handle(
+    'plugin-native:fetchStream',
+    async (
+      event,
+      streamId: string,
+      url: string,
+      options?: {
+        method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+        headers?: Record<string, string>
+        body?: string
+        timeout?: number
+      }
+    ) => {
+      try {
+        const controller = new AbortController()
+        const timeout = options?.timeout || 120000
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+        const fetchOptions: RequestInit = {
+          method: options?.method || 'GET',
+          headers: options?.headers,
+          body: options?.body,
+          signal: controller.signal
+        }
+
+        const response = await fetch(url, fetchOptions)
+        clearTimeout(timeoutId)
+
+        const headers: Record<string, string> = {}
+        response.headers.forEach((value, key) => {
+          headers[key] = value
+        })
+
+        event.sender.send(`plugin-native:fetchStream:${streamId}:start`, {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        })
+
+        if (!response.ok) {
+          const errorBody = await response.text()
+          event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+            message: `HTTP ${response.status}: ${errorBody}`
+          })
+          return { started: false }
+        }
+
+        if (!response.body) {
+          event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+            message: 'Response body is null'
+          })
+          return { started: false }
+        }
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+
+        const pump = async (): Promise<void> => {
+          const { done, value } = await reader.read()
+
+          if (done) {
+            event.sender.send(`plugin-native:fetchStream:${streamId}:end`)
+            return
+          }
+
+          const chunk = decoder.decode(value, { stream: true })
+          event.sender.send(`plugin-native:fetchStream:${streamId}:chunk`, { chunk })
+
+          return pump()
+        }
+
+        pump().catch((err) => {
+          event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+            message: err instanceof Error ? err.message : String(err)
+          })
+        })
+
+        return { started: true }
+      } catch (e) {
+        event.sender.send(`plugin-native:fetchStream:${streamId}:error`, {
+          message: e instanceof Error ? e.message : String(e)
+        })
+        return { started: false }
+      }
+    }
+  )
 
   ipcMain.handle('plugin-native:fetchStreamAbort', async () => {
     return { aborted: true }
   })
 
-  ipcMain.handle('plugin-native:readFile', async (_, path: string, encoding: BufferEncoding = 'utf-8') => {
-    try {
-      if (!existsSync(path)) {
-        return { success: false, error: 'File not found' }
+  ipcMain.handle(
+    'plugin-native:readFile',
+    async (_, path: string, encoding: BufferEncoding = 'utf-8') => {
+      try {
+        if (!existsSync(path)) {
+          return { success: false, error: 'File not found' }
+        }
+        const content = readFileSync(path, encoding)
+        return { success: true, content }
+      } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : String(e) }
       }
-      const content = readFileSync(path, encoding)
-      return { success: true, content }
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) }
     }
-  })
+  )
 
   ipcMain.handle('plugin-native:writeFile', async (_, path: string, content: string) => {
     try {
@@ -841,7 +889,7 @@ function createWindow(): void {
         return { success: false, error: 'Directory not found' }
       }
       const entries = readdirSync(path, { withFileTypes: true })
-      return { success: true, entries: entries.map(e => e.name) }
+      return { success: true, entries: entries.map((e) => e.name) }
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) }
     }
@@ -876,9 +924,12 @@ function createWindow(): void {
     }
   })
 
-  ipcMain.handle('plugin-native:getAppPath', async (_, name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => {
-    return app.getPath(name)
-  })
+  ipcMain.handle(
+    'plugin-native:getAppPath',
+    async (_, name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => {
+      return app.getPath(name)
+    }
+  )
 
   ipcMain.on('toggle-devtools', () => {
     if (mainWindow.webContents.isDevToolsOpened()) {

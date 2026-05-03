@@ -64,10 +64,7 @@ export const useChapterMetaStore = create<ChapterMetaState>((set, get) => ({
     set({ isLoading: true, currentNodeId: nodeId, hasUnsavedChanges: false })
 
     try {
-      const result = await window.api.getNodeSummaryAndOutline(
-        projectSettingsPath,
-        nodeId
-      )
+      const result = await window.api.getNodeSummaryAndOutline(projectSettingsPath, nodeId)
 
       // 检查请求是否仍然有效（如果不是最新请求，忽略结果）
       if (currentRequestId !== requestId) {
@@ -144,12 +141,7 @@ export const scheduleSave = (
   }
 
   saveTimer = window.setTimeout(() => {
-    void window.api.updateNodeSummaryAndOutline(
-      projectSettingsPath,
-      nodeId,
-      summary,
-      outline
-    )
+    void window.api.updateNodeSummaryAndOutline(projectSettingsPath, nodeId, summary, outline)
     saveTimer = null
   }, 1000)
 }

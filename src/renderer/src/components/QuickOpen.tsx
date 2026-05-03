@@ -29,64 +29,66 @@ const QuickOpen: React.FC = () => {
   const storyNodes = useProjectStore((s) => s.storyNodes)
   const openTab = useEditorStore((s) => s.openTab)
 
-
-
   // 获取所有文件节点
   const fileNodes = useMemo(() => {
     return storyNodes.filter((n) => n.type === 'file')
   }, [storyNodes])
 
   // 搜索内容
-  const searchContent = useCallback(async (query: string): Promise<SearchResult[]> => {
-    if (!currentProject || !query.trim()) return []
+  const searchContent = useCallback(
+    async (query: string): Promise<SearchResult[]> => {
+      if (!currentProject || !query.trim()) return []
 
-    const lowerQuery = query.toLowerCase()
-    const searchResults: SearchResult[] = []
+      const lowerQuery = query.toLowerCase()
+      const searchResults: SearchResult[] = []
 
-    // 搜索文件名
-    for (const node of fileNodes) {
-      if (node.name.toLowerCase().includes(lowerQuery)) {
-        searchResults.push({
-          node,
-          path: buildNodeDisplayPath(node, storyNodes, t),
-          matchType: 'name'
-        })
-      }
-    }
-
-    // 搜索内容
-    for (const node of fileNodes) {
-      if (searchResults.some((r) => r.node.id === node.id)) continue
-
-      try {
-        const content = await window.api.readNodeContent(
-          currentProject.projectSettingsPath,
-          node.id
-        )
-        if (content) {
-          const lowerContent = content.toLowerCase()
-          const index = lowerContent.indexOf(lowerQuery)
-          if (index !== -1) {
-            const start = Math.max(0, index - 25)
-            const end = Math.min(content.length, index + query.length + 25)
-            const preview = content.substring(start, end)
-
-            searchResults.push({
-              node,
-              path: buildNodeDisplayPath(node, storyNodes, t),
-              matchType: 'content',
-              contentPreview: (start > 0 ? '...' : '') + preview + (end < content.length ? '...' : ''),
-              matchIndex: index
-            })
-          }
+      // 搜索文件名
+      for (const node of fileNodes) {
+        if (node.name.toLowerCase().includes(lowerQuery)) {
+          searchResults.push({
+            node,
+            path: buildNodeDisplayPath(node, storyNodes, t),
+            matchType: 'name'
+          })
         }
-      } catch (error) {
-        console.error(`Failed to read content for node ${node.id}:`, error)
       }
-    }
 
-    return searchResults
-  }, [currentProject, fileNodes, storyNodes, t])
+      // 搜索内容
+      for (const node of fileNodes) {
+        if (searchResults.some((r) => r.node.id === node.id)) continue
+
+        try {
+          const content = await window.api.readNodeContent(
+            currentProject.projectSettingsPath,
+            node.id
+          )
+          if (content) {
+            const lowerContent = content.toLowerCase()
+            const index = lowerContent.indexOf(lowerQuery)
+            if (index !== -1) {
+              const start = Math.max(0, index - 25)
+              const end = Math.min(content.length, index + query.length + 25)
+              const preview = content.substring(start, end)
+
+              searchResults.push({
+                node,
+                path: buildNodeDisplayPath(node, storyNodes, t),
+                matchType: 'content',
+                contentPreview:
+                  (start > 0 ? '...' : '') + preview + (end < content.length ? '...' : ''),
+                matchIndex: index
+              })
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to read content for node ${node.id}:`, error)
+        }
+      }
+
+      return searchResults
+    },
+    [currentProject, fileNodes, storyNodes, t]
+  )
 
   // 执行搜索
   useEffect(() => {
@@ -344,13 +346,7 @@ const QuickOpen: React.FC = () => {
               onMouseEnter={() => setSelectedIndex(index)}
             >
               {/* 文件类型图标 */}
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                style={{ flexShrink: 0 }}
-              >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
                 {result.node.kind === 'setting' ? (
                   <path
                     d="M8 1l2.5 5 5.5 1-4 4 1 5.5L8 13l-5 3.5 1-5.5-4-4 5.5-1L8 1z"
@@ -366,7 +362,15 @@ const QuickOpen: React.FC = () => {
               </svg>
 
               {/* 主信息区 */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1px'
+                }}
+              >
                 {/* 第一行：名称和标签 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span

@@ -20,9 +20,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
 
   const getChildren = useCallback(
     (parentId: string | null) => {
-      return nodes
-        .filter((n) => n.parentId === parentId)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
+      return nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.sortOrder - b.sortOrder)
     },
     [nodes]
   )
@@ -65,24 +63,34 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
           }}
         >
           {isFolder && (
-            <span style={{ 
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', 
-              transition: 'transform 0.15s',
-              fontSize: '10px'
-            }}>
+            <span
+              style={{
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.15s',
+                fontSize: '10px'
+              }}
+            >
               ▶
             </span>
           )}
           {!isFolder && <span style={{ width: '10px' }} />}
-          
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px' }}>
+
+          <span
+            style={{
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontSize: '13px'
+            }}
+          >
             {node.type === 'folder' ? '📁' : '📄'} {node.name}
           </span>
-          
+
           <span style={{ fontSize: '11px', color: 'var(--foreground, #888)', flexShrink: 0 }}>
             {node.deletedAt ? new Date(node.deletedAt).toLocaleDateString() : ''}
           </span>
-          
+
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -134,11 +142,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
 
   const rootNodes = useMemo(() => getChildren(null), [getChildren])
 
-  return (
-    <div style={{ padding: '4px 0' }}>
-      {rootNodes.map((node) => renderNode(node, 0))}
-    </div>
-  )
+  return <div style={{ padding: '4px 0' }}>{rootNodes.map((node) => renderNode(node, 0))}</div>
 }
 
 export default ArchiveTree

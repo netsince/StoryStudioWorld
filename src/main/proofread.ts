@@ -61,13 +61,33 @@ const commonEnglishMisspellings: Record<string, string> = {
 
 // 中文错词检测规则
 const commonMistakes = [
-  { pattern: /[的得地]/g, message: '检查「的/得/地」使用是否正确', suggestion: '的+名词，地+动词，得+形容词' },
-  { pattern: /[做作](?:法|为|业|事)/g, message: '检查「做/作」使用是否正确', suggestion: '做+具体动作，作+抽象行为' },
-  { pattern: /[再在]见/g, message: '检查「再/在」使用是否正确', suggestion: '再见=再次见面，在见=正在见面' },
+  {
+    pattern: /[的得地]/g,
+    message: '检查「的/得/地」使用是否正确',
+    suggestion: '的+名词，地+动词，得+形容词'
+  },
+  {
+    pattern: /[做作](?:法|为|业|事)/g,
+    message: '检查「做/作」使用是否正确',
+    suggestion: '做+具体动作，作+抽象行为'
+  },
+  {
+    pattern: /[再在]见/g,
+    message: '检查「再/在」使用是否正确',
+    suggestion: '再见=再次见面，在见=正在见面'
+  },
   { pattern: /以[经径]/g, message: '应该是「已经」', suggestion: '已经' },
   { pattern: /[坐座]位/g, message: '应该是「座位」', suggestion: '座位' },
-  { pattern: /[那哪]里/g, message: '检查「那/哪」使用是否正确', suggestion: '那里=指示，哪里=疑问' },
-  { pattern: /[在再]说/g, message: '检查「在/再」使用是否正确', suggestion: '再说=再一次说，在说=正在说' },
+  {
+    pattern: /[那哪]里/g,
+    message: '检查「那/哪」使用是否正确',
+    suggestion: '那里=指示，哪里=疑问'
+  },
+  {
+    pattern: /[在再]说/g,
+    message: '检查「在/再」使用是否正确',
+    suggestion: '再说=再一次说，在说=正在说'
+  },
   { pattern: /[到道]理/g, message: '应该是「道理」', suggestion: '道理' },
   { pattern: /[对队]伍/g, message: '应该是「队伍」', suggestion: '队伍' },
   { pattern: /[长常]年/g, message: '检查「长/常」使用是否正确', suggestion: '常年=经常，长年=长期' }
@@ -85,25 +105,139 @@ const punctuationIssues = [
   { pattern: /。{2,}/g, message: '多余的句号', suggestion: '使用单个句号' },
   { pattern: /!{2,}/g, message: '多余的感叹号', suggestion: '使用单个感叹号' },
   { pattern: /\?{2,}/g, message: '多余的问号', suggestion: '使用单个问号' },
-  { pattern: /[\u4e00-\u9fa5][,.!?](?!\s)/g, message: '中文标点后面建议加空格', suggestion: '在标点后添加空格' },
+  {
+    pattern: /[\u4e00-\u9fa5][,.!?](?!\s)/g,
+    message: '中文标点后面建议加空格',
+    suggestion: '在标点后添加空格'
+  },
   { pattern: /\s+[，。！？]/g, message: '标点符号前不应有空格', suggestion: '删除空格' }
 ]
 
 // 常见英文单词列表（用于检测拼写错误）
 const commonEnglishWords = new Set([
-  'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
-  'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
-  'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
-  'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
-  'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
-  'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take',
-  'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see', 'other',
-  'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also',
-  'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way',
-  'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us',
-  'is', 'are', 'was', 'were', 'been', 'has', 'had', 'did', 'does', 'doing',
-  'done', 'apple', 'microsoft', 'google', 'amazon', 'facebook', 'twitter',
-  'election', 'selection', 'collection', 'connection', 'protection', 'section'
+  'the',
+  'be',
+  'to',
+  'of',
+  'and',
+  'a',
+  'in',
+  'that',
+  'have',
+  'i',
+  'it',
+  'for',
+  'not',
+  'on',
+  'with',
+  'he',
+  'as',
+  'you',
+  'do',
+  'at',
+  'this',
+  'but',
+  'his',
+  'by',
+  'from',
+  'they',
+  'we',
+  'say',
+  'her',
+  'she',
+  'or',
+  'an',
+  'will',
+  'my',
+  'one',
+  'all',
+  'would',
+  'there',
+  'their',
+  'what',
+  'so',
+  'up',
+  'out',
+  'if',
+  'about',
+  'who',
+  'get',
+  'which',
+  'go',
+  'me',
+  'when',
+  'make',
+  'can',
+  'like',
+  'time',
+  'no',
+  'just',
+  'him',
+  'know',
+  'take',
+  'people',
+  'into',
+  'year',
+  'your',
+  'good',
+  'some',
+  'could',
+  'them',
+  'see',
+  'other',
+  'than',
+  'then',
+  'now',
+  'look',
+  'only',
+  'come',
+  'its',
+  'over',
+  'think',
+  'also',
+  'back',
+  'after',
+  'use',
+  'two',
+  'how',
+  'our',
+  'work',
+  'first',
+  'well',
+  'way',
+  'even',
+  'new',
+  'want',
+  'because',
+  'any',
+  'these',
+  'give',
+  'day',
+  'most',
+  'us',
+  'is',
+  'are',
+  'was',
+  'were',
+  'been',
+  'has',
+  'had',
+  'did',
+  'does',
+  'doing',
+  'done',
+  'apple',
+  'microsoft',
+  'google',
+  'amazon',
+  'facebook',
+  'twitter',
+  'election',
+  'selection',
+  'collection',
+  'connection',
+  'protection',
+  'section'
 ])
 
 function generateId(): string {
@@ -146,45 +280,45 @@ function levenshteinDistance(a: string, b: string): number {
 // 找最接近的单词
 function findClosestWord(word: string): string | null {
   const lowerWord = word.toLowerCase()
-  
+
   // 首先检查常见错误映射
   if (commonEnglishMisspellings[lowerWord]) {
     return commonEnglishMisspellings[lowerWord]
   }
-  
+
   // 使用编辑距离找最接近的词
   let minDistance = Infinity
   let closestWord: string | null = null
-  
+
   for (const dictWord of commonEnglishWords) {
     // 只比较长度相近的词
     if (Math.abs(dictWord.length - lowerWord.length) > 2) continue
-    
+
     const distance = levenshteinDistance(lowerWord, dictWord)
     if (distance < minDistance && distance <= 2) {
       minDistance = distance
       closestWord = dictWord
     }
   }
-  
+
   return closestWord
 }
 
 async function checkEnglishSpelling(text: string): Promise<ProofreadIssue[]> {
   const issues: ProofreadIssue[] = []
-  
+
   // 提取所有英文单词
   const words = text.match(/\b[a-zA-Z]+\b/g) || []
-  
+
   for (const word of words) {
     const lowerWord = word.toLowerCase()
-    
+
     // 跳过常见单词
     if (commonEnglishWords.has(lowerWord)) continue
-    
+
     // 检查是否是已知错误
     const suggestion = findClosestWord(word)
-    
+
     if (suggestion) {
       const index = text.toLowerCase().indexOf(lowerWord)
       if (index !== -1) {

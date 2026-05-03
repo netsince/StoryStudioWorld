@@ -50,9 +50,7 @@ const PluginManagerPanel: React.FC = () => {
           <div className="plugin-empty">
             <div className="plugin-empty-icon">🧩</div>
             <p>{t('plugin.noPlugins')}</p>
-            <p style={{ fontSize: '11px', marginTop: '8px' }}>
-              {t('plugin.installHint')}
-            </p>
+            <p style={{ fontSize: '11px', marginTop: '8px' }}>{t('plugin.installHint')}</p>
           </div>
         ) : (
           plugins.map((plugin) => (
@@ -78,26 +76,17 @@ const PluginManagerPanel: React.FC = () => {
               </div>
 
               {plugin.manifest.description && (
-                <div className="plugin-item-details">
-                  {plugin.manifest.description}
-                </div>
+                <div className="plugin-item-details">{plugin.manifest.description}</div>
               )}
 
-              {plugin.error && (
-                <div className="plugin-error">
-                  ⚠️ {plugin.error}
-                </div>
-              )}
+              {plugin.error && <div className="plugin-error">⚠️ {plugin.error}</div>}
             </div>
           ))
         )}
       </div>
 
       <div className="plugin-help-footer">
-        <div
-          className="plugin-help-toggle"
-          onClick={() => setShowHelp(!showHelp)}
-        >
+        <div className="plugin-help-toggle" onClick={() => setShowHelp(!showHelp)}>
           <svg
             width="12"
             height="12"
@@ -114,7 +103,9 @@ const PluginManagerPanel: React.FC = () => {
 
         {showHelp && (
           <div style={{ marginTop: '12px' }}>
-            <p style={{ marginBottom: '8px', color: 'var(--text-muted)' }}>{t('plugin.directoryStructure')}:</p>
+            <p style={{ marginBottom: '8px', color: 'var(--text-muted)' }}>
+              {t('plugin.directoryStructure')}:
+            </p>
             <pre
               style={{
                 margin: 0,
@@ -127,7 +118,7 @@ const PluginManagerPanel: React.FC = () => {
                 border: '1px solid var(--border-color)'
               }}
             >
-{`my-plugin/
+              {`my-plugin/
 ├── manifest.json
 └── index.js
 

@@ -11,7 +11,7 @@ interface ArchiveViewProps {
 const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
   const { t } = useTranslation()
   const [timeFilter, setTimeFilter] = useState<string>('all')
-  
+
   const currentProject = useProjectStore((s) => s.currentProject)
   const archivedNodes = useProjectStore((s) => s.archivedNodes)
   const isBusy = useProjectStore((s) => s.isProjectBusy)
@@ -26,13 +26,13 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
   }, [currentProject, refreshArchivedNodes])
 
   const filteredNodes = useMemo(() => {
-    let nodes = archivedNodes.filter(n => n.kind === kind)
-    
+    const nodes = archivedNodes.filter((n) => n.kind === kind)
+
     if (timeFilter === 'all') {
       return nodes
     }
     const filterDate = new Date()
-    
+
     switch (timeFilter) {
       case 'today':
         filterDate.setHours(0, 0, 0, 0)
@@ -49,7 +49,7 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
       default:
         return nodes
     }
-    
+
     return nodes.filter((node: StoryNode) => {
       if (!node.deletedAt) return false
       const deleteDate = new Date(node.deletedAt)
@@ -58,9 +58,19 @@ const ArchiveView: React.FC<ArchiveViewProps> = ({ kind = 'story' }) => {
   }, [archivedNodes, timeFilter, kind])
 
   return (
-    <div style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <h2 style={{ marginBottom: '16px' }}>{kind === 'setting' ? t('archive.settingArchive') : t('archive.storyArchive')}</h2>
-      
+    <div
+      style={{
+        padding: '16px',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+    >
+      <h2 style={{ marginBottom: '16px' }}>
+        {kind === 'setting' ? t('archive.settingArchive') : t('archive.storyArchive')}
+      </h2>
+
       <div style={{ marginBottom: '16px' }}>
         <select
           value={timeFilter}

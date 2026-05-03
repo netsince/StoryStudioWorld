@@ -164,28 +164,28 @@ function getSystemFontPaths(): string[] {
 
   if (sysPlatform === 'win32') {
     return [
-      'C:/Windows/Fonts/simsun.ttc',      // 宋体
-      'C:/Windows/Fonts/simhei.ttf',      // 黑体
-      'C:/Windows/Fonts/msyh.ttc',        // 微软雅黑
-      'C:/Windows/Fonts/msyhl.ttc',       // 微软雅黑 Light
-      'C:/Windows/Fonts/simkai.ttf',      // 楷体
-      'C:/Windows/Fonts/simfang.ttf'      // 仿宋
+      'C:/Windows/Fonts/simsun.ttc', // 宋体
+      'C:/Windows/Fonts/simhei.ttf', // 黑体
+      'C:/Windows/Fonts/msyh.ttc', // 微软雅黑
+      'C:/Windows/Fonts/msyhl.ttc', // 微软雅黑 Light
+      'C:/Windows/Fonts/simkai.ttf', // 楷体
+      'C:/Windows/Fonts/simfang.ttf' // 仿宋
     ]
   } else if (sysPlatform === 'darwin') {
     return [
-      '/System/Library/Fonts/PingFang.ttc',           // 苹方
-      '/System/Library/Fonts/STHeiti Light.ttc',      // 黑体
+      '/System/Library/Fonts/PingFang.ttc', // 苹方
+      '/System/Library/Fonts/STHeiti Light.ttc', // 黑体
       '/System/Library/Fonts/STHeiti Medium.ttc',
-      '/System/Library/Fonts/STSong Light.ttc',       // 宋体
-      '/Library/Fonts/Arial Unicode.ttf',             // Arial Unicode
-      '/System/Library/Fonts/Hiragino Sans GB.ttc'    // 冬青黑体
+      '/System/Library/Fonts/STSong Light.ttc', // 宋体
+      '/Library/Fonts/Arial Unicode.ttf', // Arial Unicode
+      '/System/Library/Fonts/Hiragino Sans GB.ttc' // 冬青黑体
     ]
   } else {
     // Linux
     return [
-      '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',     // 文泉驿正黑
-      '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',   // 文泉驿微米黑
-      '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',  // Noto Sans CJK
+      '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', // 文泉驿正黑
+      '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc', // 文泉驿微米黑
+      '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', // Noto Sans CJK
       '/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc', // Noto Serif CJK
       '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
     ]
@@ -580,7 +580,11 @@ function getWikiNodeDisplayName(node: WikiNode, i18n: Record<string, string>): s
   return node.name
 }
 
-function buildNodeDisplayPathParts(node: WikiNode, allNodes: WikiNode[], i18n: Record<string, string>): string[] {
+function buildNodeDisplayPathParts(
+  node: WikiNode,
+  allNodes: WikiNode[],
+  i18n: Record<string, string>
+): string[] {
   const parts: string[] = []
   let current: WikiNode | undefined = node
   while (current) {
@@ -611,7 +615,10 @@ function resolveWikiRefHtml(
       for (let i = 0; i < parts.length - 1; i++) {
         const refPart = parts[i]
         const pathIdx = rawParts.length - parts.length + i
-        if (pathIdx < 0) { isMatch = false; break }
+        if (pathIdx < 0) {
+          isMatch = false
+          break
+        }
         if (rawParts[pathIdx] !== refPart && displayParts[pathIdx] !== refPart) {
           isMatch = false
           break
@@ -699,15 +706,17 @@ function buildDisambigPageHtml(
   const title = i18n.disambiguationTitle.replace('{{name}}', escapeHtml(ref))
   const desc = i18n.disambiguationDesc.replace('{{name}}', escapeHtml(ref))
 
-  const items = matchedNodes.map((n) => {
-    const pathParts = buildNodePathParts(n, nodes)
-    const path = pathParts.join(' / ')
-    const kindLabel = n.kind === 'story' ? i18n.story : i18n.setting
-    return `<li style="margin-bottom:8px">
+  const items = matchedNodes
+    .map((n) => {
+      const pathParts = buildNodePathParts(n, nodes)
+      const path = pathParts.join(' / ')
+      const kindLabel = n.kind === 'story' ? i18n.story : i18n.setting
+      return `<li style="margin-bottom:8px">
       <a href="${n.id}.html" style="color:#3498db;font-size:14px">${escapeHtml(n.name)}</a>
       <span style="color:#888;font-size:12px;margin-left:8px">${kindLabel} — ${escapeHtml(path)}</span>
     </li>`
-  }).join('\n')
+    })
+    .join('\n')
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(language)}">
@@ -754,11 +763,28 @@ function buildSettingPageHtml(
   const FIELD_CONFIG: Record<string, { single: string[]; multi: string[] }> = {
     character: {
       single: ['name', 'gender', 'age'],
-      multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
+      multi: [
+        'background',
+        'motivation',
+        'arc',
+        'appearance',
+        'personality',
+        'speech',
+        'skills',
+        'notes'
+      ]
     },
     location: {
       single: [],
-      multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
+      multi: [
+        'locationDescription',
+        'visual',
+        'auditory',
+        'olfactory',
+        'atmosphere',
+        'danger',
+        'notes'
+      ]
     },
     item: {
       single: ['type', 'quality'],
@@ -772,21 +798,51 @@ function buildSettingPageHtml(
 
   const FIELD_LABELS: Record<string, Record<string, string>> = {
     'zh-CN': {
-      name: '角色', gender: '性别', age: '年龄', background: '背景经历',
-      motivation: '动机目标', arc: '成长弧线', appearance: '外貌描写',
-      personality: '性格特征', speech: '说话风格', skills: '能力技能',
-      notes: '其他备注', description: '设定描述', locationDescription: '地点描述',
-      visual: '视觉', auditory: '听觉', olfactory: '嗅觉', atmosphere: '氛围',
-      danger: '危险程度', type: '类型', quality: '品质', stats: '数值属性',
+      name: '角色',
+      gender: '性别',
+      age: '年龄',
+      background: '背景经历',
+      motivation: '动机目标',
+      arc: '成长弧线',
+      appearance: '外貌描写',
+      personality: '性格特征',
+      speech: '说话风格',
+      skills: '能力技能',
+      notes: '其他备注',
+      description: '设定描述',
+      locationDescription: '地点描述',
+      visual: '视觉',
+      auditory: '听觉',
+      olfactory: '嗅觉',
+      atmosphere: '氛围',
+      danger: '危险程度',
+      type: '类型',
+      quality: '品质',
+      stats: '数值属性',
       symbolism: '象征意义'
     },
-    'en': {
-      name: 'Name', gender: 'Gender', age: 'Age', background: 'Background',
-      motivation: 'Motivation', arc: 'Character Arc', appearance: 'Appearance',
-      personality: 'Personality', speech: 'Speech Style', skills: 'Skills & Abilities',
-      notes: 'Notes', description: 'Description', locationDescription: 'Location Description',
-      visual: 'Visual', auditory: 'Auditory', olfactory: 'Olfactory', atmosphere: 'Atmosphere',
-      danger: 'Danger Level', type: 'Type', quality: 'Quality', stats: 'Stats',
+    en: {
+      name: 'Name',
+      gender: 'Gender',
+      age: 'Age',
+      background: 'Background',
+      motivation: 'Motivation',
+      arc: 'Character Arc',
+      appearance: 'Appearance',
+      personality: 'Personality',
+      speech: 'Speech Style',
+      skills: 'Skills & Abilities',
+      notes: 'Notes',
+      description: 'Description',
+      locationDescription: 'Location Description',
+      visual: 'Visual',
+      auditory: 'Auditory',
+      olfactory: 'Olfactory',
+      atmosphere: 'Atmosphere',
+      danger: 'Danger Level',
+      type: 'Type',
+      quality: 'Quality',
+      stats: 'Stats',
       symbolism: 'Symbolism'
     }
   }
@@ -807,25 +863,32 @@ function buildSettingPageHtml(
 
   let infoboxHtml = ''
   const themeImg = node.gallery.find((g) => g.isTheme)
-  const themeImgHtml = themeImg && themeImg.dataUrl
-    ? `<div style="margin-bottom:8px"><img src="images/${node.id}_${themeImg.id}.jpg" alt="${escapeHtml(themeImg.caption || node.name)}" style="width:100%;display:block;border-radius:2px" />${themeImg.caption ? `<div style="font-size:11px;color:#888;text-align:center;padding:4px 0">${escapeHtml(themeImg.caption)}</div>` : ''}</div>`
-    : ''
+  const themeImgHtml =
+    themeImg && themeImg.dataUrl
+      ? `<div style="margin-bottom:8px"><img src="images/${node.id}_${themeImg.id}.jpg" alt="${escapeHtml(themeImg.caption || node.name)}" style="width:100%;display:block;border-radius:2px" />${themeImg.caption ? `<div style="font-size:11px;color:#888;text-align:center;padding:4px 0">${escapeHtml(themeImg.caption)}</div>` : ''}</div>`
+      : ''
 
   if (config.single.length > 0 || themeImg) {
     infoboxHtml = `<aside style="width:280px;background:#2a2a2e;border:1px solid #54595d;padding:8px;font-size:13px;float:right;margin-left:24px;margin-bottom:20px">
       <div style="text-align:center;font-weight:bold;padding:8px;background:#3a3a3e;margin-bottom:8px;border:1px solid #54595d">${escapeHtml(node.name)}</div>
       ${themeImgHtml}
-      ${config.single.length > 0 ? `<table style="width:100%;border-collapse:collapse">
+      ${
+        config.single.length > 0
+          ? `<table style="width:100%;border-collapse:collapse">
         <tbody>
-          ${config.single.map((field) => {
-            const val = data[field]
-            return `<tr style="border-bottom:1px solid #444">
+          ${config.single
+            .map((field) => {
+              const val = data[field]
+              return `<tr style="border-bottom:1px solid #444">
               <th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${labels[field] || field}</th>
               <td style="padding:6px 4px">${val ? escapeHtml(val) : '<span style="color:#666;font-style:italic">' + i18n.noContent + '</span>'}</td>
             </tr>`
-          }).join('\n')}
+            })
+            .join('\n')}
         </tbody>
-      </table>` : ''}
+      </table>`
+          : ''
+      }
     </aside>`
   }
 
@@ -839,15 +902,17 @@ function buildSettingPageHtml(
     </nav>`
   }
 
-  const sectionsHtml = config.multi.map((field) => {
-    const val = data[field]
-    return `<section id="${field}" style="margin-bottom:24px">
+  const sectionsHtml = config.multi
+    .map((field) => {
+      const val = data[field]
+      return `<section id="${field}" style="margin-bottom:24px">
       <div style="border-bottom:1px solid #54595d;margin-bottom:12px;padding-bottom:2px">
         <h2 style="margin:0;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${labels[field] || field}</h2>
       </div>
       <div style="font-size:14px;white-space:pre-wrap;color:${val ? '#d1d1d1' : '#666'};font-style:${val ? 'normal' : 'italic'}">${val ? processWikiRefsInText(val, nodes, includedNodeIds, i18n) : i18n.noContent}</div>
     </section>`
-  }).join('\n')
+    })
+    .join('\n')
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(language)}">
@@ -870,19 +935,25 @@ function buildSettingPageHtml(
         ${sectionsHtml}
       </div>
     </div>
-    ${node.gallery.length > 0 ? `
+    ${
+      node.gallery.length > 0
+        ? `
     <div style="margin-top:40px;border-top:1px solid #54595d;padding-top:20px">
       <h2 style="margin:0 0 16px;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${i18n.gallery || 'Gallery'}</h2>
       <div style="column-count:3;column-gap:12px">
-        ${node.gallery.map((img) => {
-          if (!img.dataUrl) return ''
-          return `<div style="break-inside:avoid;margin-bottom:12px;border:1px solid #54595d;border-radius:4px;overflow:hidden">
+        ${node.gallery
+          .map((img) => {
+            if (!img.dataUrl) return ''
+            return `<div style="break-inside:avoid;margin-bottom:12px;border:1px solid #54595d;border-radius:4px;overflow:hidden">
             <img src="images/${node.id}_${img.id}.jpg" alt="${escapeHtml(img.caption || img.fileName)}" style="width:100%;display:block" />
             ${img.caption ? `<div style="padding:6px 8px;font-size:12px;color:#aaa">${escapeHtml(img.caption)}</div>` : ''}
           </div>`
-        }).join('\n')}
+          })
+          .join('\n')}
       </div>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
   </div>
 </body>
 </html>`
@@ -914,9 +985,12 @@ function buildStoryPageHtml(
         .split('\n')
         .map((line) => {
           if (line.startsWith('<')) return line
-          if (line.startsWith('# ')) return `<h2 style="font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;border-bottom:1px solid #54595d;padding-bottom:2px;margin-top:24px;margin-bottom:12px">${escapeHtml(line.slice(2))}</h2>`
-          if (line.startsWith('## ')) return `<h3 style="font-size:18px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:20px;margin-bottom:8px">${escapeHtml(line.slice(3))}</h3>`
-          if (line.startsWith('### ')) return `<h4 style="font-size:16px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:16px;margin-bottom:8px">${escapeHtml(line.slice(4))}</h4>`
+          if (line.startsWith('# '))
+            return `<h2 style="font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;border-bottom:1px solid #54595d;padding-bottom:2px;margin-top:24px;margin-bottom:12px">${escapeHtml(line.slice(2))}</h2>`
+          if (line.startsWith('## '))
+            return `<h3 style="font-size:18px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:20px;margin-bottom:8px">${escapeHtml(line.slice(3))}</h3>`
+          if (line.startsWith('### '))
+            return `<h4 style="font-size:16px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff;margin-top:16px;margin-bottom:8px">${escapeHtml(line.slice(4))}</h4>`
           if (line.startsWith('- ') || line.startsWith('* '))
             return `<p style="padding-left:1em">• ${escapeHtml(line.slice(2))}</p>`
           if (line.trim()) return `<p style="margin:4px 0">${line}</p>`
@@ -999,7 +1073,9 @@ export function exportToWiki(options: WikiExportOptions): void {
           const buffer = Buffer.from(base64Match[1], 'base64')
           writeFileSync(join(imagesDir, `${node.id}_${img.id}.jpg`), buffer)
         }
-      } catch { /* ignore image save errors */ }
+      } catch {
+        /* ignore image save errors */
+      }
     }
   }
 

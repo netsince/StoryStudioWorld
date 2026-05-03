@@ -74,16 +74,19 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
     void loadContent()
   }, [tab.id, tab.nodeId, tab.type, currentProject])
 
-  const handleEditorChange = useCallback((content: string): void => {
-    setEditorContent(content)
-    triggerContentChange(content)
-    if (tab.type === 'file') {
-      setDirtyTab(groupId, tab.id, true)
-      if (tab.nodeId) {
-        setDraft(tab.nodeId, content)
+  const handleEditorChange = useCallback(
+    (content: string): void => {
+      setEditorContent(content)
+      triggerContentChange(content)
+      if (tab.type === 'file') {
+        setDirtyTab(groupId, tab.id, true)
+        if (tab.nodeId) {
+          setDraft(tab.nodeId, content)
+        }
       }
-    }
-  }, [tab.type, tab.id, tab.nodeId, groupId, setDirtyTab, setDraft])
+    },
+    [tab.type, tab.id, tab.nodeId, groupId, setDirtyTab, setDraft]
+  )
 
   const handleSave = useCallback(async (): Promise<void> => {
     if (tab.type === 'file' && tab.nodeId && currentProject) {
@@ -91,7 +94,17 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
       setDirtyTab(groupId, tab.id, false)
       clearDraft(tab.nodeId)
     }
-  }, [tab.type, tab.nodeId, currentProject, editorContent, saveNodeContent, setDirtyTab, groupId, tab.id, clearDraft])
+  }, [
+    tab.type,
+    tab.nodeId,
+    currentProject,
+    editorContent,
+    saveNodeContent,
+    setDirtyTab,
+    groupId,
+    tab.id,
+    clearDraft
+  ])
 
   if (tab.type === 'welcome') {
     return (
@@ -152,11 +165,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
       }
       return (
         <div className="editor-content">
-          <SettingEditor
-            nodeId={tab.nodeId!}
-            groupId={groupId}
-            tabId={tab.id}
-          />
+          <SettingEditor nodeId={tab.nodeId!} groupId={groupId} tabId={tab.id} />
         </div>
       )
     }

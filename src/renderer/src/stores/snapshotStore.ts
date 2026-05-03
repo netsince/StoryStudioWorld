@@ -27,7 +27,7 @@ interface SnapshotState {
   selectSnapshot: (id: string | null) => void
 }
 
-export const useSnapshotStore = create<SnapshotState>((set, _get) => ({
+export const useSnapshotStore = create<SnapshotState>((set) => ({
   snapshots: [],
   isLoading: false,
   selectedSnapshotId: null,
@@ -64,7 +64,8 @@ export const useSnapshotStore = create<SnapshotState>((set, _get) => ({
       if (success) {
         set((state) => ({
           snapshots: state.snapshots.filter((s) => s.id !== snapshotId),
-          selectedSnapshotId: state.selectedSnapshotId === snapshotId ? null : state.selectedSnapshotId
+          selectedSnapshotId:
+            state.selectedSnapshotId === snapshotId ? null : state.selectedSnapshotId
         }))
       }
     } catch (error) {

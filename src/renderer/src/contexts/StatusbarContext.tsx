@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const enum StatusbarAlignment {
   LEFT,
   RIGHT
@@ -97,7 +96,6 @@ export const StatusbarProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useStatusbar = (): StatusbarContextType => {
   const context = useContext(StatusbarContext)
   if (!context) {

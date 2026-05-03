@@ -1,10 +1,10 @@
-(function () {
+;(function () {
   'use strict'
 
   var STORAGE_KEY = 'ssw:website:lang'
 
   var translations = {
-    'zh': {
+    zh: {
       nav_editor: '编辑器',
       nav_world: '世界观',
       nav_export: '导出',
@@ -114,7 +114,7 @@
       mock_md_leave: '**该走了。**',
       mock_docx_ch2: '第二章'
     },
-    'en': {
+    en: {
       nav_editor: 'Editor',
       nav_world: 'World',
       nav_export: 'Export',
@@ -129,13 +129,18 @@
       hero_explore: 'Explore Features',
       editor_title_1: 'An Editor',
       editor_title_2: 'Built for Writing',
-      editor_detail_1: 'Multi-tab parallel editing with drag-and-drop sorting — organize chapters like organizing thoughts.',
-      editor_detail_2: 'Zen mode hides all distractions in one click, leaving only you and your words.',
-      editor_detail_3: 'Auto-save, never lose your work. Local SQLite database — your data belongs to you alone.',
+      editor_detail_1:
+        'Multi-tab parallel editing with drag-and-drop sorting — organize chapters like organizing thoughts.',
+      editor_detail_2:
+        'Zen mode hides all distractions in one click, leaving only you and your words.',
+      editor_detail_3:
+        'Auto-save, never lose your work. Local SQLite database — your data belongs to you alone.',
       world_title_1: 'Build Your',
       world_title_2: 'World',
-      world_detail_1: 'Dedicated world-building panel — characters, locations, races, history, all neatly organized.',
-      world_detail_2: 'Gallery system links images to each node — character art, scene illustrations, WYSIWYG.',
+      world_detail_1:
+        'Dedicated world-building panel — characters, locations, races, history, all neatly organized.',
+      world_detail_2:
+        'Gallery system links images to each node — character art, scene illustrations, WYSIWYG.',
       world_detail_3: 'Custom reading order for chapters — tell your story at your own pace.',
       export_title_1: 'Export in',
       export_title_2: 'Any Format',
@@ -147,9 +152,12 @@
       export_docx_desc: 'Word format, easy to edit further',
       plugin_title_1: 'Infinite',
       plugin_title_2: 'Extensibility',
-      plugin_detail_1: 'JavaScript plugin system — register commands, extend UI, listen to editor events.',
-      plugin_detail_2: 'Community plugin marketplace — word count, AI assistant, language packs, install and go.',
-      plugin_detail_3: 'Complete API documentation — build your own writing tool in just a few lines of code.',
+      plugin_detail_1:
+        'JavaScript plugin system — register commands, extend UI, listen to editor events.',
+      plugin_detail_2:
+        'Community plugin marketplace — word count, AI assistant, language packs, install and go.',
+      plugin_detail_3:
+        'Complete API documentation — build your own writing tool in just a few lines of code.',
       download_eyebrow: 'Start Creating',
       download_title_1: 'Your Story',
       download_title_2: 'Awaits',
@@ -200,7 +208,8 @@
       mock_not_filled: 'Not filled',
       mock_gender_male: 'Male',
       mock_identity_value: 'Young Master of Yunyin Manor',
-      mock_personality_desc: 'Aloof and taciturn, yet harboring grand ambitions. Trained in swordsmanship from a young age.',
+      mock_personality_desc:
+        'Aloof and taciturn, yet harboring grand ambitions. Trained in swordsmanship from a young age.',
       mock_gallery: 'Gallery',
       mock_plugin_wordcount: 'Word Count',
       mock_plugin_ai: 'AI Writing Assistant',
@@ -221,7 +230,7 @@
       mock_md_ch2: '# Chapter 2',
       mock_md_rain: 'Rain pattered against the window,',
       mock_md_mountain: 'She gazed at the distant mountains.',
-      mock_md_leave: '**It\'s time to go.**',
+      mock_md_leave: "**It's time to go.**",
       mock_docx_ch2: 'Chapter 2'
     }
   }
@@ -285,7 +294,9 @@
   }
 
   window._sswI18n = {
-    get currentLang() { return currentLang },
+    get currentLang() {
+      return currentLang
+    },
     setLanguage: setLanguage,
     applyTranslations: applyTranslations
   }

@@ -16,7 +16,9 @@ const isReactElement = (value: unknown): value is React.ReactElement => {
 }
 
 const PluginPanelWrapper: React.FC<{
-  panel: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
+  panel:
+    | ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement)
+    | React.ComponentType<{ api: PluginAPI }>
   api: PluginAPI
 }> = ({ panel, api }) => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -34,7 +36,9 @@ const PluginPanelWrapper: React.FC<{
     }
 
     try {
-      const result = (panel as (props: { api: PluginAPI }) => React.ReactNode | HTMLElement)({ api })
+      const result = (panel as (props: { api: PluginAPI }) => React.ReactNode | HTMLElement)({
+        api
+      })
 
       if (result instanceof HTMLElement) {
         container.innerHTML = ''
@@ -120,7 +124,8 @@ const RightPanel: React.FC = () => {
         {activeActivity === 'proofread' && <ProofreadPanel />}
         {activeActivity === 'memo' && <MemoPanel />}
         {activeActivity === 'snapshot' && <SnapshotPanel />}
-        {!['chapterMeta', 'proofread', 'memo', 'snapshot'].includes(activeActivity) && getPluginPanel()}
+        {!['chapterMeta', 'proofread', 'memo', 'snapshot'].includes(activeActivity) &&
+          getPluginPanel()}
       </div>
     </Sidebar>
   )

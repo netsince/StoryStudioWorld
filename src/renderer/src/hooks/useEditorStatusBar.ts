@@ -42,14 +42,22 @@ export const useEditorStatusBar = (isActive: boolean): EditorStatusBarController
 
     charsWithoutSpacesAccessorRef.current = addEntry(
       'editor-chars-without-spaces',
-      { name: t('statusBar.charsWithoutSpacesCount'), text: '', ariaLabel: t('statusBar.charsWithoutSpacesLabel') },
+      {
+        name: t('statusBar.charsWithoutSpacesCount'),
+        text: '',
+        ariaLabel: t('statusBar.charsWithoutSpacesLabel')
+      },
       StatusbarAlignment.RIGHT,
       85
     )
 
     paragraphCountAccessorRef.current = addEntry(
       'editor-paragraph-count',
-      { name: t('statusBar.paragraphCount'), text: '', ariaLabel: t('statusBar.paragraphCountLabel') },
+      {
+        name: t('statusBar.paragraphCount'),
+        text: '',
+        ariaLabel: t('statusBar.paragraphCountLabel')
+      },
       StatusbarAlignment.RIGHT,
       75
     )
@@ -89,40 +97,46 @@ export const useEditorStatusBar = (isActive: boolean): EditorStatusBarController
     isInitializedRef.current = false
   }, [])
 
-  const updateStats = useCallback((stats: EditorStats) => {
-    if (!isInitializedRef.current) return
+  const updateStats = useCallback(
+    (stats: EditorStats) => {
+      if (!isInitializedRef.current) return
 
-    charCountAccessorRef.current?.update({
-      text: `${t('statusBar.chars')}: ${stats.chars.toLocaleString()}`
-    })
-    wordCountAccessorRef.current?.update({
-      text: `${t('statusBar.words')}: ${stats.words.toLocaleString()}`
-    })
-    charsWithoutSpacesAccessorRef.current?.update({
-      text: `${t('statusBar.charsWithoutSpaces')}: ${stats.charsWithoutSpaces.toLocaleString()}`
-    })
-    paragraphCountAccessorRef.current?.update({
-      text: `${t('statusBar.paragraphs')}: ${stats.paragraphs.toLocaleString()}`
-    })
-
-    const timeText =
-      stats.readingTime < 60
-        ? `${t('statusBar.reading')}: <1${t('statusBar.minutes')}`
-        : `${t('statusBar.reading')}: ${Math.ceil(stats.readingTime / 60)}${t('statusBar.minutes')}`
-    readingTimeAccessorRef.current?.update({ text: timeText })
-  }, [t])
-
-  const updateLastSaved = useCallback((lastSavedAt: string | null) => {
-    if (!isInitializedRef.current) return
-
-    if (lastSavedAt) {
-      lastSavedAccessorRef.current?.update({
-        text: `${lastSavedAt} ${t('statusBar.autoSaved')}`
+      charCountAccessorRef.current?.update({
+        text: `${t('statusBar.chars')}: ${stats.chars.toLocaleString()}`
       })
-    } else {
-      lastSavedAccessorRef.current?.update({ text: '' })
-    }
-  }, [t])
+      wordCountAccessorRef.current?.update({
+        text: `${t('statusBar.words')}: ${stats.words.toLocaleString()}`
+      })
+      charsWithoutSpacesAccessorRef.current?.update({
+        text: `${t('statusBar.charsWithoutSpaces')}: ${stats.charsWithoutSpaces.toLocaleString()}`
+      })
+      paragraphCountAccessorRef.current?.update({
+        text: `${t('statusBar.paragraphs')}: ${stats.paragraphs.toLocaleString()}`
+      })
+
+      const timeText =
+        stats.readingTime < 60
+          ? `${t('statusBar.reading')}: <1${t('statusBar.minutes')}`
+          : `${t('statusBar.reading')}: ${Math.ceil(stats.readingTime / 60)}${t('statusBar.minutes')}`
+      readingTimeAccessorRef.current?.update({ text: timeText })
+    },
+    [t]
+  )
+
+  const updateLastSaved = useCallback(
+    (lastSavedAt: string | null) => {
+      if (!isInitializedRef.current) return
+
+      if (lastSavedAt) {
+        lastSavedAccessorRef.current?.update({
+          text: `${lastSavedAt} ${t('statusBar.autoSaved')}`
+        })
+      } else {
+        lastSavedAccessorRef.current?.update({ text: '' })
+      }
+    },
+    [t]
+  )
 
   useEffect(() => {
     if (isActive) {

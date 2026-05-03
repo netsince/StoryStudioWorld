@@ -47,7 +47,7 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
   const openCreateProjectTab = useEditorStore((s) => s.openCreateProjectTab)
 
   const isFocused = focusedGroupId === groupId
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   const tabs = group?.tabs ?? []
   const activeTabId = group?.activeTabId ?? ''
 
@@ -105,22 +105,22 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
       setActiveGroup(groupId)
       commandService.setActiveGroup(groupId)
       switchTab(groupId, tabId)
-      
+
       const currentGroup = useEditorStore.getState().editorTree
         ? findGroupNode(useEditorStore.getState().editorTree, groupId)
         : null
       const tab = currentGroup?.tabs.find((t) => t.id === tabId)
-      
+
       // 触发插件 Tab 切换事件
       triggerTabChange(tab || null)
-      
+
       if (tab && tab.nodeId && storyNodes.length > 0) {
         const nodeId = tab.nodeId
         const parentIds: string[] = []
-        let current = storyNodes.find(n => n.id === nodeId)
+        let current = storyNodes.find((n) => n.id === nodeId)
         while (current?.parentId) {
           parentIds.unshift(current.parentId)
-          current = storyNodes.find(n => n.id === current!.parentId)
+          current = storyNodes.find((n) => n.id === current!.parentId)
         }
         if (parentIds.length > 0) {
           setExpandNodePath(parentIds)
@@ -169,7 +169,10 @@ const EditorGroup: React.FC<{ groupId: string }> = ({ groupId }) => {
         onTabDragEnd={tabDrag.onTabDragEnd}
       />
 
-      <div className="editor-container" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div
+        className="editor-container"
+        style={{ flex: 1, position: 'relative', overflow: 'hidden' }}
+      >
         {tabs.length === 0 ? (
           <EmptyState onOpenWelcome={openWelcomeTab} />
         ) : (

@@ -4,7 +4,13 @@ import { useProjectStore } from '../stores/projectStore'
 import { getAvailableLanguages, getCurrentLanguage, type SupportedLanguage } from '../i18n'
 
 const WikiIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M12 2L2 7l10 5 10-5-10-5z" />
     <path d="M2 17l10 5 10-5" />
     <path d="M2 12l10 5 10-5" />
@@ -12,13 +18,25 @@ const WikiIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const FolderIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
   </svg>
 )
 
 const ExportIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="7 10 12 15 17 10" />
     <line x1="12" y1="15" x2="12" y2="3" />
@@ -34,7 +52,9 @@ const ExportWikiPanel: React.FC = () => {
   const [exportPath, setExportPath] = useState('')
   const [includeChapters, setIncludeChapters] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  )
 
   const handlePickFolder = async (): Promise<void> => {
     const result = await window.api.pickWikiExportPath()
@@ -51,9 +71,18 @@ const ExportWikiPanel: React.FC = () => {
     }
 
     const wikiKeys = [
-      'tableOfContents', 'story', 'setting', 'backToIndex', 'summary',
-      'outline', 'noContent', 'projectWiki', 'disambiguation',
-      'disambiguationTitle', 'disambiguationDesc', 'notFound'
+      'tableOfContents',
+      'story',
+      'setting',
+      'backToIndex',
+      'summary',
+      'outline',
+      'noContent',
+      'projectWiki',
+      'disambiguation',
+      'disambiguationTitle',
+      'disambiguationDesc',
+      'notFound'
     ]
     const i18nStrings: Record<string, string> = {}
     for (const key of wikiKeys) {
@@ -77,7 +106,10 @@ const ExportWikiPanel: React.FC = () => {
       })
 
       if (result.success) {
-        setExportResult({ success: true, message: t('exportWiki.exportSuccess', { path: result.exportPath }) })
+        setExportResult({
+          success: true,
+          message: t('exportWiki.exportSuccess', { path: result.exportPath })
+        })
       } else {
         setExportResult({ success: false, message: result.error || t('exportWiki.exportFailed') })
       }
@@ -192,9 +224,7 @@ const ExportWikiPanel: React.FC = () => {
 
         {exportResult && (
           <div className={`export-result ${exportResult.success ? 'success' : 'error'}`}>
-            <div className="export-result-icon">
-              {exportResult.success ? '✓' : '✕'}
-            </div>
+            <div className="export-result-icon">{exportResult.success ? '✓' : '✕'}</div>
             <span>{exportResult.message}</span>
           </div>
         )}

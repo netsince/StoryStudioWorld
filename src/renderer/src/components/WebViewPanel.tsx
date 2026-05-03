@@ -34,12 +34,8 @@ const WebViewPanel: React.FC<WebViewPanelProps> = ({ webViewId }) => {
     const doc = iframe.contentDocument
     if (!doc) return
 
-    const scripts = webView.scripts
-      .map((src) => `<script src="${src}"></script>`)
-      .join('\n')
-    const styles = webView.styles
-      .map((href) => `<link rel="stylesheet" href="${href}">`)
-      .join('\n')
+    const scripts = webView.scripts.map((src) => `<script src="${src}"></script>`).join('\n')
+    const styles = webView.styles.map((href) => `<link rel="stylesheet" href="${href}">`).join('\n')
 
     const html = `
       <!DOCTYPE html>

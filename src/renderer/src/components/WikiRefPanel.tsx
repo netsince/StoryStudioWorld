@@ -72,7 +72,9 @@ const WikiRefPanel: React.FC<WikiRefPanelProps> = ({ items, title, is404, onSele
         </div>
         <div ref={listRef} style={{ overflow: 'auto', flex: 1, minHeight: 0 }}>
           {items.length === 0 && is404 && (
-            <div style={{ padding: '16px', textAlign: 'center', color: '#e74c3c', fontSize: '12px' }}>
+            <div
+              style={{ padding: '16px', textAlign: 'center', color: '#e74c3c', fontSize: '12px' }}
+            >
               404 — {t('exportWiki.refNotFound')}
             </div>
           )}
@@ -112,7 +114,15 @@ const WikiRefPanel: React.FC<WikiRefPanelProps> = ({ items, title, is404, onSele
                   />
                 )}
               </svg>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1px'
+                }}
+              >
                 <span style={{ fontSize: '12px', fontWeight: 500 }}>{item.node.name}</span>
                 <span
                   style={{

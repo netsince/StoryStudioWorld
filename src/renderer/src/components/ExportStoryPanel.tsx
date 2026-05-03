@@ -17,7 +17,13 @@ interface ExportConfig {
 
 // SVG Icons
 const FileTextIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <line x1="16" y1="13" x2="8" y2="13" />
@@ -27,7 +33,13 @@ const FileTextIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const MarkdownIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <path d="M8 12h8" />
@@ -37,7 +49,13 @@ const MarkdownIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const PdfIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <path d="M9 13l6 0" />
@@ -47,7 +65,13 @@ const PdfIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const EpubIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     <path d="M12 6v7" />
@@ -56,7 +80,13 @@ const EpubIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const DocxIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <path d="M8 12h.01" />
@@ -69,7 +99,13 @@ const DocxIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const ExportIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="7 10 12 15 17 10" />
     <line x1="12" y1="15" x2="12" y2="3" />
@@ -77,7 +113,13 @@ const ExportIcon: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 const ArrowRightIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+  >
     <line x1="5" y1="12" x2="19" y2="12" />
     <polyline points="12 5 19 12 12 19" />
   </svg>
@@ -105,7 +147,9 @@ const ExportStoryPanel: React.FC = () => {
     fileName: ''
   })
   const [isExporting, setIsExporting] = useState(false)
-  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  )
 
   const getChapterNodes = useCallback((): StoryNode[] => {
     const chapters: StoryNode[] = []
@@ -142,15 +186,13 @@ const ExportStoryPanel: React.FC = () => {
     setExportResult(null)
 
     try {
-      const selectedNode = config.mode === 'single'
-        ? chapterNodes.find(n => n.id === config.selectedNodeId)
-        : null
+      const selectedNode =
+        config.mode === 'single' ? chapterNodes.find((n) => n.id === config.selectedNodeId) : null
       const chapterName = selectedNode?.name || ''
 
-      const defaultFileName = config.fileName ||
-        (config.mode === 'single' && chapterName
-          ? chapterName
-          : currentProject.projectName)
+      const defaultFileName =
+        config.fileName ||
+        (config.mode === 'single' && chapterName ? chapterName : currentProject.projectName)
 
       const result = await window.api.exportStory({
         projectSettingsPath: currentProject.projectSettingsPath,
@@ -162,7 +204,10 @@ const ExportStoryPanel: React.FC = () => {
       })
 
       if (result.success) {
-        setExportResult({ success: true, message: t('exportStory.exportSuccess', { path: result.filePath }) })
+        setExportResult({
+          success: true,
+          message: t('exportStory.exportSuccess', { path: result.filePath })
+        })
       } else {
         setExportResult({ success: false, message: result.error || t('exportStory.exportFailed') })
       }
@@ -224,7 +269,9 @@ const ExportStoryPanel: React.FC = () => {
           <div className="export-mode-selector">
             <button
               className={`export-mode-option ${config.mode === 'single' ? 'active' : ''}`}
-              onClick={() => setConfig((prev) => ({ ...prev, mode: 'single', selectedNodeId: null }))}
+              onClick={() =>
+                setConfig((prev) => ({ ...prev, mode: 'single', selectedNodeId: null }))
+              }
             >
               <div className="export-mode-radio">
                 <div className={`radio-indicator ${config.mode === 'single' ? 'active' : ''}`} />
@@ -236,7 +283,9 @@ const ExportStoryPanel: React.FC = () => {
               onClick={() => setConfig((prev) => ({ ...prev, mode: 'readingOrder' }))}
             >
               <div className="export-mode-radio">
-                <div className={`radio-indicator ${config.mode === 'readingOrder' ? 'active' : ''}`} />
+                <div
+                  className={`radio-indicator ${config.mode === 'readingOrder' ? 'active' : ''}`}
+                />
               </div>
               <span>{t('exportStory.readingOrderMode')}</span>
             </button>
@@ -250,7 +299,9 @@ const ExportStoryPanel: React.FC = () => {
             <select
               className="export-select"
               value={config.selectedNodeId || ''}
-              onChange={(e) => setConfig((prev) => ({ ...prev, selectedNodeId: e.target.value || null }))}
+              onChange={(e) =>
+                setConfig((prev) => ({ ...prev, selectedNodeId: e.target.value || null }))
+              }
             >
               <option value="">{t('exportStory.pleaseSelect')}</option>
               {chapterNodes.map((node) => (
@@ -273,9 +324,7 @@ const ExportStoryPanel: React.FC = () => {
                   <span className="export-stats-label">{t('exportStory.chaptersToExport')}</span>
                 </div>
               ) : (
-                <div className="export-info-warning">
-                  {t('exportStory.readingOrderEmpty')}
-                </div>
+                <div className="export-info-warning">{t('exportStory.readingOrderEmpty')}</div>
               )}
               <button className="export-link-btn" onClick={handleGoToReadingOrder}>
                 <span>{t('exportStory.gotoReadingOrder')}</span>
@@ -324,9 +373,7 @@ const ExportStoryPanel: React.FC = () => {
         {/* Export Result */}
         {exportResult && (
           <div className={`export-result ${exportResult.success ? 'success' : 'error'}`}>
-            <div className="export-result-icon">
-              {exportResult.success ? '✓' : '✕'}
-            </div>
+            <div className="export-result-icon">{exportResult.success ? '✓' : '✕'}</div>
             <span>{exportResult.message}</span>
           </div>
         )}

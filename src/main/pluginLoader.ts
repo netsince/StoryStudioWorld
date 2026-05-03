@@ -162,16 +162,12 @@ class PluginLoader {
     }
 
     if (enabled) {
-      this.settings.disabledPlugins = this.settings.disabledPlugins.filter(
-        (id) => id !== pluginId
-      )
+      this.settings.disabledPlugins = this.settings.disabledPlugins.filter((id) => id !== pluginId)
       if (!this.settings.enabledPlugins.includes(pluginId)) {
         this.settings.enabledPlugins.push(pluginId)
       }
     } else {
-      this.settings.enabledPlugins = this.settings.enabledPlugins.filter(
-        (id) => id !== pluginId
-      )
+      this.settings.enabledPlugins = this.settings.enabledPlugins.filter((id) => id !== pluginId)
       if (!this.settings.disabledPlugins.includes(pluginId)) {
         this.settings.disabledPlugins.push(pluginId)
       }
@@ -186,12 +182,8 @@ class PluginLoader {
   }
 
   clearPluginData(pluginId: string): void {
-    this.settings.enabledPlugins = this.settings.enabledPlugins.filter(
-      (id) => id !== pluginId
-    )
-    this.settings.disabledPlugins = this.settings.disabledPlugins.filter(
-      (id) => id !== pluginId
-    )
+    this.settings.enabledPlugins = this.settings.enabledPlugins.filter((id) => id !== pluginId)
+    this.settings.disabledPlugins = this.settings.disabledPlugins.filter((id) => id !== pluginId)
     this.saveSettings()
   }
 }

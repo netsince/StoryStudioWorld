@@ -5,7 +5,10 @@ import { useProjectStore } from '../stores/projectStore'
 import type { Snapshot, DiffResult, DiffNode } from '../../../main/snapshot'
 import ConfirmModal from './ConfirmModal'
 
-const formatTime = (timestamp: string, t: (key: string, options?: Record<string, unknown>) => string): string => {
+const formatTime = (
+  timestamp: string,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string => {
   const date = new Date(timestamp)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
@@ -72,14 +75,14 @@ const CreateSnapshotModal: React.FC<{
             </div>
           </div>
           <div className="ssw-modal-actions">
-            <button type="button" className="action-button secondary inline-button" onClick={onClose}>
+            <button
+              type="button"
+              className="action-button secondary inline-button"
+              onClick={onClose}
+            >
               {t('common.cancel')}
             </button>
-            <button
-              type="submit"
-              className="action-button inline-button"
-              disabled={!name.trim()}
-            >
+            <button type="submit" className="action-button inline-button" disabled={!name.trim()}>
               {t('common.save')}
             </button>
           </div>
@@ -95,31 +98,53 @@ const DiffView: React.FC<{
 }> = ({ diff, onBack }) => {
   const { t } = useTranslation()
   const totalChanges =
-    diff.story.added.length + diff.story.modified.length + diff.story.deleted.length +
-    diff.setting.added.length + diff.setting.modified.length + diff.setting.deleted.length
+    diff.story.added.length +
+    diff.story.modified.length +
+    diff.story.deleted.length +
+    diff.setting.added.length +
+    diff.setting.modified.length +
+    diff.setting.deleted.length
 
-  const renderDiffNode = (node: DiffNode, type: 'added' | 'modified' | 'deleted'): React.ReactElement => {
+  const renderDiffNode = (
+    node: DiffNode,
+    type: 'added' | 'modified' | 'deleted'
+  ): React.ReactElement => {
     const className = `diff-node ${type}`
-    const icon = node.type === 'folder' ? (
-      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-    ) : (
-      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-    )
+    const icon =
+      node.type === 'folder' ? (
+        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+      ) : (
+        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+      )
 
     return (
       <div key={node.id} className={className}>
         <div className="diff-node-main">
           <span className="diff-node-icon">{icon}</span>
           <div className="diff-node-info">
-            <span className="diff-node-name" title={node.name}>{node.name}</span>
-            {node.path && <span className="diff-node-path" title={node.path}>{node.path}</span>}
+            <span className="diff-node-name" title={node.name}>
+              {node.name}
+            </span>
+            {node.path && (
+              <span className="diff-node-path" title={node.path}>
+                {node.path}
+              </span>
+            )}
           </div>
         </div>
         <div className="diff-node-meta">
-          <span className={`diff-tag ${type}`}>{
-            type === 'added' ? t('snapshot.diff.added') :
-            type === 'modified' ? t('snapshot.diff.modified') : t('snapshot.diff.removed')
-          }</span>
+          <span className={`diff-tag ${type}`}>
+            {type === 'added'
+              ? t('snapshot.diff.added')
+              : type === 'modified'
+                ? t('snapshot.diff.modified')
+                : t('snapshot.diff.removed')}
+          </span>
         </div>
       </div>
     )
@@ -129,7 +154,14 @@ const DiffView: React.FC<{
     <div className="snapshot-diff">
       <div className="snapshot-diff-header">
         <button className="snapshot-btn icon-btn" onClick={onBack} title={t('snapshot.backToList')}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
@@ -142,65 +174,96 @@ const DiffView: React.FC<{
           <span className="stat-label">{t('snapshot.diff.added')}</span>
         </div>
         <div className="stat-item modified">
-          <span className="stat-value">{diff.story.modified.length + diff.setting.modified.length}</span>
+          <span className="stat-value">
+            {diff.story.modified.length + diff.setting.modified.length}
+          </span>
           <span className="stat-label">{t('snapshot.diff.modified')}</span>
         </div>
         <div className="stat-item deleted">
-          <span className="stat-value">{diff.story.deleted.length + diff.setting.deleted.length}</span>
+          <span className="stat-value">
+            {diff.story.deleted.length + diff.setting.deleted.length}
+          </span>
           <span className="stat-label">{t('snapshot.diff.removed')}</span>
         </div>
       </div>
 
       <div className="snapshot-diff-content">
-        {(diff.story.added.length > 0 || diff.story.modified.length > 0 || diff.story.deleted.length > 0) && (
+        {(diff.story.added.length > 0 ||
+          diff.story.modified.length > 0 ||
+          diff.story.deleted.length > 0) && (
           <div className="diff-section">
             <div className="diff-section-title">
-              <svg width="12" height="12" style={{ marginRight: '6px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              <svg
+                width="12"
+                height="12"
+                style={{ marginRight: '6px' }}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
               {t('snapshot.storyNodes')}
             </div>
             {diff.story.added.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.added')}</div>
-                {diff.story.added.map(node => renderDiffNode(node, 'added'))}
+                {diff.story.added.map((node) => renderDiffNode(node, 'added'))}
               </div>
             )}
             {diff.story.modified.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.modified')}</div>
-                {diff.story.modified.map(node => renderDiffNode(node, 'modified'))}
+                {diff.story.modified.map((node) => renderDiffNode(node, 'modified'))}
               </div>
             )}
             {diff.story.deleted.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.removed')}</div>
-                {diff.story.deleted.map(node => renderDiffNode(node, 'deleted'))}
+                {diff.story.deleted.map((node) => renderDiffNode(node, 'deleted'))}
               </div>
             )}
           </div>
         )}
 
-        {(diff.setting.added.length > 0 || diff.setting.modified.length > 0 || diff.setting.deleted.length > 0) && (
+        {(diff.setting.added.length > 0 ||
+          diff.setting.modified.length > 0 ||
+          diff.setting.deleted.length > 0) && (
           <div className="diff-section">
             <div className="diff-section-title">
-              <svg width="12" height="12" style={{ marginRight: '6px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <svg
+                width="12"
+                height="12"
+                style={{ marginRight: '6px' }}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
               {t('snapshot.settingNodes')}
             </div>
             {diff.setting.added.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.added')}</div>
-                {diff.setting.added.map(node => renderDiffNode(node, 'added'))}
+                {diff.setting.added.map((node) => renderDiffNode(node, 'added'))}
               </div>
             )}
             {diff.setting.modified.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.modified')}</div>
-                {diff.setting.modified.map(node => renderDiffNode(node, 'modified'))}
+                {diff.setting.modified.map((node) => renderDiffNode(node, 'modified'))}
               </div>
             )}
             {diff.setting.deleted.length > 0 && (
               <div className="diff-group">
                 <div className="diff-group-title">{t('snapshot.diff.removed')}</div>
-                {diff.setting.deleted.map(node => renderDiffNode(node, 'deleted'))}
+                {diff.setting.deleted.map((node) => renderDiffNode(node, 'deleted'))}
               </div>
             )}
           </div>
@@ -208,7 +271,15 @@ const DiffView: React.FC<{
 
         {totalChanges === 0 && (
           <div className="diff-empty">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+              opacity="0.2"
+            >
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
@@ -229,45 +300,95 @@ const SnapshotItem: React.FC<{
   onRestore: () => void
 }> = ({ snapshot, isSelected, onSelect, onDelete, onCompare, onRestore }) => {
   const { t } = useTranslation()
-  
+
   return (
-    <div
-      className={`snapshot-item ${isSelected ? 'selected' : ''}`}
-      onClick={onSelect}
-    >
+    <div className={`snapshot-item ${isSelected ? 'selected' : ''}`} onClick={onSelect}>
       <div className="snapshot-item-header">
         <span className="snapshot-name">{snapshot.name}</span>
         <span className="snapshot-time">{formatTime(snapshot.createdAt, t)}</span>
       </div>
-      {snapshot.description && (
-        <div className="snapshot-description">{snapshot.description}</div>
-      )}
+      {snapshot.description && <div className="snapshot-description">{snapshot.description}</div>}
       <div className="snapshot-stats">
-        <span className="snapshot-stat" title={t('snapshot.nodeCount', { count: snapshot.nodeCount })}>
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        <span
+          className="snapshot-stat"
+          title={t('snapshot.nodeCount', { count: snapshot.nodeCount })}
+        >
+          <svg
+            className="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13 2 13 9 20 9"></polyline>
+          </svg>
           {snapshot.nodeCount}
         </span>
         {snapshot.storyCount > 0 && (
-          <span className="snapshot-stat" title={t('snapshot.storyCount', { count: snapshot.storyCount })}>
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span
+            className="snapshot-stat"
+            title={t('snapshot.storyCount', { count: snapshot.storyCount })}
+          >
+            <svg
+              className="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
             {snapshot.storyCount}
           </span>
         )}
         {snapshot.settingCount > 0 && (
-          <span className="snapshot-stat" title={t('snapshot.settingCount', { count: snapshot.settingCount })}>
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span
+            className="snapshot-stat"
+            title={t('snapshot.settingCount', { count: snapshot.settingCount })}
+          >
+            <svg
+              className="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
             {snapshot.settingCount}
           </span>
         )}
       </div>
       <div className="snapshot-actions">
-        <button className="snapshot-btn primary small" onClick={(e) => { e.stopPropagation(); onCompare() }}>
+        <button
+          className="snapshot-btn primary small"
+          onClick={(e) => {
+            e.stopPropagation()
+            onCompare()
+          }}
+        >
           {t('snapshot.compare')}
         </button>
-        <button className="snapshot-btn small" onClick={(e) => { e.stopPropagation(); onRestore() }}>
+        <button
+          className="snapshot-btn small"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRestore()
+          }}
+        >
           {t('snapshot.restore')}
         </button>
-        <button className="snapshot-btn small danger" onClick={(e) => { e.stopPropagation(); onDelete() }}>
+        <button
+          className="snapshot-btn small danger"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+        >
           {t('common.delete')}
         </button>
       </div>
@@ -329,7 +450,7 @@ const SnapshotPanel: React.FC = () => {
         isDanger: true,
         onConfirm: () => {
           void deleteSnapshot(currentProject.projectSettingsPath, snapshotId)
-          setConfirmState(prev => ({ ...prev, isOpen: false }))
+          setConfirmState((prev) => ({ ...prev, isOpen: false }))
         }
       })
     }
@@ -349,7 +470,7 @@ const SnapshotPanel: React.FC = () => {
             window.location.reload()
           }
         })
-        setConfirmState(prev => ({ ...prev, isOpen: false }))
+        setConfirmState((prev) => ({ ...prev, isOpen: false }))
       }
     })
   }
@@ -365,7 +486,10 @@ const SnapshotPanel: React.FC = () => {
       <div className="snapshot-panel">
         <div className="snapshot-empty">
           <div className="snapshot-empty-icon">
-            <svg className="icon-xl" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            <svg className="icon-xl" viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
           </div>
           <div className="snapshot-empty-text">{t('snapshot.openProjectFirst')}</div>
           <div className="snapshot-empty-subtext">{t('snapshot.openProjectHint')}</div>
@@ -377,10 +501,7 @@ const SnapshotPanel: React.FC = () => {
   if (currentDiff) {
     return (
       <div className="snapshot-panel">
-        <DiffView
-          diff={currentDiff}
-          onBack={clearDiff}
-        />
+        <DiffView diff={currentDiff} onBack={clearDiff} />
       </div>
     )
   }
@@ -394,7 +515,14 @@ const SnapshotPanel: React.FC = () => {
           onClick={openCreateModal}
           title={t('snapshot.create')}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
@@ -412,7 +540,11 @@ const SnapshotPanel: React.FC = () => {
         {!isLoading && snapshots.length === 0 && (
           <div className="snapshot-empty">
             <div className="snapshot-empty-icon">
-              <svg className="icon-xl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <svg className="icon-xl" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
             </div>
             <div className="snapshot-empty-text">{t('snapshot.noSnapshots')}</div>
             <div className="snapshot-empty-subtext">{t('snapshot.createFirstHint')}</div>
@@ -444,7 +576,7 @@ const SnapshotPanel: React.FC = () => {
         message={confirmState.message}
         isDanger={confirmState.isDanger}
         onConfirm={confirmState.onConfirm}
-        onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   )

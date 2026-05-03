@@ -74,9 +74,9 @@ export async function updateMemo(id: string, content: string): Promise<Memo | nu
   if (!data.memos) {
     return null
   }
-  const memo = data.memos.find(m => m.id === id)
+  const memo = data.memos.find((m) => m.id === id)
   if (!memo) return null
-  
+
   memo.content = content
   memo.updatedAt = Date.now()
   await saveMemos(data)
@@ -88,9 +88,9 @@ export async function deleteMemo(id: string): Promise<boolean> {
   if (!data.memos) {
     return false
   }
-  const index = data.memos.findIndex(m => m.id === id)
+  const index = data.memos.findIndex((m) => m.id === id)
   if (index === -1) return false
-  
+
   data.memos.splice(index, 1)
   await saveMemos(data)
   return true

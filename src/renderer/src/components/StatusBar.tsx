@@ -9,19 +9,15 @@ const StatusBar: React.FC = () => {
   const { autoHideStatusBar } = useUiSettings()
 
   const leftEntries = useMemo(() => {
-    return (
-      Array.from(entries.values())
-        .filter((e) => e.alignment === StatusbarAlignment.LEFT)
-        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-    )
+    return Array.from(entries.values())
+      .filter((e) => e.alignment === StatusbarAlignment.LEFT)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
   }, [entries])
 
   const rightEntries = useMemo(() => {
-    return (
-      Array.from(entries.values())
-        .filter((e) => e.alignment === StatusbarAlignment.RIGHT)
-        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-    )
+    return Array.from(entries.values())
+      .filter((e) => e.alignment === StatusbarAlignment.RIGHT)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
   }, [entries])
 
   const { pluginLeftItems, pluginRightItems } = useMemo(() => {
@@ -34,8 +30,11 @@ const StatusBar: React.FC = () => {
     return { pluginLeftItems: left, pluginRightItems: right }
   }, [pluginStatusBarItems])
 
-  const hasContent = leftEntries.length > 0 || rightEntries.length > 0 || 
-    pluginLeftItems.length > 0 || pluginRightItems.length > 0
+  const hasContent =
+    leftEntries.length > 0 ||
+    rightEntries.length > 0 ||
+    pluginLeftItems.length > 0 ||
+    pluginRightItems.length > 0
 
   if (autoHideStatusBar && !hasContent) {
     return null

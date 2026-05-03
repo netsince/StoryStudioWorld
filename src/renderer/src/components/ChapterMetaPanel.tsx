@@ -10,14 +10,14 @@ type MetaTab = 'summary' | 'outline'
 
 const ChapterMetaPanel: React.FC = () => {
   const { t } = useTranslation()
-  
+
   // 从 editorStore 获取当前焦点组
   const editorTree = useEditorStore((s) => s.editorTree)
   const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
-  
+
   // 从 projectStore 获取项目信息
   const currentProject = useProjectStore((s) => s.currentProject)
-  
+
   // 从 chapterMetaStore 获取状态和操作
   const summary = useChapterMetaStore((s) => s.summary)
   const outline = useChapterMetaStore((s) => s.outline)
@@ -35,7 +35,7 @@ const ChapterMetaPanel: React.FC = () => {
   const activeTabInfo = useMemo(() => {
     const group = findGroupNode(editorTree, focusedGroupId)
     if (!group || group.kind !== 'group') return null
-    
+
     const activeTab = group.tabs.find((t) => t.id === group.activeTabId)
     return activeTab || null
   }, [editorTree, focusedGroupId])
@@ -87,47 +87,46 @@ const ChapterMetaPanel: React.FC = () => {
   }, [currentProject, saveChapterMeta])
 
   // 处理简概变化
-  const handleSummaryChange = useCallback((value: string): void => {
-    setSummary(value)
-    
-    // 触发防抖保存
-    if (currentProject && currentNodeId) {
-      scheduleSave(
-        currentProject.projectSettingsPath,
-        currentNodeId,
-        value,
-        outline
-      )
-    }
-  }, [currentProject, currentNodeId, outline, setSummary])
+  const handleSummaryChange = useCallback(
+    (value: string): void => {
+      setSummary(value)
+
+      // 触发防抖保存
+      if (currentProject && currentNodeId) {
+        scheduleSave(currentProject.projectSettingsPath, currentNodeId, value, outline)
+      }
+    },
+    [currentProject, currentNodeId, outline, setSummary]
+  )
 
   // 处理章纲变化
-  const handleOutlineChange = useCallback((value: string): void => {
-    setOutline(value)
-    
-    // 触发防抖保存
-    if (currentProject && currentNodeId) {
-      scheduleSave(
-        currentProject.projectSettingsPath,
-        currentNodeId,
-        summary,
-        value
-      )
-    }
-  }, [currentProject, currentNodeId, summary, setOutline])
+  const handleOutlineChange = useCallback(
+    (value: string): void => {
+      setOutline(value)
+
+      // 触发防抖保存
+      if (currentProject && currentNodeId) {
+        scheduleSave(currentProject.projectSettingsPath, currentNodeId, summary, value)
+      }
+    },
+    [currentProject, currentNodeId, summary, setOutline]
+  )
 
   // 切换 Tab 时保存
-  const handleTabSwitch = useCallback((tab: MetaTab): void => {
-    if (tab === activeTab) return
-    
-    // 立即保存当前内容
-    if (currentProject && currentNodeId) {
-      clearSaveTimer()
-      void saveChapterMeta(currentProject.projectSettingsPath)
-    }
-    
-    setActiveTab(tab)
-  }, [activeTab, currentProject, currentNodeId, saveChapterMeta])
+  const handleTabSwitch = useCallback(
+    (tab: MetaTab): void => {
+      if (tab === activeTab) return
+
+      // 立即保存当前内容
+      if (currentProject && currentNodeId) {
+        clearSaveTimer()
+        void saveChapterMeta(currentProject.projectSettingsPath)
+      }
+
+      setActiveTab(tab)
+    },
+    [activeTab, currentProject, currentNodeId, saveChapterMeta]
+  )
 
   const chapterName = activeTabInfo?.title || t('panel.chapterMeta.noChapter')
 
@@ -136,7 +135,14 @@ const ChapterMetaPanel: React.FC = () => {
       <div className="chapter-meta-panel">
         <div className="chapter-meta-empty">
           <div className="chapter-meta-empty-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -173,8 +179,8 @@ const ChapterMetaPanel: React.FC = () => {
       </div>
 
       <div className="chapter-meta-editor-container">
-        {!isLoading && (
-          activeTab === 'summary' ? (
+        {!isLoading &&
+          (activeTab === 'summary' ? (
             <PlainTextEditor
               content={summary}
               onChange={handleSummaryChange}
@@ -190,8 +196,7 @@ const ChapterMetaPanel: React.FC = () => {
               placeholder={t('panel.chapterMeta.outlinePlaceholder')}
               isActive={true}
             />
-          )
-        )}
+          ))}
       </div>
     </div>
   )

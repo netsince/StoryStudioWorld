@@ -26,7 +26,9 @@ const loadSettings = (): UiSettings => {
         autoHideStatusBar: parsed.autoHideStatusBar ?? false
       }
     }
-  } catch {}
+  } catch {
+    // ignore parse errors, fall through to defaults
+  }
   return getDefaultSettings()
 }
 

@@ -155,9 +155,7 @@ const DebugPanel: React.FC = () => {
           break
         case 'ArrowDown':
           e.preventDefault()
-          setSelectedIndex((prev) =>
-            prev + 1 < filteredActions.length ? prev + 1 : prev
-          )
+          setSelectedIndex((prev) => (prev + 1 < filteredActions.length ? prev + 1 : prev))
           break
         case 'ArrowUp':
           e.preventDefault()
@@ -174,25 +172,22 @@ const DebugPanel: React.FC = () => {
   )
 
   // 执行动作
-  const handleExecute = useCallback(
-    async (action: DebugAction): Promise<void> => {
-      if (action.requireConfirm) {
-        setConfirmAction(action)
-        setConfirmInput('')
-        return
-      }
+  const handleExecute = useCallback(async (action: DebugAction): Promise<void> => {
+    if (action.requireConfirm) {
+      setConfirmAction(action)
+      setConfirmInput('')
+      return
+    }
 
-      try {
-        await action.onExecute()
-      } catch (error) {
-        console.error(`Debug action ${action.id} failed:`, error)
-      }
-      setIsVisible(false)
-      setSearchText('')
-      setSelectedIndex(0)
-    },
-    []
-  )
+    try {
+      await action.onExecute()
+    } catch (error) {
+      console.error(`Debug action ${action.id} failed:`, error)
+    }
+    setIsVisible(false)
+    setSearchText('')
+    setSelectedIndex(0)
+  }, [])
 
   // 处理确认
   const handleConfirm = useCallback(() => {
@@ -445,7 +440,9 @@ const DebugPanel: React.FC = () => {
                   color: 'var(--foreground-muted, #858585)'
                 }}
               >
-                {t('debugPanel.confirmInstruction', '请输入 "{{text}}" 以确认此操作', { text: confirmAction.confirmText })}
+                {t('debugPanel.confirmInstruction', '请输入 "{{text}}" 以确认此操作', {
+                  text: confirmAction.confirmText
+                })}
               </div>
               <input
                 ref={confirmInputRef}
@@ -490,9 +487,10 @@ const DebugPanel: React.FC = () => {
                   disabled={confirmInput !== confirmAction.confirmText}
                   style={{
                     padding: '6px 12px',
-                    background: confirmInput === confirmAction.confirmText
-                      ? 'var(--button-primary-bg, #0e639c)'
-                      : 'var(--button-disabled-bg, #4a4a4a)',
+                    background:
+                      confirmInput === confirmAction.confirmText
+                        ? 'var(--button-primary-bg, #0e639c)'
+                        : 'var(--button-disabled-bg, #4a4a4a)',
                     border: 'none',
                     borderRadius: '3px',
                     color: '#fff',

@@ -22,11 +22,28 @@ interface SettingData {
 const FIELD_CONFIG = {
   character: {
     single: ['name', 'gender', 'age'],
-    multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
+    multi: [
+      'background',
+      'motivation',
+      'arc',
+      'appearance',
+      'personality',
+      'speech',
+      'skills',
+      'notes'
+    ]
   },
   location: {
     single: [],
-    multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
+    multi: [
+      'locationDescription',
+      'visual',
+      'auditory',
+      'olfactory',
+      'atmosphere',
+      'danger',
+      'notes'
+    ]
   },
   item: {
     single: ['type', 'quality'],
@@ -53,7 +70,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [refPanelOpen, setRefPanelOpen] = useState(false)
 
   const openTab = useEditorStore((s) => s.openTab)
-  
+
   const currentProject = useProjectStore((s) => s.currentProject)
   const storyNodes = useProjectStore((s) => s.storyNodes)
   const draftsByNodeId = useProjectStore((s) => s.draftsByNodeId)
@@ -66,7 +83,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   // 使用 Map 缓存节点查找，优化性能
   const nodeMap = useMemo(() => {
     const map = new Map<string, StoryNode>()
-    storyNodes.forEach(n => map.set(n.id, n))
+    storyNodes.forEach((n) => map.set(n.id, n))
     return map
   }, [storyNodes])
 
@@ -94,7 +111,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
-    
+
     const loadContent = async () => {
       try {
         const draft = draftsByNodeId[nodeId]
@@ -109,7 +126,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
             console.error('Failed to parse draft', e)
           }
         }
-        
+
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (content) {
           setData(JSON.parse(content))
@@ -129,12 +146,12 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
-    
+
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
       return
     }
-    
+
     const reloadContent = async () => {
       try {
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
@@ -186,77 +203,111 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   }
 
   const openMultiLineEdit = (field: string) => {
-    openTabInSplit({
-      id: `${nodeId}-${field}`,
-      title: `${node?.name} - ${getFieldLabel(field)}`,
-      type: 'file',
-      nodeId: nodeId,
-      kind: 'setting',
-      field: field
-    }, groupId)
+    openTabInSplit(
+      {
+        id: `${nodeId}-${field}`,
+        title: `${node?.name} - ${getFieldLabel(field)}`,
+        type: 'file',
+        nodeId: nodeId,
+        kind: 'setting',
+        field: field
+      },
+      groupId
+    )
   }
 
-  const resolveWikiRef = useCallback((ref: string): { matched: WikiRefItem[] } => {
-    const fileNodes = storyNodes.filter((n) => n.type === 'file')
-    const matched: WikiRefItem[] = []
+  const resolveWikiRef = useCallback(
+    (ref: string): { matched: WikiRefItem[] } => {
+      const fileNodes = storyNodes.filter((n) => n.type === 'file')
+      const matched: WikiRefItem[] = []
 
-    const buildBothPathParts = (node: StoryNode): string[] => {
-      const parts: string[] = []
-      let current: StoryNode | undefined = node
-      while (current) {
-        parts.unshift(current.name)
-        current = nodeMap.get(current.parentId || '')
+      const buildBothPathParts = (node: StoryNode): string[] => {
+        const parts: string[] = []
+        let current: StoryNode | undefined = node
+        while (current) {
+          parts.unshift(current.name)
+          current = nodeMap.get(current.parentId || '')
+        }
+        return parts
       }
-      return parts
-    }
 
-    const buildDisplayPathParts = (node: StoryNode): string[] => {
-      const parts: string[] = []
-      let current: StoryNode | undefined = node
-      while (current) {
-        parts.unshift(getNodeDisplayName(current, t))
-        current = nodeMap.get(current.parentId || '')
+      const buildDisplayPathParts = (node: StoryNode): string[] => {
+        const parts: string[] = []
+        let current: StoryNode | undefined = node
+        while (current) {
+          parts.unshift(getNodeDisplayName(current, t))
+          current = nodeMap.get(current.parentId || '')
+        }
+        return parts
       }
-      return parts
-    }
 
-    if (ref.includes('/')) {
-      const parts = ref.split('/').filter(Boolean)
-      const leafName = parts[parts.length - 1]
-      const candidates = fileNodes.filter((n) => n.name === leafName)
-      for (const candidate of candidates) {
-        const rawParts = buildBothPathParts(candidate)
-        const displayParts = buildDisplayPathParts(candidate)
-        let match = true
-        for (let i = 0; i < parts.length - 1; i++) {
-          const refPart = parts[i]
-          const pathIdx = rawParts.length - parts.length + i
-          if (pathIdx < 0) { match = false; break }
-          if (rawParts[pathIdx] !== refPart && displayParts[pathIdx] !== refPart) {
-            match = false
-            break
+      if (ref.includes('/')) {
+        const parts = ref.split('/').filter(Boolean)
+        const leafName = parts[parts.length - 1]
+        const candidates = fileNodes.filter((n) => n.name === leafName)
+        for (const candidate of candidates) {
+          const rawParts = buildBothPathParts(candidate)
+          const displayParts = buildDisplayPathParts(candidate)
+          let match = true
+          for (let i = 0; i < parts.length - 1; i++) {
+            const refPart = parts[i]
+            const pathIdx = rawParts.length - parts.length + i
+            if (pathIdx < 0) {
+              match = false
+              break
+            }
+            if (rawParts[pathIdx] !== refPart && displayParts[pathIdx] !== refPart) {
+              match = false
+              break
+            }
+          }
+          if (match) {
+            matched.push({ node: candidate, path: buildNodeDisplayPath(candidate, storyNodes, t) })
           }
         }
-        if (match) {
-          matched.push({ node: candidate, path: buildNodeDisplayPath(candidate, storyNodes, t) })
+      } else {
+        for (const n of fileNodes) {
+          if (n.name === ref) {
+            matched.push({ node: n, path: buildNodeDisplayPath(n, storyNodes, t) })
+          }
         }
       }
-    } else {
-      for (const n of fileNodes) {
-        if (n.name === ref) {
-          matched.push({ node: n, path: buildNodeDisplayPath(n, storyNodes, t) })
-        }
+
+      return { matched }
+    },
+    [storyNodes, t, nodeMap]
+  )
+
+  const handleRefClick = useCallback(
+    (ref: string) => {
+      const { matched } = resolveWikiRef(ref)
+
+      if (matched.length === 1) {
+        const item = matched[0]
+        openTab({
+          id: item.node.id,
+          title: item.node.name,
+          type: 'file',
+          nodeId: item.node.id,
+          kind: item.node.kind
+        })
+      } else if (matched.length > 1) {
+        setRefPanelItems(matched)
+        setRefPanelTitle(t('exportWiki.refDisambiguation', { name: ref }))
+        setRefPanelIs404(false)
+        setRefPanelOpen(true)
+      } else {
+        setRefPanelItems([])
+        setRefPanelTitle(t('exportWiki.refNotFoundTitle', { name: ref }))
+        setRefPanelIs404(true)
+        setRefPanelOpen(true)
       }
-    }
+    },
+    [resolveWikiRef, openTab, t]
+  )
 
-    return { matched }
-  }, [storyNodes, t, nodeMap])
-
-  const handleRefClick = useCallback((ref: string) => {
-    const { matched } = resolveWikiRef(ref)
-
-    if (matched.length === 1) {
-      const item = matched[0]
+  const handleRefPanelSelect = useCallback(
+    (item: WikiRefItem) => {
       openTab({
         id: item.node.id,
         title: item.node.name,
@@ -264,104 +315,95 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
         nodeId: item.node.id,
         kind: item.node.kind
       })
-    } else if (matched.length > 1) {
-      setRefPanelItems(matched)
-      setRefPanelTitle(t('exportWiki.refDisambiguation', { name: ref }))
-      setRefPanelIs404(false)
-      setRefPanelOpen(true)
-    } else {
-      setRefPanelItems([])
-      setRefPanelTitle(t('exportWiki.refNotFoundTitle', { name: ref }))
-      setRefPanelIs404(true)
-      setRefPanelOpen(true)
-    }
-  }, [resolveWikiRef, openTab, t])
+      setRefPanelOpen(false)
+    },
+    [openTab]
+  )
 
-  const handleRefPanelSelect = useCallback((item: WikiRefItem) => {
-    openTab({
-      id: item.node.id,
-      title: item.node.name,
-      type: 'file',
-      nodeId: item.node.id,
-      kind: item.node.kind
-    })
-    setRefPanelOpen(false)
-  }, [openTab])
+  const renderContentWithRefs = useCallback(
+    (text: string): React.ReactNode => {
+      if (!text) return null
+      const parts: React.ReactNode[] = []
+      const regex = /@\(([^)]+)\)/g
+      let lastIndex = 0
+      let match: RegExpExecArray | null
+      let keyIndex = 0
 
-  const renderContentWithRefs = useCallback((text: string): React.ReactNode => {
-    if (!text) return null
-    const parts: React.ReactNode[] = []
-    const regex = /@\(([^)]+)\)/g
-    let lastIndex = 0
-    let match: RegExpExecArray | null
-    let keyIndex = 0
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index))
+      while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(text.slice(lastIndex, match.index))
+        }
+        const refName = match[1]
+        const { matched } = resolveWikiRef(refName)
+        const isRed = matched.length === 0
+        parts.push(
+          <a
+            key={`ref-${keyIndex++}`}
+            onClick={(e) => {
+              e.preventDefault()
+              handleRefClick(refName)
+            }}
+            style={{
+              color: isRed ? '#e74c3c' : '#3498db',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              borderBottom: isRed ? '1px dashed #e74c3c' : 'none'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseOut={(e) => (e.currentTarget.style.textDecoration = isRed ? 'none' : 'none')}
+          >
+            {refName}
+          </a>
+        )
+        lastIndex = regex.lastIndex
       }
-      const refName = match[1]
-      const { matched } = resolveWikiRef(refName)
-      const isRed = matched.length === 0
-      parts.push(
-        <a
-          key={`ref-${keyIndex++}`}
-          onClick={(e) => {
-            e.preventDefault()
-            handleRefClick(refName)
-          }}
-          style={{
-            color: isRed ? '#e74c3c' : '#3498db',
-            cursor: 'pointer',
-            textDecoration: 'none',
-            borderBottom: isRed ? '1px dashed #e74c3c' : 'none'
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-          onMouseOut={(e) => (e.currentTarget.style.textDecoration = isRed ? 'none' : 'none')}
-        >
-          {refName}
-        </a>
-      )
-      lastIndex = regex.lastIndex
-    }
 
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex))
-    }
+      if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex))
+      }
 
-    return parts
-  }, [resolveWikiRef, handleRefClick])
+      return parts
+    },
+    [resolveWikiRef, handleRefClick]
+  )
 
   if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
   if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>{t('errors.fileNotFound')}</div>
 
   return (
-    <div className="setting-editor wiki-style" style={{ 
-      height: '100%', 
-      backgroundColor: 'var(--editor-bg, #1e1e1e)',
-      color: 'var(--foreground, #ccc)',
-      overflowY: 'auto',
-      padding: '40px 60px'
-    }}>
+    <div
+      className="setting-editor wiki-style"
+      style={{
+        height: '100%',
+        backgroundColor: 'var(--editor-bg, #1e1e1e)',
+        color: 'var(--foreground, #ccc)',
+        overflowY: 'auto',
+        padding: '40px 60px'
+      }}
+    >
       <div style={{ margin: '0 auto', position: 'relative' }}>
-        <header style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'baseline',
-          marginBottom: '20px',
-          borderBottom: '1px solid #54595d',
-          paddingBottom: '5px'
-        }}>
-          <h1 style={{ 
-            margin: 0, 
-            fontSize: '32px', 
-            fontWeight: 'normal', 
-            fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
-            color: '#fff'
-          }}>
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: '20px',
+            borderBottom: '1px solid #54595d',
+            paddingBottom: '5px'
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '32px',
+              fontWeight: 'normal',
+              fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+              color: '#fff'
+            }}
+          >
             {node.name}
           </h1>
-          <button 
+          <button
             onClick={() => {
               if (isEditing) {
                 handleSave(data)
@@ -402,114 +444,141 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
         {activeTab === 'gallery' ? (
           <SettingGallery nodeId={nodeId} />
         ) : (
-        <div style={{ position: 'relative', display: 'block' }}>
-           {config.single.length > 0 && (
-             <aside className="wiki-infobox" style={{ 
-               width: '280px', 
-               backgroundColor: '#2a2a2e', 
-               border: '1px solid #54595d', 
-               padding: '8px',
-               fontSize: '13px',
-               float: 'right',
-               marginLeft: '24px',
-               marginBottom: '20px'
-             }}>
-               <div style={{ 
-                 textAlign: 'center', 
-                 fontWeight: 'bold', 
-                 padding: '8px', 
-                 backgroundColor: '#3a3a3e',
-                 marginBottom: '8px',
-                 border: '1px solid #54595d'
-               }}>
-                 {node.name}
-               </div>
-               {themeImage && themeImage.dataUrl && (
-                 <div style={{ marginBottom: '8px' }}>
-                   <img
-                     src={themeImage.dataUrl}
-                     alt={themeImage.caption || node.name}
-                     style={{ width: '100%', display: 'block', borderRadius: '2px' }}
-                   />
-                   {themeImage.caption && (
-                     <div style={{ fontSize: '11px', color: '#888', textAlign: 'center', padding: '4px 0' }}>
-                       {themeImage.caption}
-                     </div>
-                   )}
-                 </div>
-               )}
-               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                 <tbody>
-                   {config.single.map((field: string) => (
-                     <tr key={field} style={{ borderBottom: '1px solid #444' }}>
-                       <th style={{ 
-                         textAlign: 'left', 
-                         padding: '6px 4px', 
-                         width: '35%', 
-                         verticalAlign: 'top',
-                         color: '#aaa',
-                         fontWeight: 'bold'
-                       }}>
-                         {getFieldLabel(field)}
-                       </th>
-                       <td style={{ padding: '6px 4px' }}>
-                         {isEditing ? (
-                           <input 
-                             type="text"
-                             value={data[field] || ''}
-                             onChange={(e) => handleChange(field, e.target.value)}
-                             style={{
-                               width: '100%',
-                               backgroundColor: '#1e1e1e',
-                               border: '1px solid #54595d',
-                               color: '#fff',
-                               padding: '2px 4px',
-                               fontSize: '13px'
-                             }}
-                           />
-                         ) : (
-                           <span>{data[field] || <span style={{ color: '#666', fontStyle: 'italic' }}>{t('setting.notFilled')}</span>}</span>
-                         )}
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </aside>
-           )}
-  
+          <div style={{ position: 'relative', display: 'block' }}>
+            {config.single.length > 0 && (
+              <aside
+                className="wiki-infobox"
+                style={{
+                  width: '280px',
+                  backgroundColor: '#2a2a2e',
+                  border: '1px solid #54595d',
+                  padding: '8px',
+                  fontSize: '13px',
+                  float: 'right',
+                  marginLeft: '24px',
+                  marginBottom: '20px'
+                }}
+              >
+                <div
+                  style={{
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    padding: '8px',
+                    backgroundColor: '#3a3a3e',
+                    marginBottom: '8px',
+                    border: '1px solid #54595d'
+                  }}
+                >
+                  {node.name}
+                </div>
+                {themeImage && themeImage.dataUrl && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <img
+                      src={themeImage.dataUrl}
+                      alt={themeImage.caption || node.name}
+                      style={{ width: '100%', display: 'block', borderRadius: '2px' }}
+                    />
+                    {themeImage.caption && (
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: '#888',
+                          textAlign: 'center',
+                          padding: '4px 0'
+                        }}
+                      >
+                        {themeImage.caption}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {config.single.map((field: string) => (
+                      <tr key={field} style={{ borderBottom: '1px solid #444' }}>
+                        <th
+                          style={{
+                            textAlign: 'left',
+                            padding: '6px 4px',
+                            width: '35%',
+                            verticalAlign: 'top',
+                            color: '#aaa',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {getFieldLabel(field)}
+                        </th>
+                        <td style={{ padding: '6px 4px' }}>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={data[field] || ''}
+                              onChange={(e) => handleChange(field, e.target.value)}
+                              style={{
+                                width: '100%',
+                                backgroundColor: '#1e1e1e',
+                                border: '1px solid #54595d',
+                                color: '#fff',
+                                padding: '2px 4px',
+                                fontSize: '13px'
+                              }}
+                            />
+                          ) : (
+                            <span>
+                              {data[field] || (
+                                <span style={{ color: '#666', fontStyle: 'italic' }}>
+                                  {t('setting.notFilled')}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </aside>
+            )}
+
             <div className="wiki-content">
               {config.multi.length >= 3 && !isEditing && (
-                <nav className="wiki-toc" style={{ 
-                  backgroundColor: '#2a2a2e', 
-                  border: '1px solid #54595d', 
-                  padding: '12px 20px', 
-                  marginBottom: '24px',
-                  display: 'inline-block',
-                  minWidth: '200px'
-                }}>
-                  <div style={{ 
-                    fontWeight: 'bold', 
-                    textAlign: 'center', 
-                    marginBottom: '10px',
-                    fontSize: '14px'
-                  }}>
+                <nav
+                  className="wiki-toc"
+                  style={{
+                    backgroundColor: '#2a2a2e',
+                    border: '1px solid #54595d',
+                    padding: '12px 20px',
+                    marginBottom: '24px',
+                    display: 'inline-block',
+                    minWidth: '200px'
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      marginBottom: '10px',
+                      fontSize: '14px'
+                    }}
+                  >
                     {t('setting.tableOfContents')}
                   </div>
-                  <ul style={{ 
-                    listStyle: 'none', 
-                    padding: 0, 
-                    margin: 0,
-                    fontSize: '13px',
-                    color: '#3498db'
-                  }}>
+                  <ul
+                    style={{
+                      listStyle: 'none',
+                      padding: 0,
+                      margin: 0,
+                      fontSize: '13px',
+                      color: '#3498db'
+                    }}
+                  >
                     {config.multi.map((field: string, index: number) => (
                       <li key={field} style={{ marginBottom: '4px' }}>
-                        <a 
-                          href={`#${field}`} 
+                        <a
+                          href={`#${field}`}
                           onClick={(e) => {
-                            e.preventDefault();
-                            document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' });
+                            e.preventDefault()
+                            document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' })
                           }}
                           style={{ color: 'inherit', textDecoration: 'none' }}
                           onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
@@ -523,27 +592,31 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                   </ul>
                 </nav>
               )}
-  
+
               {config.multi.map((field: string) => (
                 <section key={field} id={field} style={{ marginBottom: '24px' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'baseline',
-                    borderBottom: '1px solid #54595d',
-                    marginBottom: '12px',
-                    paddingBottom: '2px'
-                  }}>
-                    <h2 style={{ 
-                      margin: 0, 
-                      fontSize: '22px', 
-                      fontWeight: 'normal',
-                      fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
-                      color: '#fff'
-                    }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      borderBottom: '1px solid #54595d',
+                      marginBottom: '12px',
+                      paddingBottom: '2px'
+                    }}
+                  >
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: '22px',
+                        fontWeight: 'normal',
+                        fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+                        color: '#fff'
+                      }}
+                    >
                       {getFieldLabel(field)}
                     </h2>
-                    <button 
+                    <button
                       onClick={() => openMultiLineEdit(field)}
                       style={{
                         fontSize: '12px',
@@ -559,21 +632,28 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       [ {t('setting.independentEdit')} ]
                     </button>
                   </div>
-                  
-                  <div style={{ 
-                    fontSize: `${appSettings.editorFontSize}px`, 
-                    lineHeight: appSettings.editorLineHeight,
-                    whiteSpace: 'pre-wrap', 
-                    color: data[field] ? '#d1d1d1' : '#666',
-                    fontFamily: appSettings.editorFontFamily,
-                    border: isEditing ? '1px dashed #444' : 'none',
-                    padding: isEditing ? '8px' : '0',
-                    backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
-                  }}>
-                    {isEditing
-                      ? (data[field] || <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>)
-                      : (data[field] ? renderContentWithRefs(data[field]) : <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>)
-                    }
+
+                  <div
+                    style={{
+                      fontSize: `${appSettings.editorFontSize}px`,
+                      lineHeight: appSettings.editorLineHeight,
+                      whiteSpace: 'pre-wrap',
+                      color: data[field] ? '#d1d1d1' : '#666',
+                      fontFamily: appSettings.editorFontFamily,
+                      border: isEditing ? '1px dashed #444' : 'none',
+                      padding: isEditing ? '8px' : '0',
+                      backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
+                    }}
+                  >
+                    {isEditing ? (
+                      data[field] || (
+                        <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
+                      )
+                    ) : data[field] ? (
+                      renderContentWithRefs(data[field])
+                    ) : (
+                      <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
+                    )}
                   </div>
                 </section>
               ))}

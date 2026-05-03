@@ -11,7 +11,12 @@ interface SettingFieldEditorProps {
   tabId: string
 }
 
-const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, groupId, tabId }) => {
+const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
+  nodeId,
+  field,
+  groupId,
+  tabId
+}) => {
   const { t } = useTranslation()
   const [content, setContent] = useState('')
   const [fullData, setFullData] = useState<Record<string, string>>({})
@@ -25,7 +30,9 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
   const clearDraft = useProjectStore((s) => s.clearDraft)
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
 
-  const node = useProjectStore(useCallback((s) => s.storyNodes.find(n => n.id === nodeId), [nodeId]))
+  const node = useProjectStore(
+    useCallback((s) => s.storyNodes.find((n) => n.id === nodeId), [nodeId])
+  )
 
   const getFieldLabel = (fieldKey: string): string => {
     return t(`setting.field.${fieldKey}`, fieldKey)
@@ -33,7 +40,7 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
 
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
-    
+
     const loadData = async () => {
       try {
         const draft = draftsByNodeId[nodeId]
@@ -49,8 +56,11 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
             console.error('Failed to parse draft', e)
           }
         }
-        
-        const jsonContent = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
+
+        const jsonContent = await window.api.readNodeContent(
+          currentProject.projectSettingsPath,
+          nodeId
+        )
         if (jsonContent) {
           const data = JSON.parse(jsonContent)
           setFullData(data)
@@ -68,15 +78,18 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
 
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
-    
+
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
       return
     }
-    
+
     const reloadContent = async () => {
       try {
-        const jsonContent = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
+        const jsonContent = await window.api.readNodeContent(
+          currentProject.projectSettingsPath,
+          nodeId
+        )
         if (jsonContent) {
           const data = JSON.parse(jsonContent)
           setFullData(data)
@@ -113,12 +126,15 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({ nodeId, field, 
   if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
 
   return (
-    <div className="setting-field-editor" style={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: 'var(--editor-bg, #1e1e1e)'
-    }}>
+    <div
+      className="setting-field-editor"
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--editor-bg, #1e1e1e)'
+      }}
+    >
       <PlainTextEditor
         content={content}
         onChange={handleChange}

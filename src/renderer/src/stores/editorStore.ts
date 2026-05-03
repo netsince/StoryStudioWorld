@@ -280,7 +280,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openCreateProjectTab: () => {
-      const tab: Tab = { id: 'create-project', title: i18n.t('welcome.newProject'), type: 'create-project' }
+      const tab: Tab = {
+        id: 'create-project',
+        title: i18n.t('welcome.newProject'),
+        type: 'create-project'
+      }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
@@ -319,7 +323,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openReadingOrderTab: () => {
-      const tab: Tab = { id: 'reading-order', title: i18n.t('readingOrder.title'), type: 'reading-order' }
+      const tab: Tab = {
+        id: 'reading-order',
+        title: i18n.t('readingOrder.title'),
+        type: 'reading-order'
+      }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
@@ -332,7 +340,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     openExportStoryTab: () => {
-      const tab: Tab = { id: 'export-story', title: i18n.t('exportStory.title'), type: 'export-story' }
+      const tab: Tab = {
+        id: 'export-story',
+        title: i18n.t('exportStory.title'),
+        type: 'export-story'
+      }
       set((state) => {
         const targetGroupId = resolveTargetGroupId(state.editorTree, state.focusedGroupId)
         const nextTree = updateGroup(state.editorTree, targetGroupId, (group) => {
@@ -393,7 +405,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
           activeTabId: tab.id
         }
 
-        const nextTree = splitAtGroup(state.editorTree, sourceGroupId, direction, newGroup, 'second')
+        const nextTree = splitAtGroup(
+          state.editorTree,
+          sourceGroupId,
+          direction,
+          newGroup,
+          'second'
+        )
         return {
           editorTree: nextTree,
           focusedGroupId: newGroup.id

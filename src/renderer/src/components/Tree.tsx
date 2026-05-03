@@ -55,13 +55,13 @@ const Tree: React.FC<TreeProps> = ({
   const treeRef = useRef<HTMLDivElement>(null)
   const lastClickedNodeIdRef = useRef<string | null>(null)
 
-  const selectedNodeIds = externalSelectedNodeIds !== undefined 
-    ? new Set(externalSelectedNodeIds) 
-    : internalSelectedNodeIds
-    
-  const expandedNodes = externalExpandedNodeIds !== undefined 
-    ? new Set(externalExpandedNodeIds) 
-    : internalExpandedNodes
+  const selectedNodeIds =
+    externalSelectedNodeIds !== undefined
+      ? new Set(externalSelectedNodeIds)
+      : internalSelectedNodeIds
+
+  const expandedNodes =
+    externalExpandedNodeIds !== undefined ? new Set(externalExpandedNodeIds) : internalExpandedNodes
 
   const setSelectedNodes = (nodes: Set<string>) => {
     if (externalSelectedNodeIds !== undefined) {
@@ -71,27 +71,30 @@ const Tree: React.FC<TreeProps> = ({
     }
   }
 
-  const toggleExpanded = useCallback((nodeId: string) => {
-    if (externalExpandedNodeIds !== undefined) {
-      const newSet = new Set(externalExpandedNodeIds)
-      if (newSet.has(nodeId)) {
-        newSet.delete(nodeId)
-      } else {
-        newSet.add(nodeId)
-      }
-      onExpandedChange?.(newSet)
-    } else {
-      setInternalExpandedNodes((prev) => {
-        const next = new Set(prev)
-        if (next.has(nodeId)) {
-          next.delete(nodeId)
+  const toggleExpanded = useCallback(
+    (nodeId: string) => {
+      if (externalExpandedNodeIds !== undefined) {
+        const newSet = new Set(externalExpandedNodeIds)
+        if (newSet.has(nodeId)) {
+          newSet.delete(nodeId)
         } else {
-          next.add(nodeId)
+          newSet.add(nodeId)
         }
-        return next
-      })
-    }
-  }, [externalExpandedNodeIds, onExpandedChange])
+        onExpandedChange?.(newSet)
+      } else {
+        setInternalExpandedNodes((prev) => {
+          const next = new Set(prev)
+          if (next.has(nodeId)) {
+            next.delete(nodeId)
+          } else {
+            next.add(nodeId)
+          }
+          return next
+        })
+      }
+    },
+    [externalExpandedNodeIds, onExpandedChange]
+  )
 
   const getNodeById = useCallback(
     (nodeId: string) => {
@@ -125,28 +128,34 @@ const Tree: React.FC<TreeProps> = ({
 
     traverse(null, 0)
     return result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [nodes, expandedNodes, getChildren])
 
   const getAllVisibleNodeIds = useCallback((): string[] => {
     return visibleNodes.map(({ node }) => node.id)
   }, [visibleNodes])
 
-  const handleDragStart = useCallback((e: React.DragEvent, nodeId: string) => {
-    const node = getNodeById(nodeId)
-    if (node) {
-      e.dataTransfer.setData('application/json', JSON.stringify({
-        type: 'story-node',
-        nodeId: node.id,
-        title: node.name,
-        nodeType: node.type,
-        kind: node.kind
-      }))
-    }
-    setDraggingNodeId(nodeId)
-    // 支持移动和复制（阅读编排需要复制）
-    e.dataTransfer.effectAllowed = 'copyMove'
-  }, [getNodeById])
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, nodeId: string) => {
+      const node = getNodeById(nodeId)
+      if (node) {
+        e.dataTransfer.setData(
+          'application/json',
+          JSON.stringify({
+            type: 'story-node',
+            nodeId: node.id,
+            title: node.name,
+            nodeType: node.type,
+            kind: node.kind
+          })
+        )
+      }
+      setDraggingNodeId(nodeId)
+      // 支持移动和复制（阅读编排需要复制）
+      e.dataTransfer.effectAllowed = 'copyMove'
+    },
+    [getNodeById]
+  )
 
   const handleDragOver = useCallback(
     (e: React.DragEvent, nodeId: string) => {
@@ -241,9 +250,12 @@ const Tree: React.FC<TreeProps> = ({
     return isDefaultSettingCategory(node)
   }, [])
 
-  const getDisplayNodeName = useCallback((node: StoryNode): string => {
-    return getNodeDisplayName(node, t)
-  }, [t])
+  const getDisplayNodeName = useCallback(
+    (node: StoryNode): string => {
+      return getNodeDisplayName(node, t)
+    },
+    [t]
+  )
 
   const handleContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.preventDefault()
@@ -580,32 +592,51 @@ const Tree: React.FC<TreeProps> = ({
                 setContextMenu(null)
                 return
               }
-              
+
               if (nodeToDelete.type === 'folder' && getNodeDescendants) {
                 const descendants = getNodeDescendants(contextMenu.nodeId)
-                
+
                 if (descendants.files > 0) {
-                  const sortedByLength = [...descendants.fileNames].sort((a, b) => b.length - a.length)
+                  const sortedByLength = [...descendants.fileNames].sort(
+                    (a, b) => b.length - a.length
+                  )
                   const top5ByLength = sortedByLength.slice(0, 5)
                   const fileList = top5ByLength.join(', ')
-                  const moreText = descendants.fileNames.length > 5 
-                    ? t('tree.deleteFolderWarning.moreFiles', { count: descendants.fileNames.length }) 
-                    : ''
-                  
+                  const moreText =
+                    descendants.fileNames.length > 5
+                      ? t('tree.deleteFolderWarning.moreFiles', {
+                          count: descendants.fileNames.length
+                        })
+                      : ''
+
                   const confirmMessages = [
-                    t('tree.deleteFolderWarning.title', { name: nodeToDelete.name, count: descendants.files }) + 
-                      '\n\n' + t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) + 
-                      '\n\n' + t('tree.deleteFolderWarning.confirm'),
-                    t('tree.deleteFolderWarning.secondConfirm', { name: nodeToDelete.name, count: descendants.files, files: fileList, more: moreText }),
-                    t('tree.deleteFolderWarning.finalConfirm', { name: nodeToDelete.name, files: descendants.files, folders: descendants.folders })
+                    t('tree.deleteFolderWarning.title', {
+                      name: nodeToDelete.name,
+                      count: descendants.files
+                    }) +
+                      '\n\n' +
+                      t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) +
+                      '\n\n' +
+                      t('tree.deleteFolderWarning.confirm'),
+                    t('tree.deleteFolderWarning.secondConfirm', {
+                      name: nodeToDelete.name,
+                      count: descendants.files,
+                      files: fileList,
+                      more: moreText
+                    }),
+                    t('tree.deleteFolderWarning.finalConfirm', {
+                      name: nodeToDelete.name,
+                      files: descendants.files,
+                      folders: descendants.folders
+                    })
                   ]
-                  
+
                   let confirmed = false
                   for (let i = 0; i < confirmMessages.length; i++) {
                     confirmed = confirm(confirmMessages[i])
                     if (!confirmed) break
                   }
-                  
+
                   if (confirmed) {
                     onDeleteNode(contextMenu.nodeId)
                   }

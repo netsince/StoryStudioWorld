@@ -50,17 +50,13 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
   const handleSetTheme = async (itemId: string): Promise<void> => {
     if (!currentProject) return
     await window.api.gallery.setTheme(currentProject.projectSettingsPath, nodeId, itemId)
-    setImages((prev) =>
-      prev.map((img) => ({ ...img, isTheme: img.id === itemId }))
-    )
+    setImages((prev) => prev.map((img) => ({ ...img, isTheme: img.id === itemId })))
   }
 
   const handleUnsetTheme = async (): Promise<void> => {
     if (!currentProject) return
     await window.api.gallery.unsetTheme(currentProject.projectSettingsPath, nodeId)
-    setImages((prev) =>
-      prev.map((img) => ({ ...img, isTheme: false }))
-    )
+    setImages((prev) => prev.map((img) => ({ ...img, isTheme: false })))
   }
 
   const handleCaptionSave = async (itemId: string): Promise<void> => {
@@ -160,13 +156,20 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
                   }}
                 >
                   <span className="setting-gallery-caption-text">
-                    {img.caption || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('gallery.addCaption')}</span>}
+                    {img.caption || (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        {t('gallery.addCaption')}
+                      </span>
+                    )}
                   </span>
                   <span className="setting-gallery-caption-actions">
                     {img.isTheme ? (
                       <button
                         className="setting-gallery-inline-btn theme-active"
-                        onClick={(e) => { e.stopPropagation(); handleUnsetTheme() }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleUnsetTheme()
+                        }}
                         title={t('gallery.unsetTheme')}
                       >
                         ★
@@ -174,7 +177,10 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
                     ) : (
                       <button
                         className="setting-gallery-inline-btn"
-                        onClick={(e) => { e.stopPropagation(); handleSetTheme(img.id) }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSetTheme(img.id)
+                        }}
                         title={t('gallery.setTheme')}
                       >
                         ★
@@ -182,7 +188,10 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
                     )}
                     <button
                       className="setting-gallery-inline-btn delete"
-                      onClick={(e) => { e.stopPropagation(); handleRemove(img.id) }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemove(img.id)
+                      }}
                       title={t('gallery.remove')}
                     >
                       ✕

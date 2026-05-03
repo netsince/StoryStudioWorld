@@ -2,38 +2,19 @@ import type { StoryNode } from '../models'
 import type { ProofreadResult, CreateNodeInput } from '../../../preload/index'
 import i18n from '../i18n'
 
-export type BeforeSaveCallback = (
-  content: string,
-  node: StoryNode
-) => string | false | void
+export type BeforeSaveCallback = (content: string, node: StoryNode) => string | false | void
 
-export type AfterLoadCallback = (
-  content: string,
-  node: StoryNode
-) => string | void
+export type AfterLoadCallback = (content: string, node: StoryNode) => string | void
 
-export type ProofreadCallback = (
-  text: string
-) => ProofreadResult | Promise<ProofreadResult>
+export type ProofreadCallback = (text: string) => ProofreadResult | Promise<ProofreadResult>
 
-export type FileOpenCallback = (
-  node: StoryNode,
-  content: string
-) => void | string
+export type FileOpenCallback = (node: StoryNode, content: string) => void | string
 
-export type ExportCallback = (
-  format: string,
-  data: unknown
-) => unknown | Promise<unknown>
+export type ExportCallback = (format: string, data: unknown) => unknown | Promise<unknown>
 
-export type NodeCreateCallback = (
-  input: CreateNodeInput
-) => CreateNodeInput | false | void
+export type NodeCreateCallback = (input: CreateNodeInput) => CreateNodeInput | false | void
 
-export type NodeDeleteCallback = (
-  nodeId: string,
-  node: StoryNode
-) => boolean | void
+export type NodeDeleteCallback = (nodeId: string, node: StoryNode) => boolean | void
 
 export type NodeRenameCallback = (
   nodeId: string,
@@ -164,10 +145,7 @@ class HookSystem {
     return result
   }
 
-  async intercept<T>(
-    event: string,
-    input: T
-  ): Promise<{ proceed: boolean; result?: T }> {
+  async intercept<T>(event: string, input: T): Promise<{ proceed: boolean; result?: T }> {
     const callbacks = Array.from(this.hooks.get(event) || [])
 
     for (const cb of callbacks) {

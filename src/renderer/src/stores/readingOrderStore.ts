@@ -157,10 +157,7 @@ export const useReadingOrderStore = create<ReadingOrderState>((set, get) => ({
 }))
 
 // 防抖保存
-export const scheduleSave = (
-  projectSettingsPath: string,
-  delay: number = 1000
-): void => {
+export const scheduleSave = (projectSettingsPath: string, delay: number = 1000): void => {
   if (saveTimer) {
     clearTimeout(saveTimer)
   }

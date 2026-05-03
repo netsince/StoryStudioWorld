@@ -226,7 +226,12 @@ export interface PluginExecResult {
 }
 
 export interface PluginFetchStreamCallbacks {
-  onStart?: (info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }) => void
+  onStart?: (info: {
+    ok: boolean
+    status: number
+    statusText: string
+    headers: Record<string, string>
+  }) => void
   onChunk?: (chunk: string) => void
   onError?: (error: { message: string }) => void
   onEnd?: () => void
@@ -275,7 +280,11 @@ const api = {
     ipcRenderer.invoke('reorder-story-node', input),
   getArchivedNodes: (projectSettingsPath: string): Promise<StoryNode[]> =>
     ipcRenderer.invoke('get-archived-nodes', projectSettingsPath),
-  restoreArchivedNode: (projectSettingsPath: string, nodeId: string, newParentId: string | null = null): Promise<StoryNode[]> =>
+  restoreArchivedNode: (
+    projectSettingsPath: string,
+    nodeId: string,
+    newParentId: string | null = null
+  ): Promise<StoryNode[]> =>
     ipcRenderer.invoke('restore-archived-node', projectSettingsPath, nodeId, newParentId),
   permanentlyDeleteNode: (input: DeleteNodeInput): Promise<StoryNode[]> =>
     ipcRenderer.invoke('permanently-delete-node', input),
@@ -283,10 +292,24 @@ const api = {
     ipcRenderer.invoke('read-node-content', projectSettingsPath, nodeId),
   writeNodeContent: (projectSettingsPath: string, nodeId: string, content: string): Promise<void> =>
     ipcRenderer.invoke('write-node-content', projectSettingsPath, nodeId, content),
-  getNodeSummaryAndOutline: (projectSettingsPath: string, nodeId: string): Promise<{ summary: string | null; outline: string | null }> =>
+  getNodeSummaryAndOutline: (
+    projectSettingsPath: string,
+    nodeId: string
+  ): Promise<{ summary: string | null; outline: string | null }> =>
     ipcRenderer.invoke('get-node-summary-and-outline', projectSettingsPath, nodeId),
-  updateNodeSummaryAndOutline: (projectSettingsPath: string, nodeId: string, summary: string, outline: string): Promise<void> =>
-    ipcRenderer.invoke('update-node-summary-and-outline', projectSettingsPath, nodeId, summary, outline),
+  updateNodeSummaryAndOutline: (
+    projectSettingsPath: string,
+    nodeId: string,
+    summary: string,
+    outline: string
+  ): Promise<void> =>
+    ipcRenderer.invoke(
+      'update-node-summary-and-outline',
+      projectSettingsPath,
+      nodeId,
+      summary,
+      outline
+    ),
   getAppVersion: (): Promise<{
     version: string
     electron: string
@@ -309,7 +332,11 @@ const api = {
     ipcRenderer.invoke('update-memo', id, content),
   deleteMemo: (id: string): Promise<boolean> => ipcRenderer.invoke('delete-memo', id),
   // Snapshot APIs
-  createSnapshot: (projectSettingsPath: string, name: string, description?: string): Promise<Snapshot> =>
+  createSnapshot: (
+    projectSettingsPath: string,
+    name: string,
+    description?: string
+  ): Promise<Snapshot> =>
     ipcRenderer.invoke('create-snapshot', projectSettingsPath, name, description),
   getAllSnapshots: (projectSettingsPath: string): Promise<Snapshot[]> =>
     ipcRenderer.invoke('get-all-snapshots', projectSettingsPath),
@@ -317,7 +344,10 @@ const api = {
     ipcRenderer.invoke('delete-snapshot', projectSettingsPath, snapshotId),
   restoreSnapshot: (projectSettingsPath: string, snapshotId: string): Promise<boolean> =>
     ipcRenderer.invoke('restore-snapshot', projectSettingsPath, snapshotId),
-  compareWithCurrent: (projectSettingsPath: string, snapshotId: string): Promise<DiffResult | null> =>
+  compareWithCurrent: (
+    projectSettingsPath: string,
+    snapshotId: string
+  ): Promise<DiffResult | null> =>
     ipcRenderer.invoke('compare-with-current', projectSettingsPath, snapshotId),
   // Plugin APIs
   getPlugins: (): Promise<PluginInfo[]> => ipcRenderer.invoke('get-plugins'),
@@ -326,7 +356,9 @@ const api = {
     ipcRenderer.invoke('set-plugin-enabled', pluginId, enabled),
   getPluginDir: (): Promise<string> => ipcRenderer.invoke('get-plugin-dir'),
   openPluginsFolder: (): void => ipcRenderer.send('open-plugins-folder'),
-  readPluginFile: (filePath: string): Promise<{ success: boolean; content?: string; error?: string }> =>
+  readPluginFile: (
+    filePath: string
+  ): Promise<{ success: boolean; content?: string; error?: string }> =>
     ipcRenderer.invoke('read-plugin-file', filePath),
   // Reading Order APIs
   readReadingOrder: (projectSettingsPath: string): Promise<ReadingOrderConfig | null> =>
@@ -339,8 +371,7 @@ const api = {
   // Export Wiki API
   exportWiki: (input: ExportWikiInput): Promise<ExportWikiResult> =>
     ipcRenderer.invoke('export-wiki', input),
-  pickWikiExportPath: (): Promise<string | null> =>
-    ipcRenderer.invoke('pick-wiki-export-path'),
+  pickWikiExportPath: (): Promise<string | null> => ipcRenderer.invoke('pick-wiki-export-path'),
   // Gallery API
   gallery: {
     getImages: (projectSettingsPath: string, nodeId: string): Promise<GalleryImageItem[]> =>
@@ -356,7 +387,7 @@ const api = {
     unsetTheme: (projectSettingsPath: string, nodeId: string): Promise<void> =>
       ipcRenderer.invoke('gallery:unset-theme', { projectSettingsPath, nodeId }),
     remove: (projectSettingsPath: string, itemId: string): Promise<void> =>
-      ipcRenderer.invoke('gallery:remove', { projectSettingsPath, itemId }),
+      ipcRenderer.invoke('gallery:remove', { projectSettingsPath, itemId })
   },
   // Plugin Native APIs
   pluginNative: {
@@ -367,9 +398,13 @@ const api = {
       callbacks: PluginFetchStreamCallbacks,
       options?: PluginFetchStreamOptions
     ): { abort: () => void; streamId: string } => {
-      const streamId = options?.streamId || `stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      const streamId =
+        options?.streamId || `stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-      const startHandler = (_: unknown, info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }) => {
+      const startHandler = (
+        _: unknown,
+        info: { ok: boolean; status: number; statusText: string; headers: Record<string, string> }
+      ) => {
         callbacks.onStart?.(info)
       }
       const chunkHandler = (_: unknown, data: { chunk: string }) => {
@@ -409,12 +444,14 @@ const api = {
         streamId
       }
     },
-    readFile: (path: string, encoding?: BufferEncoding): Promise<{ success: boolean; content?: string; error?: string }> =>
+    readFile: (
+      path: string,
+      encoding?: BufferEncoding
+    ): Promise<{ success: boolean; content?: string; error?: string }> =>
       ipcRenderer.invoke('plugin-native:readFile', path, encoding),
     writeFile: (path: string, content: string): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('plugin-native:writeFile', path, content),
-    exists: (path: string): Promise<boolean> =>
-      ipcRenderer.invoke('plugin-native:exists', path),
+    exists: (path: string): Promise<boolean> => ipcRenderer.invoke('plugin-native:exists', path),
     mkdir: (path: string): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('plugin-native:mkdir', path),
     readdir: (path: string): Promise<{ success: boolean; entries?: string[]; error?: string }> =>
@@ -423,8 +460,9 @@ const api = {
       ipcRenderer.invoke('plugin-native:unlink', path),
     exec: (command: string, cwd?: string): Promise<PluginExecResult> =>
       ipcRenderer.invoke('plugin-native:exec', command, cwd),
-    getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'): Promise<string> =>
-      ipcRenderer.invoke('plugin-native:getAppPath', name)
+    getAppPath: (
+      name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'
+    ): Promise<string> => ipcRenderer.invoke('plugin-native:getAppPath', name)
   }
 }
 
@@ -436,8 +474,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.api = api
 }

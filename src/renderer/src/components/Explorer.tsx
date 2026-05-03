@@ -30,7 +30,7 @@ const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'set
     const button = document.querySelector('.story-action-button') as HTMLElement
     if (button) {
       const rect = button.getBoundingClientRect()
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setPosition({ top: rect.bottom + 4, left: rect.left })
     }
 
@@ -169,7 +169,7 @@ const Explorer: React.FC = () => {
 
   const getSelectedFolderId = (): string | null => {
     if (selectedNodeIds.length === 1) {
-      const selectedNode = storyNodes.find(n => n.id === selectedNodeIds[0])
+      const selectedNode = storyNodes.find((n) => n.id === selectedNodeIds[0])
       if (selectedNode?.type === 'folder') {
         return selectedNode.id
       }
@@ -184,7 +184,9 @@ const Explorer: React.FC = () => {
       .sort((a, b) => a.sortOrder - b.sortOrder)
   }
 
-  const getNodeDescendants = (nodeId: string): { folders: number; files: number; fileNames: string[] } => {
+  const getNodeDescendants = (
+    nodeId: string
+  ): { folders: number; files: number; fileNames: string[] } => {
     let folders = 0
     let files = 0
     const fileNames: string[] = []
@@ -210,7 +212,10 @@ const Explorer: React.FC = () => {
     const kind = activeActivity === 'setting' ? 'setting' : 'story'
 
     if (type === 'folder') {
-      name = kind === 'setting' && !getSelectedFolderId() ? t('sidebar.newCategory') : t('sidebar.newFolder')
+      name =
+        kind === 'setting' && !getSelectedFolderId()
+          ? t('sidebar.newCategory')
+          : t('sidebar.newFolder')
     } else {
       const parentId = getSelectedFolderId()
       const siblings = getNodeChildren(parentId)
@@ -219,27 +224,31 @@ const Explorer: React.FC = () => {
           window.alert(t('explorer.createFolderFirst'))
           return
         }
-        const parentNode = storyNodes.find(n => n.id === parentId)
-        if (parentNode && parentNode.parentId === null && RESERVED_CATEGORY_IDS.includes(parentNode.name)) {
+        const parentNode = storyNodes.find((n) => n.id === parentId)
+        if (
+          parentNode &&
+          parentNode.parentId === null &&
+          RESERVED_CATEGORY_IDS.includes(parentNode.name)
+        ) {
           window.alert(t('explorer.createFolderFirst'))
           return
         }
         name = t('explorer.newSetting')
       } else {
-        const fileCount = siblings.filter(n => n.type === 'file').length
+        const fileCount = siblings.filter((n) => n.type === 'file').length
         name = t('explorer.newChapter', { count: fileCount + 1 })
       }
     }
     const parentId = getSelectedFolderId()
-    
+
     if (kind === 'setting' && type === 'folder' && RESERVED_CATEGORY_IDS.includes(name)) {
       window.alert(t('errors.cannotCreateInReservedCategory'))
       return
     }
-    
+
     await onCreateStoryNode(parentId, name, type, kind)
     if (parentId && !expandedNodeIds.includes(parentId)) {
-      setExpandedNodeIds(prev => [...prev, parentId])
+      setExpandedNodeIds((prev) => [...prev, parentId])
     }
     setIsCreateMenuOpen(false)
   }
@@ -298,7 +307,9 @@ const Explorer: React.FC = () => {
                   className="story-toolbar-btn"
                   title={t('explorer.addRootNode')}
                   disabled={isBusy}
-                  onClick={() => void onCreateStoryNode(null, t('sidebar.newCategory'), 'folder', 'setting')}
+                  onClick={() =>
+                    void onCreateStoryNode(null, t('sidebar.newCategory'), 'folder', 'setting')
+                  }
                 >
                   <svg
                     width="14"
@@ -364,7 +375,14 @@ const Explorer: React.FC = () => {
                 title={t('sidebar.archive')}
                 disabled={isBusy}
                 onClick={() => {
-                  openTab({ id: kind === 'setting' ? 'setting-archive' : 'archive', title: kind === 'setting' ? t('explorer.settingArchive') : t('explorer.archiveSpace'), type: 'archive' })
+                  openTab({
+                    id: kind === 'setting' ? 'setting-archive' : 'archive',
+                    title:
+                      kind === 'setting'
+                        ? t('explorer.settingArchive')
+                        : t('explorer.archiveSpace'),
+                    type: 'archive'
+                  })
                 }}
               >
                 <svg

@@ -26,7 +26,12 @@ interface ProjectState {
   openRecentProject: (projectSettingsPath: string) => Promise<void>
   createProject: (input: CreateProjectInput) => Promise<void>
 
-  createStoryNode: (parentId: string | null, name: string, type: 'folder' | 'file', kind?: 'story' | 'setting') => Promise<void>
+  createStoryNode: (
+    parentId: string | null,
+    name: string,
+    type: 'folder' | 'file',
+    kind?: 'story' | 'setting'
+  ) => Promise<void>
   initSettingNodes: () => Promise<void>
   renameStoryNode: (nodeId: string, newName: string) => Promise<void>
   deleteStoryNode: (nodeId: string) => Promise<void>
@@ -147,7 +152,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         })
         handleProjectLoaded(project)
       } catch (error) {
-        const message = error instanceof Error ? error.message : i18n.t('errors.createProjectFailed')
+        const message =
+          error instanceof Error ? error.message : i18n.t('errors.createProjectFailed')
         set({ errorMessage: message })
         window.alert(message)
         throw error
@@ -318,11 +324,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
       try {
         set({ isProjectBusy: true })
-        const nodes = await window.api.restoreArchivedNode(currentProject.projectSettingsPath, nodeId, newParentId)
+        const nodes = await window.api.restoreArchivedNode(
+          currentProject.projectSettingsPath,
+          nodeId,
+          newParentId
+        )
         set({ storyNodes: nodes })
         await get().refreshArchivedNodes()
       } catch (error) {
-        const message = error instanceof Error ? error.message : i18n.t('errors.archiveRestoreFailed')
+        const message =
+          error instanceof Error ? error.message : i18n.t('errors.archiveRestoreFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {
@@ -343,7 +354,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         set({ storyNodes: nodes })
         await get().refreshArchivedNodes()
       } catch (error) {
-        const message = error instanceof Error ? error.message : i18n.t('errors.permanentDeleteFailed')
+        const message =
+          error instanceof Error ? error.message : i18n.t('errors.permanentDeleteFailed')
         set({ errorMessage: message })
         window.alert(message)
       } finally {

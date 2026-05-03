@@ -10,7 +10,7 @@ interface ProofreadPanelProps {
   className?: string
 }
 
-export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className: _className = '' }) => {
+export const ProofreadPanel: React.FC<ProofreadPanelProps> = () => {
   const { t } = useTranslation()
   const result = useProofreadStore((s) => s.result)
   const isChecking = useProofreadStore((s) => s.isChecking)
@@ -23,44 +23,50 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className: _clas
 
   const editorTree = useEditorStore((s) => s.editorTree)
   const focusedGroupId = useEditorStore((s) => s.focusedGroupId)
-  const group = React.useMemo(() => findGroupNode(editorTree, focusedGroupId), [editorTree, focusedGroupId])
+  const group = React.useMemo(
+    () => findGroupNode(editorTree, focusedGroupId),
+    [editorTree, focusedGroupId]
+  )
   const activeTabId = group?.activeTabId
   const draftsByNodeId = useProjectStore((s) => s.draftsByNodeId)
   const currentProject = useProjectStore((s) => s.currentProject)
 
-  const getCurrentText = useCallback(async (isManual = false): Promise<string> => {
-    if (!group || !activeTabId) return ''
+  const getCurrentText = useCallback(
+    async (isManual = false): Promise<string> => {
+      if (!group || !activeTabId) return ''
 
-    const editorTextarea = document.querySelector(
-      `.plain-text-editor-textarea[data-tab-id="${activeTabId}"]`
-    ) as HTMLTextAreaElement
+      const editorTextarea = document.querySelector(
+        `.plain-text-editor-textarea[data-tab-id="${activeTabId}"]`
+      ) as HTMLTextAreaElement
 
-    if (editorTextarea?.value) {
-      return editorTextarea.value
-    }
-
-    const activeTab = group.tabs.find((tab) => tab.id === activeTabId)
-    if (activeTab?.nodeId) {
-      const draft = draftsByNodeId[activeTab.nodeId]
-      if (typeof draft === 'string') {
-        return draft
+      if (editorTextarea?.value) {
+        return editorTextarea.value
       }
 
-      if (isManual && currentProject) {
-        try {
-          const content = await window.api.readNodeContent(
-            currentProject.projectSettingsPath,
-            activeTab.nodeId
-          )
-          return content || ''
-        } catch {
-          return ''
+      const activeTab = group.tabs.find((tab) => tab.id === activeTabId)
+      if (activeTab?.nodeId) {
+        const draft = draftsByNodeId[activeTab.nodeId]
+        if (typeof draft === 'string') {
+          return draft
+        }
+
+        if (isManual && currentProject) {
+          try {
+            const content = await window.api.readNodeContent(
+              currentProject.projectSettingsPath,
+              activeTab.nodeId
+            )
+            return content || ''
+          } catch {
+            return ''
+          }
         }
       }
-    }
 
-    return ''
-  }, [group, activeTabId, draftsByNodeId, currentProject])
+      return ''
+    },
+    [group, activeTabId, draftsByNodeId, currentProject]
+  )
 
   const handleCheck = useCallback(async () => {
     const text = await getCurrentText(true)
@@ -119,23 +125,26 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className: _clas
     })()
   }, [activeTabId, autoCheck, getCurrentText, checkText])
 
-  const handleIssueClick = useCallback((issue: ProofreadIssue) => {
-    selectIssue(issue.id)
+  const handleIssueClick = useCallback(
+    (issue: ProofreadIssue) => {
+      selectIssue(issue.id)
 
-    const editorTextarea = document.querySelector(
-      `.plain-text-editor-textarea[data-tab-id="${activeTabId}"]`
-    ) as HTMLTextAreaElement
+      const editorTextarea = document.querySelector(
+        `.plain-text-editor-textarea[data-tab-id="${activeTabId}"]`
+      ) as HTMLTextAreaElement
 
-    if (editorTextarea) {
-      editorTextarea.focus()
-      editorTextarea.setSelectionRange(issue.start, issue.end)
+      if (editorTextarea) {
+        editorTextarea.focus()
+        editorTextarea.setSelectionRange(issue.start, issue.end)
 
-      const lineHeight = 20
-      const lines = editorTextarea.value.substring(0, issue.start).split('\n').length
-      const scrollTop = Math.max(0, (lines - 5) * lineHeight)
-      editorTextarea.scrollTop = scrollTop
-    }
-  }, [selectIssue, activeTabId])
+        const lineHeight = 20
+        const lines = editorTextarea.value.substring(0, issue.start).split('\n').length
+        const scrollTop = Math.max(0, (lines - 5) * lineHeight)
+        editorTextarea.scrollTop = scrollTop
+      }
+    },
+    [selectIssue, activeTabId]
+  )
 
   const groupedIssues = React.useMemo(() => {
     if (!result?.issues.length) return {}
@@ -204,15 +213,21 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className: _clas
         <div className="proofread-summary">
           <div className="summary-item">
             <span className="summary-dot error" />
-            <span className="summary-count">{result.stats.errorCount} {t('proofread.severity.error')}</span>
+            <span className="summary-count">
+              {result.stats.errorCount} {t('proofread.severity.error')}
+            </span>
           </div>
           <div className="summary-item">
             <span className="summary-dot warning" />
-            <span className="summary-count">{result.stats.warningCount} {t('proofread.severity.warning')}</span>
+            <span className="summary-count">
+              {result.stats.warningCount} {t('proofread.severity.warning')}
+            </span>
           </div>
           <div className="summary-item">
             <span className="summary-dot info" />
-            <span className="summary-count">{result.stats.infoCount} {t('proofread.severity.info')}</span>
+            <span className="summary-count">
+              {result.stats.infoCount} {t('proofread.severity.info')}
+            </span>
           </div>
         </div>
       )}
@@ -321,7 +336,7 @@ interface IssueItemProps {
 
 const IssueItem: React.FC<IssueItemProps> = ({ issue, isSelected, onClick, getTypeLabel }) => {
   const { t } = useTranslation()
-  
+
   return (
     <div
       className={`proofread-item ${isSelected ? 'selected' : ''} severity-${issue.severity}`}

@@ -22,7 +22,10 @@ export interface LanguageFile {
   [key: string]: unknown
 }
 
-const languageModules = import.meta.glob('../languages/*.json', { eager: true }) as Record<string, { default: LanguageFile }>
+const languageModules = import.meta.glob('../languages/*.json', { eager: true }) as Record<
+  string,
+  { default: LanguageFile }
+>
 
 const resources: Record<string, { translation: Record<string, unknown> }> = {}
 const availableLanguages: LanguageMetadata[] = []
@@ -53,7 +56,7 @@ i18n
     fallbackLng: ['en', 'zh-CN'],
     debug: false,
     saveMissing: true,
-    missingKeyHandler: (lngs, _ns, key) => {
+    missingKeyHandler: (lngs, _ns: string, key) => {
       const langChain = Array.isArray(lngs) ? lngs : [lngs]
       for (let i = 0; i < langChain.length - 1; i++) {
         const fromLang = langChain[i]

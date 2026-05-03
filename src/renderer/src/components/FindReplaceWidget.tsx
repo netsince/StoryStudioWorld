@@ -82,7 +82,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
       setCurrentMatchIndex(newMatches.length - 1)
       highlightMatch(newMatches[newMatches.length - 1], false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [findText, text, isVisible, findAllMatches, currentMatchIndex])
 
   // 通知父组件匹配变化
@@ -294,7 +294,11 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
             </>
           )}
 
-          <button className="find-replace-btn close-btn" onClick={onClose} title={t('findReplace.close')}>
+          <button
+            className="find-replace-btn close-btn"
+            onClick={onClose}
+            title={t('findReplace.close')}
+          >
             ✕
           </button>
         </div>

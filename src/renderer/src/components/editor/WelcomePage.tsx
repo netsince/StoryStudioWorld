@@ -33,7 +33,7 @@ const WelcomePage: React.FC<{
   onOpenFolder: () => void
 }> = ({ currentProject, onOpenCreateProject, onOpenFolder }) => {
   const { t } = useTranslation()
-  
+
   return (
     <div
       key="welcome"
@@ -46,14 +46,12 @@ const WelcomePage: React.FC<{
         width: '100%'
       }}
     >
-      <img
-        className="brand-logo brand-logo-xl"
-        src={ssworldNobgSvg}
-        alt={APP_NAME}
-      />
+      <img className="brand-logo brand-logo-xl" src={ssworldNobgSvg} alt={APP_NAME} />
       <div className="project-title">{APP_NAME}</div>
       <div className="project-subtitle" style={{ marginBottom: '40px' }}>
-        {currentProject ? `${t('welcome.currentProject')}: ${currentProject.projectPath}` : t('welcome.selectProject')}
+        {currentProject
+          ? `${t('welcome.currentProject')}: ${currentProject.projectPath}`
+          : t('welcome.selectProject')}
       </div>
 
       <div className="start-group" style={{ maxWidth: '320px' }}>

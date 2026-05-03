@@ -34,7 +34,16 @@ export interface RecentProject {
 export interface Tab {
   id: string
   title: string
-  type: 'welcome' | 'file' | 'create-project' | 'about' | 'preferences' | 'archive' | 'reading-order' | 'export-story' | 'export-wiki'
+  type:
+    | 'welcome'
+    | 'file'
+    | 'create-project'
+    | 'about'
+    | 'preferences'
+    | 'archive'
+    | 'reading-order'
+    | 'export-story'
+    | 'export-wiki'
   path?: string
   nodeId?: string
   kind?: 'story' | 'setting'

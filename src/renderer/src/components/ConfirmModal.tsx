@@ -49,7 +49,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     <div className="ssw-modal-overlay" onClick={onCancel}>
       <div className="ssw-modal" onClick={(e) => e.stopPropagation()}>
         <div className="ssw-modal-title">{title}</div>
-        <div className="ssw-modal-body" style={{ color: 'var(--text-main)', fontSize: '13px', lineHeight: '1.6', marginBottom: '20px', whiteSpace: 'pre-wrap' }}>
+        <div
+          className="ssw-modal-body"
+          style={{
+            color: 'var(--text-main)',
+            fontSize: '13px',
+            lineHeight: '1.6',
+            marginBottom: '20px',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
           {message}
         </div>
         <div className="ssw-modal-actions">

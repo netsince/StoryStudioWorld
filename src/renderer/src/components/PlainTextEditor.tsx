@@ -110,7 +110,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   const pendingEnterAfterCompositionRef = useRef(false)
   const compositionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(isActive ?? false)
+  const { updateStats: updateStatusBarStats, updateLastSaved } = useEditorStatusBar(
+    isActive ?? false
+  )
 
   const pendingRestoreScrollRef = useRef(false)
   const lastRestoredTabIdRef = useRef<string | undefined>(undefined)
@@ -157,7 +159,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
       console.debug(`[PlainTextEditor][scroll] ${message}`, payload)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
     [tabId, text.length]
   )
 
@@ -690,7 +692,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavForward()
       unregisterZenMode()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [onChange, onSave, saveHistory, goBack, goForward, groupId])
 
   // Update status bar when text changes

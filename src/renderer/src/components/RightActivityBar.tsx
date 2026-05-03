@@ -78,7 +78,10 @@ const RightActivityBar: React.FC = () => {
 
       {pluginItems.length > 0 && (
         <>
-          <div className="activity-separator" style={{ height: '1px', background: 'var(--border-subtle)', margin: '8px 12px' }} />
+          <div
+            className="activity-separator"
+            style={{ height: '1px', background: 'var(--border-subtle)', margin: '8px 12px' }}
+          />
           {pluginItems.map((item) => (
             <div
               key={item.id}
@@ -86,9 +89,7 @@ const RightActivityBar: React.FC = () => {
               title={item.title}
               onClick={() => onActivityChange(item.id as 'proofread' | 'memo' | 'snapshot')}
             >
-              <div className="activity-icon">
-                {renderIcon(item.icon)}
-              </div>
+              <div className="activity-icon">{renderIcon(item.icon)}</div>
               {!hideLabel && <span>{item.title}</span>}
             </div>
           ))}

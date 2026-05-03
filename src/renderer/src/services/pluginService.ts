@@ -5,7 +5,14 @@ import { hookSystem } from './hookService'
 import { commandService } from './commandService'
 import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
-import i18n, { addLanguage, getAvailableLanguages, getCurrentLanguage, setLanguage, type LanguageFile, type LanguageMetadata } from '../i18n'
+import i18n, {
+  addLanguage,
+  getAvailableLanguages,
+  getCurrentLanguage,
+  setLanguage,
+  type LanguageFile,
+  type LanguageMetadata
+} from '../i18n'
 import type {
   ProofreadResult,
   CreateNodeInput,
@@ -55,7 +62,9 @@ export interface RightActivityItem {
   id: string
   icon: React.ReactNode | string
   title: string
-  panel?: ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement) | React.ComponentType<{ api: PluginAPI }>
+  panel?:
+    | ((props: { api: PluginAPI }) => React.ReactNode | HTMLElement)
+    | React.ComponentType<{ api: PluginAPI }>
   webViewId?: string
   order?: number
   pluginId: string
@@ -149,7 +158,10 @@ export interface PluginAPI {
     addRightActivityItem: (item: Omit<RightActivityItem, 'pluginId'>) => () => void
     addStatusBarItem: (item: Omit<StatusBarItem, 'pluginId'>) => () => void
     showNotification: (message: string, type?: 'info' | 'warning' | 'error') => void
-    createWebView: (options: WebViewOptions) => { postMessage: (message: unknown) => void; dispose: () => void }
+    createWebView: (options: WebViewOptions) => {
+      postMessage: (message: unknown) => void
+      dispose: () => void
+    }
     addWebViewPanel: (options: {
       id: string
       title: string
@@ -178,7 +190,9 @@ export interface PluginAPI {
     moveNode: (nodeId: string, newParentId: string | null) => Promise<void>
     readNodeContent: (nodeId: string) => Promise<string | null>
     writeNodeContent: (nodeId: string, content: string) => Promise<void>
-    getNodeSummaryAndOutline: (nodeId: string) => Promise<{ summary: string | null; outline: string | null }>
+    getNodeSummaryAndOutline: (
+      nodeId: string
+    ) => Promise<{ summary: string | null; outline: string | null }>
     updateNodeSummaryAndOutline: (nodeId: string, summary: string, outline: string) => Promise<void>
   }
   story: {
@@ -209,21 +223,15 @@ export interface PluginAPI {
     beforeSave: (
       callback: (content: string, node: StoryNode) => string | false | void
     ) => () => void
-    afterLoad: (
-      callback: (content: string, node: StoryNode) => string | void
-    ) => () => void
+    afterLoad: (callback: (content: string, node: StoryNode) => string | void) => () => void
     onProofread: (
       callback: (text: string) => ProofreadResult | Promise<ProofreadResult>
     ) => () => void
-    onFileOpen: (
-      callback: (node: StoryNode, content: string) => void | string
-    ) => () => void
+    onFileOpen: (callback: (node: StoryNode, content: string) => void | string) => () => void
     onNodeCreate: (
       callback: (input: CreateNodeInput) => CreateNodeInput | false | void
     ) => () => void
-    onNodeDelete: (
-      callback: (nodeId: string, node: StoryNode) => boolean | void
-    ) => () => void
+    onNodeDelete: (callback: (nodeId: string, node: StoryNode) => boolean | void) => () => void
   }
   storage: {
     get: <T>(key: string) => T | undefined
@@ -241,14 +249,19 @@ export interface PluginAPI {
       callbacks: PluginFetchStreamCallbacks,
       options?: PluginFetchStreamOptions
     ) => { abort: () => void; streamId: string }
-    readFile: (path: string, encoding?: BufferEncoding) => Promise<{ success: boolean; content?: string; error?: string }>
+    readFile: (
+      path: string,
+      encoding?: BufferEncoding
+    ) => Promise<{ success: boolean; content?: string; error?: string }>
     writeFile: (path: string, content: string) => Promise<{ success: boolean; error?: string }>
     exists: (path: string) => Promise<boolean>
     mkdir: (path: string) => Promise<{ success: boolean; error?: string }>
     readdir: (path: string) => Promise<{ success: boolean; entries?: string[]; error?: string }>
     unlink: (path: string) => Promise<{ success: boolean; error?: string }>
     exec: (command: string, cwd?: string) => Promise<PluginExecResult>
-    getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') => Promise<string>
+    getAppPath: (
+      name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'
+    ) => Promise<string>
   }
   i18n: {
     addLanguage: (languageFile: LanguageFile) => boolean
@@ -270,7 +283,11 @@ interface PluginState {
 
   loadPlugins: () => Promise<void>
   reloadPlugins: () => Promise<void>
-  loadPlugin: (pluginInfo: { manifest: PluginManifest; path: string; mainPath: string }) => Promise<void>
+  loadPlugin: (pluginInfo: {
+    manifest: PluginManifest
+    path: string
+    mainPath: string
+  }) => Promise<void>
   unloadPlugin: (pluginId: string) => void
   setPluginEnabled: (pluginId: string, enabled: boolean) => void
 
@@ -354,7 +371,11 @@ export const triggerTabChange = (tab: Tab | null): void => {
 }
 
 // Helper to find node by path
-const findNodeByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'setting'): StoryNode | null => {
+const findNodeByPath = (
+  nodes: StoryNode[],
+  path: string,
+  kind: 'story' | 'setting'
+): StoryNode | null => {
   const parts = path.split('/').filter(Boolean)
   let currentNodes = nodes.filter((n) => n.parentId === null && n.kind === kind)
 
@@ -369,7 +390,11 @@ const findNodeByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'setti
 }
 
 // Helper to get children by path
-const getChildrenByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'setting'): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
+const getChildrenByPath = (
+  nodes: StoryNode[],
+  path: string,
+  kind: 'story' | 'setting'
+): Array<{ name: string; type: 'file' | 'folder'; path: string }> => {
   if (path === '' || path === '/') {
     return nodes
       .filter((n) => n.parentId === null && n.kind === kind)
@@ -397,11 +422,28 @@ const getChildrenByPath = (nodes: StoryNode[], path: string, kind: 'story' | 'se
 const SETTING_FIELD_CONFIG = {
   character: {
     single: ['name', 'gender', 'age'],
-    multi: ['background', 'motivation', 'arc', 'appearance', 'personality', 'speech', 'skills', 'notes']
+    multi: [
+      'background',
+      'motivation',
+      'arc',
+      'appearance',
+      'personality',
+      'speech',
+      'skills',
+      'notes'
+    ]
   },
   location: {
     single: [],
-    multi: ['locationDescription', 'visual', 'auditory', 'olfactory', 'atmosphere', 'danger', 'notes']
+    multi: [
+      'locationDescription',
+      'visual',
+      'auditory',
+      'olfactory',
+      'atmosphere',
+      'danger',
+      'notes'
+    ]
   },
   item: {
     single: ['type', 'quality'],
@@ -415,12 +457,12 @@ const SETTING_FIELD_CONFIG = {
 
 // Category name mapping: Chinese name -> English key (for backward compatibility with existing data)
 const CATEGORY_NAME_MAP: Record<string, string> = {
-  '人物': 'character',
-  '地点': 'location',
-  '物品': 'item',
-  'character': 'character',
-  'location': 'location',
-  'item': 'item'
+  人物: 'character',
+  地点: 'location',
+  物品: 'item',
+  character: 'character',
+  location: 'location',
+  item: 'item'
 }
 
 // Helper to get category from path
@@ -437,13 +479,13 @@ const getCategoryFromPath = (nodes: StoryNode[], filePath: string): string => {
   }
 
   if (!current?.name) return 'default'
-  
+
   // Map the category name to English key
   const mappedKey = CATEGORY_NAME_MAP[current.name]
   if (mappedKey && SETTING_FIELD_CONFIG[mappedKey as keyof typeof SETTING_FIELD_CONFIG]) {
     return mappedKey
   }
-  
+
   return 'default'
 }
 
@@ -576,8 +618,10 @@ const createWorldSettingFileAPI = () => {
     getFieldConfig: (filePath: string): { single: string[]; multi: string[] } => {
       const nodes = useProjectStore.getState().storyNodes
       const category = getCategoryFromPath(nodes, filePath)
-      return (SETTING_FIELD_CONFIG as Record<string, { single: string[]; multi: string[] }>)[category] ||
+      return (
+        (SETTING_FIELD_CONFIG as Record<string, { single: string[]; multi: string[] }>)[category] ||
         SETTING_FIELD_CONFIG.default
+      )
     },
 
     rename: async (oldPath: string, newPath: string): Promise<void> => {
@@ -676,7 +720,7 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         }
       },
       getAll: () => {
-        return Array.from(toolsRegistry.entries()).map(([_fullId, tool]) => ({
+        return Array.from(toolsRegistry.entries()).map(([, tool]) => ({
           pluginId: tool.pluginId,
           id: tool.id,
           name: tool.name,
@@ -756,7 +800,9 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
 
         return {
           postMessage: (message: unknown) => {
-            const iframe = document.querySelector(`iframe[data-webview-id="${webViewId}"]`) as HTMLIFrameElement
+            const iframe = document.querySelector(
+              `iframe[data-webview-id="${webViewId}"]`
+            ) as HTMLIFrameElement
             if (iframe?.contentWindow) {
               iframe.contentWindow.postMessage({ type: 'plugin-message', data: message }, '*')
             }
@@ -800,7 +846,9 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
 
         return {
           postMessage: (message: unknown) => {
-            const iframe = document.querySelector(`iframe[data-webview-id="${webViewId}"]`) as HTMLIFrameElement
+            const iframe = document.querySelector(
+              `iframe[data-webview-id="${webViewId}"]`
+            ) as HTMLIFrameElement
             if (iframe?.contentWindow) {
               iframe.contentWindow.postMessage({ type: 'plugin-message', data: message }, '*')
             }
@@ -1031,16 +1079,11 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         window.api.pluginNative.readFile(path, encoding),
       writeFile: (path: string, content: string) =>
         window.api.pluginNative.writeFile(path, content),
-      exists: (path: string) =>
-        window.api.pluginNative.exists(path),
-      mkdir: (path: string) =>
-        window.api.pluginNative.mkdir(path),
-      readdir: (path: string) =>
-        window.api.pluginNative.readdir(path),
-      unlink: (path: string) =>
-        window.api.pluginNative.unlink(path),
-      exec: (command: string, cwd?: string) =>
-        window.api.pluginNative.exec(command, cwd),
+      exists: (path: string) => window.api.pluginNative.exists(path),
+      mkdir: (path: string) => window.api.pluginNative.mkdir(path),
+      readdir: (path: string) => window.api.pluginNative.readdir(path),
+      unlink: (path: string) => window.api.pluginNative.unlink(path),
+      exec: (command: string, cwd?: string) => window.api.pluginNative.exec(command, cwd),
       getAppPath: (name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents') =>
         window.api.pluginNative.getAppPath(name)
     },
@@ -1139,7 +1182,9 @@ export const usePluginService = create<PluginState>((set, get) => ({
                 const langFile = JSON.parse(langResult.content) as LanguageFile
                 if (langFile.languageMetadata) {
                   addLanguage(langFile)
-                  console.log(`[Plugin:${manifest.id}] Loaded language: ${langFile.languageMetadata.code}`)
+                  console.log(
+                    `[Plugin:${manifest.id}] Loaded language: ${langFile.languageMetadata.code}`
+                  )
                 }
               } catch (e) {
                 console.warn(`[Plugin:${manifest.id}] Failed to parse language file ${entry}:`, e)
@@ -1155,7 +1200,9 @@ export const usePluginService = create<PluginState>((set, get) => ({
       }
 
       const pluginCode = result.content!
-      const pluginModule: { exports: { activate?: (api: PluginAPI) => void | Promise<void> } } = { exports: {} }
+      const pluginModule: { exports: { activate?: (api: PluginAPI) => void | Promise<void> } } = {
+        exports: {}
+      }
 
       const wrappedCode = `
         (function(module) {
@@ -1214,9 +1261,7 @@ export const usePluginService = create<PluginState>((set, get) => ({
     if (!plugin) return
 
     set((state) => ({
-      plugins: state.plugins.map((p) =>
-        p.manifest.id === pluginId ? { ...p, loaded: false } : p
-      ),
+      plugins: state.plugins.map((p) => (p.manifest.id === pluginId ? { ...p, loaded: false } : p)),
       activityItems: state.activityItems.filter((i) => i.pluginId !== pluginId),
       rightActivityItems: state.rightActivityItems.filter((i) => i.pluginId !== pluginId),
       statusBarItems: state.statusBarItems.filter((i) => i.pluginId !== pluginId),
@@ -1251,9 +1296,7 @@ export const usePluginService = create<PluginState>((set, get) => ({
     }
 
     set((state) => ({
-      plugins: state.plugins.map((p) =>
-        p.manifest.id === pluginId ? { ...p, enabled } : p
-      )
+      plugins: state.plugins.map((p) => (p.manifest.id === pluginId ? { ...p, enabled } : p))
     }))
 
     void window.api.setPluginEnabled(pluginId, enabled)

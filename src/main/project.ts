@@ -432,12 +432,16 @@ export async function getArchivedNodesProject(projectSettingsPath: string): Prom
   return nodes
 }
 
-export async function restoreArchivedNode(projectSettingsPath: string, nodeId: string, newParentId: string | null = null): Promise<StoryNode[]> {
+export async function restoreArchivedNode(
+  projectSettingsPath: string,
+  nodeId: string,
+  newParentId: string | null = null
+): Promise<StoryNode[]> {
   const project = await loadProject(projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
-  
+
   restoreNode(db, nodeId, newParentId)
-  
+
   await saveDatabase(db, project.storyDbPath)
   const nodes = getNodes(db)
   db.close()
@@ -500,7 +504,10 @@ function getGalleryFilePath(projectSettingsPath: string, itemId: string, fileNam
   return join(getAttachmentsDir(projectSettingsPath), `${itemId}_${fileName}`)
 }
 
-export async function getGalleryImages(projectSettingsPath: string, nodeId: string): Promise<(GalleryItem & { dataUrl: string })[]> {
+export async function getGalleryImages(
+  projectSettingsPath: string,
+  nodeId: string
+): Promise<(GalleryItem & { dataUrl: string })[]> {
   const project = await loadProject(projectSettingsPath)
   const db = await loadDatabase(project.storyDbPath)
   const items = getGalleryByNodeId(db, nodeId)
@@ -515,7 +522,18 @@ export async function getGalleryImages(projectSettingsPath: string, nodeId: stri
       const buffer = await readFile(filePath)
       const base64 = buffer.toString('base64')
       const ext = item.fileName.split('.').pop()?.toLowerCase()
-      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : ext === 'bmp' ? 'image/bmp' : 'image/jpeg'
+      const mime =
+        ext === 'png'
+          ? 'image/png'
+          : ext === 'gif'
+            ? 'image/gif'
+            : ext === 'webp'
+              ? 'image/webp'
+              : ext === 'svg'
+                ? 'image/svg+xml'
+                : ext === 'bmp'
+                  ? 'image/bmp'
+                  : 'image/jpeg'
       result.push({ ...item, dataUrl: `data:${mime};base64,${base64}` })
     } catch {
       result.push({ ...item, dataUrl: '' })
@@ -549,7 +567,18 @@ export async function uploadGalleryImage(
   const buffer = await readFile(destPath)
   const base64 = buffer.toString('base64')
   const ext = fileName.split('.').pop()?.toLowerCase()
-  const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : ext === 'bmp' ? 'image/bmp' : 'image/jpeg'
+  const mime =
+    ext === 'png'
+      ? 'image/png'
+      : ext === 'gif'
+        ? 'image/gif'
+        : ext === 'webp'
+          ? 'image/webp'
+          : ext === 'svg'
+            ? 'image/svg+xml'
+            : ext === 'bmp'
+              ? 'image/bmp'
+              : 'image/jpeg'
 
   return { ...item, dataUrl: `data:${mime};base64,${base64}` }
 }
@@ -615,7 +644,11 @@ export async function removeGalleryImage(
 
   if (item) {
     const filePath = getGalleryFilePath(projectSettingsPath, item.id, item.fileName)
-    try { unlinkSync(filePath) } catch { /* ignore */ }
+    try {
+      unlinkSync(filePath)
+    } catch {
+      /* ignore */
+    }
   }
 }
 
