@@ -474,8 +474,6 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-expect-error (define in dts)
-  window.electron = electronAPI
-  // @ts-expect-error (define in dts)
-  window.api = api
+  ;(window as unknown as Record<string, unknown>).electron = electronAPI
+  ;(window as unknown as Record<string, unknown>).api = api
 }
