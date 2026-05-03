@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { APP_NAME } from '../../constants/config'
 
 const ssworldSvg = new URL('../../assets/ssworld.svg', import.meta.url).href
 
@@ -69,7 +70,7 @@ const AboutPage: React.FC = () => {
       >
         <img
           src={ssworldSvg}
-          alt="Story Studio World"
+          alt={APP_NAME}
           style={{
             width: '100%',
             height: '100%',
@@ -86,7 +87,7 @@ const AboutPage: React.FC = () => {
           color: 'var(--text-color, #ffffff)'
         }}
       >
-        Story Studio World
+        {APP_NAME}
       </h1>
 
       <div

@@ -367,7 +367,7 @@
   "about": {
     "title": "关于",
     "version": "版本",
-    "description": "Story Studio World - 专业小说创作工具",
+    "description": "{{APP_NAME}} - 专业小说创作工具",
     "author": "作者",
     "website": "网站",
     "license": "许可证",
@@ -520,7 +520,7 @@
     "createProjectFailed": "创建项目失败",
     "projectPathMustBeFolder": "项目路径必须是一个文件夹。",
     "projectPathMustBeEmpty": "项目路径必须为空文件夹。",
-    "invalidProjectFolder": "当前文件夹不是有效的 Story Studio World 项目。",
+    "invalidProjectFolder": "当前文件夹不是有效的 {{APP_NAME}} 项目。",
     "selectProjectFile": "请选择 storystudioworld.sswprojectsetting 文件。",
     "projectNameRequired": "请填写项目名。",
     "nodeNotFound": "节点不存在",

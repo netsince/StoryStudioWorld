@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectData } from '../../models'
+import { APP_NAME } from '../../constants/config'
 
 const ssworldNobgSvg = new URL('../../assets/ssw-nobg.svg', import.meta.url).href
 
@@ -19,7 +20,7 @@ export const EmptyState: React.FC<{ onOpenWelcome: () => void }> = ({ onOpenWelc
     <img
       className="brand-logo brand-logo-xl"
       src={ssworldNobgSvg}
-      alt="Story Studio World"
+      alt={APP_NAME}
       style={{ cursor: 'pointer' }}
       onClick={onOpenWelcome}
     />
@@ -48,9 +49,9 @@ const WelcomePage: React.FC<{
       <img
         className="brand-logo brand-logo-xl"
         src={ssworldNobgSvg}
-        alt="Story Studio World"
+        alt={APP_NAME}
       />
-      <div className="project-title">Story Studio World</div>
+      <div className="project-title">{APP_NAME}</div>
       <div className="project-subtitle" style={{ marginBottom: '40px' }}>
         {currentProject ? `${t('welcome.currentProject')}: ${currentProject.projectPath}` : t('welcome.selectProject')}
       </div>

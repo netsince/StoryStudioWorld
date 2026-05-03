@@ -367,7 +367,7 @@
   "about": {
     "title": "About",
     "version": "Version",
-    "description": "Story Studio World - Professional Novel Writing Tool",
+    "description": "{{APP_NAME}} - Professional Novel Writing Tool",
     "author": "Author",
     "website": "Website",
     "license": "License",
@@ -520,7 +520,7 @@
     "createProjectFailed": "Failed to create project",
     "projectPathMustBeFolder": "Project path must be a folder.",
     "projectPathMustBeEmpty": "Project path must be an empty folder.",
-    "invalidProjectFolder": "Current folder is not a valid Story Studio World project.",
+    "invalidProjectFolder": "Current folder is not a valid {{APP_NAME}} project.",
     "selectProjectFile": "Please select storystudioworld.sswprojectsetting file.",
     "projectNameRequired": "Project name is required.",
     "nodeNotFound": "Node not found",

@@ -6,6 +6,7 @@ import { useUiStore } from '../stores/uiStore'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import { commandService, Commands } from '../services/commandService'
 import { useUiSettings } from '../hooks/useUiSettings'
+import { APP_NAME } from '../constants/config'
 
 const ssworldSvg = new URL('../assets/ssworld.svg', import.meta.url).href
 
@@ -422,8 +423,8 @@ const TitleBar: React.FC = () => {
     <div className="title-bar">
       <div className="title-bar-left">
         <div className="app-logo" onClick={openWelcomeTab} style={{ cursor: 'pointer' }}>
-          <img className="brand-logo" src={ssworldSvg} alt="Story Studio World" />
-          {!hideAppLogoText && 'Story Studio World'}
+          <img className="brand-logo" src={ssworldSvg} alt={APP_NAME} />
+          {!hideAppLogoText && APP_NAME}
         </div>
         <div className="title-bar-menu">
           <span

@@ -6,6 +6,7 @@ import { promisify } from 'util'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import type { ReadingOrderConfig } from '../preload/index'
+import { APP_NAME } from './config'
 import {
   createProject,
   createStoryNode,
@@ -121,7 +122,7 @@ function createWindow(): void {
   ipcMain.handle('open-project-dialog', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],
-      filters: [{ name: 'Story Studio World Project', extensions: ['sswprojectsetting'] }]
+      filters: [{ name: `${APP_NAME} Project`, extensions: ['sswprojectsetting'] }]
     })
     if (!canceled) {
       return filePaths[0]

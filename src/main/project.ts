@@ -1,6 +1,7 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join, normalize } from 'path'
 import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'fs'
+import { APP_NAME } from './config'
 import {
   STORY_DB_FILE,
   initDatabase,
@@ -162,7 +163,7 @@ async function writeProjectSettings(project: ProjectData): Promise<void> {
 async function readProjectSettings(projectPath: string): Promise<PersistedProjectData> {
   const settingsPath = getSettingsPath(projectPath)
   if (!(await pathExists(settingsPath))) {
-    throw new Error('当前文件夹不是有效的 Story Studio World 项目。')
+    throw new Error(`当前文件夹不是有效的 ${APP_NAME} 项目。`)
   }
 
   const raw = await readFile(settingsPath, 'utf-8')

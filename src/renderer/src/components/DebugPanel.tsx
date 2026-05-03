@@ -95,7 +95,7 @@ const DebugPanel: React.FC = () => {
           : '\n\nNo project loaded'
         const nodesInfo = `\nNodes: ${storyNodes.length} total`
         window.alert(
-          `Story Studio World v${info.version}\n` +
+          `${APP_NAME} v${info.version}\n` +
             `Electron: ${info.electron}\n` +
             `Chrome: ${info.chrome}\n` +
             `Node: ${info.node}\n` +

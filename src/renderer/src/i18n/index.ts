@@ -1,6 +1,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
+import { APP_NAME } from '../constants/config'
 
 export const SUPPORTED_LANGUAGES = {
   ZH_CN: 'zh-CN',
@@ -65,7 +66,10 @@ i18n
       return key
     },
     interpolation: {
-      escapeValue: false
+      escapeValue: false,
+      defaultVariables: {
+        APP_NAME
+      }
     },
     detection: {
       order: ['localStorage', 'navigator'],
