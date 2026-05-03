@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { useProjectStore } from '../stores/projectStore'
+import { APP_NAME } from '../constants/config'
 
 interface DebugAction {
   id: string

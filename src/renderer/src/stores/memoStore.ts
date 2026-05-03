@@ -18,7 +18,7 @@ interface MemoState {
   stopEditing: () => void
 }
 
-export const useMemoStore = create<MemoState>((set, get) => ({
+export const useMemoStore = create<MemoState>((set, _get) => ({
   memos: [],
   editingId: null,
   isLoading: false,

@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import type { StoryNode } from '../models'
-import { useEditorStore } from '../stores/editorStore'
-import { buildNodeDisplayPath } from '../utils/nodeUtils'
 import { useTranslation } from 'react-i18next'
 
 export interface WikiRefItem {
@@ -22,30 +20,6 @@ const WikiRefPanel: React.FC<WikiRefPanelProps> = ({ items, title, is404, onSele
   const { t } = useTranslation()
   const [selectedIndex, setSelectedIndex] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      switch (e.key) {
-        case 'Escape':
-          onClose()
-          break
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev + 1 < items.length ? prev + 1 : prev))
-          break
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
-          break
-        case 'Enter':
-          if (items[selectedIndex]) {
-            onSelect(items[selectedIndex])
-          }
-          break
-      }
-    },
-    [items, selectedIndex, onSelect, onClose]
-  )
 
   useEffect(() => {
     if (listRef.current && items.length > 0) {

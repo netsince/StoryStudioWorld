@@ -14,6 +14,7 @@ export interface StoryNode {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  children?: StoryNode[]
 }
 
 export interface ProjectData {

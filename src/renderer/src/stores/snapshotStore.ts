@@ -27,7 +27,7 @@ interface SnapshotState {
   selectSnapshot: (id: string | null) => void
 }
 
-export const useSnapshotStore = create<SnapshotState>((set, get) => ({
+export const useSnapshotStore = create<SnapshotState>((set, _get) => ({
   snapshots: [],
   isLoading: false,
   selectedSnapshotId: null,

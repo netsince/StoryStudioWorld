@@ -676,7 +676,7 @@ export const createPluginAPI = (pluginId: string): PluginAPI => {
         }
       },
       getAll: () => {
-        return Array.from(toolsRegistry.entries()).map(([fullId, tool]) => ({
+        return Array.from(toolsRegistry.entries()).map(([_fullId, tool]) => ({
           pluginId: tool.pluginId,
           id: tool.id,
           name: tool.name,

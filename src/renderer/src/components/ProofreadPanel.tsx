@@ -10,24 +10,7 @@ interface ProofreadPanelProps {
   className?: string
 }
 
-const getIssueIcon = (type: ProofreadIssue['type']): string => {
-  switch (type) {
-    case 'spelling':
-      return '🔤'
-    case 'grammar':
-      return '📝'
-    case 'style':
-      return '✨'
-    case 'duplicate':
-      return '🔁'
-    case 'punctuation':
-      return '⌨️'
-    default:
-      return '⚠️'
-  }
-}
-
-export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className = '' }) => {
+export const ProofreadPanel: React.FC<ProofreadPanelProps> = ({ className: _className = '' }) => {
   const { t } = useTranslation()
   const result = useProofreadStore((s) => s.result)
   const isChecking = useProofreadStore((s) => s.isChecking)

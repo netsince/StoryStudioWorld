@@ -39,6 +39,7 @@ jobs:
     needs: typecheck
     if: github.repository == 'netsince/StoryStudioWorld'
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -85,6 +86,7 @@ jobs:
   publish:
     name: Create GitHub Release
     needs: release
+    if: github.repository == 'netsince/StoryStudioWorld'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

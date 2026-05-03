@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react'
-import { usePluginService, type WebViewInfo } from '../services/pluginService'
+import { usePluginService } from '../services/pluginService'
 
 interface WebViewPanelProps {
   webViewId: string

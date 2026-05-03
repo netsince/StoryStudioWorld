@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
@@ -45,7 +45,7 @@ const PluginPanelWrapper: React.FC<{
       } else if (result === null || result === undefined) {
         setReactElement(null)
       } else {
-        setReactElement(result as React.ReactElement)
+        setReactElement(result as unknown as React.ReactElement)
       }
     } catch {
       const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })

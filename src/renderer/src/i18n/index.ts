@@ -53,7 +53,7 @@ i18n
     fallbackLng: ['en', 'zh-CN'],
     debug: false,
     saveMissing: true,
-    missingKeyHandler: (lngs, ns, key) => {
+    missingKeyHandler: (lngs, _ns, key) => {
       const langChain = Array.isArray(lngs) ? lngs : [lngs]
       for (let i = 0; i < langChain.length - 1; i++) {
         const fromLang = langChain[i]
