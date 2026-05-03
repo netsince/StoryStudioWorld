@@ -64,6 +64,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm snapcraft
+
       - name: Set npm hoisting configuration
         shell: bash
         run: echo "shamefully-hoist=true" > .npmrc
@@ -82,6 +88,7 @@ jobs:
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb
+            dist/*.rpm
             dist/*.snap
             dist/*.yml
             dist/*.blockmap
