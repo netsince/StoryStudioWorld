@@ -87,7 +87,95 @@
       <div class="editor-showcase">
         <div class="editor-img-wrap" data-reveal>
           <div class="editor-img-frame">
-            <img src="https://picsum.photos/seed/ssw-editor/1200/750" alt="编辑器界面" loading="lazy">
+            <div class="ssw-ui-mock editor-mock">
+              <div class="mock-titlebar">
+                <div class="mock-titlebar-left">
+                  <span class="mock-brand-logo"><svg viewBox="0 0 1920 1920"><path fill="#fff" d="m1069.48,1340.14l-288.83,134.7c-14.31,6.67-30.18-5.61-27.31-21.13l57.87-313.39L1570.56,158.89H158.89v1602.22h1602.22V446.24l-691.64,893.91Zm-339.41,259.1h-414.17c-16.56,0-29.99-13.43-29.99-29.99s13.43-29.99,29.99-29.99h414.17c16.56,0,29.99,13.43,29.99,29.99s-13.43,29.99-29.99,29.99Z"/></svg></span>
+                  <span class="mock-brand-name">Story Studio World</span>
+                  <span class="mock-titlebar-menu">文件 编辑 选择 查看 转到 帮助</span>
+                </div>
+                <div class="mock-titlebar-right">
+                  <span class="mock-winctrl">—</span>
+                  <span class="mock-winctrl">□</span>
+                  <span class="mock-winctrl close">✕</span>
+                </div>
+              </div>
+              <div class="mock-body">
+                <div class="mock-left-actbar">
+                  <div class="mock-act-item active">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>编写</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>设定</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>插件</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+                <div class="mock-sidebar">
+                  <div class="mock-sidebar-header">编写</div>
+                  <div class="mock-sidebar-toolbar">
+                    <span class="mock-toolbar-btn">+</span>
+                    <span class="mock-toolbar-btn">↻</span>
+                    <span class="mock-toolbar-btn">☰</span>
+                  </div>
+                  <div class="mock-tree">
+                    <div class="mock-tree-item"><span class="mock-toggle">▾</span> 故事</div>
+                    <div class="mock-tree-item indent"><span class="mock-toggle">▾</span> 第一卷</div>
+                    <div class="mock-tree-item indent2 active"><span class="mock-file-icon">◇</span> 第二章</div>
+                    <div class="mock-tree-item indent2"><span class="mock-file-icon">◇</span> 第三章</div>
+                    <div class="mock-tree-item indent"><span class="mock-toggle">▸</span> 第二卷</div>
+                  </div>
+                </div>
+                <div class="mock-editor">
+                  <div class="mock-tabs">
+                    <div class="mock-tab active">第二章 <span class="mock-tab-close">✕</span></div>
+                    <div class="mock-tab">第一章 <span class="mock-tab-close">✕</span></div>
+                  </div>
+                  <div class="mock-editor-content">
+                    <p class="mock-para">窗外的雨淅淅沥沥地下着，</p>
+                    <p class="mock-para">她望着远处模糊的山影，</p>
+                    <p class="mock-para">心中涌起一阵难以言喻的惆怅。</p>
+                    <p class="mock-para"></p>
+                    <p class="mock-para">「该走了。」她轻声说道。<span class="mock-cursor">|</span></p>
+                  </div>
+                </div>
+                <div class="mock-right-actbar">
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>章纲</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>校对</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>便签</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>快照</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+              </div>
+              <div class="mock-statusbar">
+                <div class="mock-status-left">
+                  <span>字数 42</span>
+                  <span>净字数 38</span>
+                  <span>段落 3</span>
+                </div>
+                <div class="mock-status-right">
+                  <span>UTF-8</span>
+                  <span>自动保存</span>
+                </div>
+              </div>
+            </div>
             <div class="img-glare"></div>
           </div>
           <div class="editor-caption">
@@ -137,7 +225,115 @@
         </div>
         <div class="world-img-wrap" data-reveal>
           <div class="world-img-frame">
-            <img src="https://picsum.photos/seed/ssw-world/1200/750" alt="世界观界面" loading="lazy">
+            <div class="ssw-ui-mock world-mock">
+              <div class="mock-titlebar">
+                <div class="mock-titlebar-left">
+                  <span class="mock-brand-logo"><svg viewBox="0 0 1920 1920"><path fill="#fff" d="m1069.48,1340.14l-288.83,134.7c-14.31,6.67-30.18-5.61-27.31-21.13l57.87-313.39L1570.56,158.89H158.89v1602.22h1602.22V446.24l-691.64,893.91Zm-339.41,259.1h-414.17c-16.56,0-29.99-13.43-29.99-29.99s13.43-29.99,29.99-29.99h414.17c16.56,0,29.99,13.43,29.99,29.99s-13.43,29.99-29.99,29.99Z"/></svg></span>
+                  <span class="mock-brand-name">Story Studio World</span>
+                  <span class="mock-titlebar-menu">文件 编辑 选择 查看 转到 帮助</span>
+                </div>
+                <div class="mock-titlebar-right">
+                  <span class="mock-winctrl">—</span>
+                  <span class="mock-winctrl">□</span>
+                  <span class="mock-winctrl close">✕</span>
+                </div>
+              </div>
+              <div class="mock-body">
+                <div class="mock-left-actbar">
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>编写</span>
+                  </div>
+                  <div class="mock-act-item active">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>设定</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>插件</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+                <div class="mock-sidebar wide">
+                  <div class="mock-sidebar-header">世界设定</div>
+                  <div class="mock-sidebar-toolbar">
+                    <span class="mock-toolbar-btn">+</span>
+                    <span class="mock-toolbar-btn">↻</span>
+                    <span class="mock-toolbar-btn">☰</span>
+                  </div>
+                  <div class="mock-tree">
+                    <div class="mock-tree-item category"><span class="mock-cat-icon">👤</span> 人物</div>
+                    <div class="mock-tree-item indent"><span class="mock-toggle">▾</span> 主角</div>
+                    <div class="mock-tree-item indent2 active"><span class="mock-file-icon">◇</span> 沈墨白</div>
+                    <div class="mock-tree-item indent2"><span class="mock-file-icon">◇</span> 林若溪</div>
+                    <div class="mock-tree-item category"><span class="mock-cat-icon">📍</span> 地点</div>
+                    <div class="mock-tree-item indent"><span class="mock-file-icon">◇</span> 云隐山庄</div>
+                    <div class="mock-tree-item category"><span class="mock-cat-icon">🌍</span> 世界观</div>
+                    <div class="mock-tree-item category"><span class="mock-cat-icon">🗡️</span> 物品</div>
+                    <div class="mock-tree-item category"><span class="mock-cat-icon">📝</span> 其他</div>
+                  </div>
+                </div>
+                <div class="mock-editor">
+                  <div class="mock-tabs">
+                    <div class="mock-tab active">沈墨白 <span class="mock-tab-close">✕</span></div>
+                  </div>
+                  <div class="mock-editor-content setting-panel">
+                    <div class="setting-field">
+                      <div class="setting-field-label">角色</div>
+                      <div class="setting-field-value">沈墨白</div>
+                    </div>
+                    <div class="setting-field">
+                      <div class="setting-field-label">性别</div>
+                      <div class="setting-field-value">男</div>
+                    </div>
+                    <div class="setting-field">
+                      <div class="setting-field-label">背景经历</div>
+                      <div class="setting-field-value muted">未填写</div>
+                    </div>
+                    <div class="setting-field">
+                      <div class="setting-field-label">性格特征</div>
+                      <div class="setting-field-desc">性格清冷，不善言辞，却心怀天下。自幼习武，剑法超群。</div>
+                    </div>
+                    <div class="setting-gallery-section">
+                      <div class="setting-gallery-label">图库</div>
+                      <div class="setting-gallery-items">
+                        <div class="setting-gallery-thumb"></div>
+                        <div class="setting-gallery-thumb add">+</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mock-right-actbar">
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>章纲</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>校对</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>便签</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>快照</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+              </div>
+              <div class="mock-statusbar">
+                <div class="mock-status-left">
+                  <span>字数 24</span>
+                  <span>净字数 20</span>
+                </div>
+                <div class="mock-status-right">
+                  <span>UTF-8</span>
+                  <span>自动保存</span>
+                </div>
+              </div>
+            </div>
             <div class="img-glare"></div>
           </div>
           <div class="world-caption">
@@ -159,7 +355,17 @@
       <div class="export-gallery">
         <div class="export-card" data-reveal>
           <div class="export-card-img">
-            <img src="https://picsum.photos/seed/ssw-pdf/600/400" alt="PDF导出" loading="lazy">
+            <div class="ssw-export-mock export-pdf-mock">
+              <div class="pdf-page">
+                <div class="pdf-title">第二章</div>
+                <div class="pdf-line"></div>
+                <div class="pdf-line"></div>
+                <div class="pdf-line short"></div>
+                <div class="pdf-line"></div>
+                <div class="pdf-line"></div>
+                <div class="pdf-line short"></div>
+              </div>
+            </div>
           </div>
           <div class="export-card-info">
             <h3>PDF</h3>
@@ -168,16 +374,77 @@
         </div>
         <div class="export-card" data-reveal>
           <div class="export-card-img">
-            <img src="https://picsum.photos/seed/ssw-epub/600/400" alt="EPUB导出" loading="lazy">
+            <div class="ssw-export-mock export-epub-mock">
+              <div class="epub-device">
+                <div class="epub-screen">
+                  <div class="epub-chapter">第二章</div>
+                  <div class="epub-text"></div>
+                  <div class="epub-text"></div>
+                  <div class="epub-text short"></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="export-card-info">
             <h3>EPUB</h3>
             <p>电子书标准格式，全平台兼容</p>
           </div>
         </div>
+        <div class="export-card" data-reveal>
+          <div class="export-card-img">
+            <div class="ssw-export-mock export-md-mock">
+              <div class="md-content">
+                <div class="md-h1"># 第二章</div>
+                <div class="md-p">窗外的雨淅淅沥沥地下着，</div>
+                <div class="md-p">她望着远处模糊的山影。</div>
+                <div class="md-p"></div>
+                <div class="md-p">**该走了。**</div>
+              </div>
+            </div>
+          </div>
+          <div class="export-card-info">
+            <h3>Markdown</h3>
+            <p>纯文本标记，版本控制友好</p>
+          </div>
+        </div>
         <div class="export-card wide" data-reveal>
           <div class="export-card-img">
-            <img src="https://picsum.photos/seed/ssw-wiki/1200/500" alt="Wiki导出" loading="lazy">
+            <div class="ssw-export-mock export-wiki-mock">
+              <div class="wiki-page">
+                <div class="wiki-back">← 返回目录</div>
+                <div class="wiki-header">
+                  <h1 class="wiki-title">沈墨白</h1>
+                </div>
+                <div class="wiki-content">
+                  <aside class="wiki-infobox">
+                    <div class="wiki-infobox-name">沈墨白</div>
+                    <table class="wiki-infobox-table">
+                      <tr><th>性别</th><td>男</td></tr>
+                      <tr><th>年龄</th><td>25</td></tr>
+                      <tr><th>身份</th><td>云隐山庄少庄主</td></tr>
+                    </table>
+                  </aside>
+                  <div class="wiki-main-content">
+                    <nav class="wiki-toc">
+                      <div class="wiki-toc-title">目录</div>
+                      <ul>
+                        <li><span class="wiki-toc-num">1</span> 背景经历</li>
+                        <li><span class="wiki-toc-num">2</span> 性格特征</li>
+                        <li><span class="wiki-toc-num">3</span> 外貌描述</li>
+                      </ul>
+                    </nav>
+                    <section class="wiki-section">
+                      <h2 class="wiki-section-title">背景经历</h2>
+                      <div class="wiki-section-text">自幼在云隐山庄长大，师从父亲学习剑法。</div>
+                    </section>
+                    <section class="wiki-section">
+                      <h2 class="wiki-section-title">性格特征</h2>
+                      <div class="wiki-section-text">性格清冷，不善言辞，却心怀天下。</div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="export-card-info">
             <h3>Wiki 网站</h3>
@@ -186,20 +453,19 @@
         </div>
         <div class="export-card" data-reveal>
           <div class="export-card-img">
-            <img src="https://picsum.photos/seed/ssw-docx/600/400" alt="DOCX导出" loading="lazy">
+            <div class="ssw-export-mock export-docx-mock">
+              <div class="docx-page">
+                <div class="docx-h1">第二章</div>
+                <div class="docx-p"></div>
+                <div class="docx-p"></div>
+                <div class="docx-p short"></div>
+                <div class="docx-p"></div>
+              </div>
+            </div>
           </div>
           <div class="export-card-info">
             <h3>DOCX</h3>
             <p>Word 格式，便于二次编辑</p>
-          </div>
-        </div>
-        <div class="export-card" data-reveal>
-          <div class="export-card-img">
-            <img src="https://picsum.photos/seed/ssw-md/600/400" alt="Markdown导出" loading="lazy">
-          </div>
-          <div class="export-card-info">
-            <h3>Markdown</h3>
-            <p>纯文本标记，版本控制友好</p>
           </div>
         </div>
       </div>
@@ -217,7 +483,111 @@
       <div class="plugin-showcase">
         <div class="plugin-img-wrap" data-reveal>
           <div class="plugin-img-frame">
-            <img src="https://picsum.photos/seed/ssw-plugin/1200/750" alt="插件系统" loading="lazy">
+            <div class="ssw-ui-mock plugin-mock">
+              <div class="mock-titlebar">
+                <div class="mock-titlebar-left">
+                  <span class="mock-brand-logo"><svg viewBox="0 0 1920 1920"><path fill="#fff" d="m1069.48,1340.14l-288.83,134.7c-14.31,6.67-30.18-5.61-27.31-21.13l57.87-313.39L1570.56,158.89H158.89v1602.22h1602.22V446.24l-691.64,893.91Zm-339.41,259.1h-414.17c-16.56,0-29.99-13.43-29.99-29.99s13.43-29.99,29.99-29.99h414.17c16.56,0,29.99,13.43,29.99,29.99s-13.43,29.99-29.99,29.99Z"/></svg></span>
+                  <span class="mock-brand-name">Story Studio World</span>
+                  <span class="mock-titlebar-menu">文件 编辑 选择 查看 转到 帮助</span>
+                </div>
+                <div class="mock-titlebar-right">
+                  <span class="mock-winctrl">—</span>
+                  <span class="mock-winctrl">□</span>
+                  <span class="mock-winctrl close">✕</span>
+                </div>
+              </div>
+              <div class="mock-body">
+                <div class="mock-left-actbar">
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>编写</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>设定</span>
+                  </div>
+                  <div class="mock-act-item active">
+                    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>插件</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+                <div class="mock-sidebar">
+                  <div class="mock-sidebar-header">已安装插件</div>
+                  <div class="mock-plugin-list">
+                    <div class="mock-plugin-item">
+                      <div class="mock-plugin-icon-wrap">🧩</div>
+                      <div class="mock-plugin-info">
+                        <div class="mock-plugin-name">字数统计</div>
+                        <div class="mock-plugin-ver">v1.2.0</div>
+                      </div>
+                      <div class="mock-plugin-toggle on"></div>
+                    </div>
+                    <div class="mock-plugin-item">
+                      <div class="mock-plugin-icon-wrap">🧩</div>
+                      <div class="mock-plugin-info">
+                        <div class="mock-plugin-name">AI 写作助手</div>
+                        <div class="mock-plugin-ver">v0.8.1</div>
+                      </div>
+                      <div class="mock-plugin-toggle on"></div>
+                    </div>
+                    <div class="mock-plugin-item">
+                      <div class="mock-plugin-icon-wrap">🧩</div>
+                      <div class="mock-plugin-info">
+                        <div class="mock-plugin-name">深色主题包</div>
+                        <div class="mock-plugin-ver">v2.0.0</div>
+                      </div>
+                      <div class="mock-plugin-toggle"></div>
+                    </div>
+                  </div>
+                  <div class="mock-plugin-footer">
+                    <span>打开插件目录</span>
+                  </div>
+                </div>
+                <div class="mock-editor">
+                  <div class="mock-tabs">
+                    <div class="mock-tab active">第二章 <span class="mock-tab-close">✕</span></div>
+                  </div>
+                  <div class="mock-editor-content">
+                    <p class="mock-para">窗外的雨淅淅沥沥地下着，</p>
+                    <p class="mock-para">她望着远处模糊的山影，</p>
+                    <p class="mock-para">心中涌起一阵难以言喻的惆怅。</p>
+                    <p class="mock-para"></p>
+                    <p class="mock-para">「该走了。」她轻声说道。</p>
+                  </div>
+                </div>
+                <div class="mock-right-actbar">
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>章纲</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>校对</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>便签</span>
+                  </div>
+                  <div class="mock-act-item">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>快照</span>
+                  </div>
+                  <div class="mock-act-item more">⋯</div>
+                </div>
+              </div>
+              <div class="mock-statusbar">
+                <div class="mock-status-left">
+                  <span>字数 42</span>
+                  <span>净字数 38</span>
+                  <span>段落 3</span>
+                </div>
+                <div class="mock-status-right">
+                  <span>UTF-8</span>
+                  <span>自动保存</span>
+                </div>
+              </div>
+            </div>
             <div class="img-glare"></div>
           </div>
           <div class="plugin-caption">
@@ -256,20 +626,11 @@
           完全免费，离线使用
         </p>
         <div class="download-buttons" data-reveal>
-          <a href="#" class="download-btn primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z"/><path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z"/><path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z"/><path d="M5 19.5A3.5 3.5 0 0 0 8.5 23H12v-7H8.5A3.5 3.5 0 0 0 5 19.5z"/><path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z"/></svg>
-            <span>Windows</span>
-          </a>
-          <a href="#" class="download-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>macOS</span>
-          </a>
-          <a href="#" class="download-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/><path d="M12 6v12"/><path d="M6 12h12"/></svg>
-            <span>Linux</span>
+          <a href="https://github.com/storystudioworld/story-studio-app/releases" class="download-btn primary" target="_blank" rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>前往 GitHub Release 下载</span>
           </a>
         </div>
-        <p class="download-version" data-reveal>v1.0.0 · 开源 · 跨平台</p>
       </div>
     </div>
   </section>

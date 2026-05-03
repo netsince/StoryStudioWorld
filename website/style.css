@@ -421,6 +421,754 @@ body:hover .cursor-follower { opacity: 1; }
 }
 
 /* ============================================
+   UI Mock — Story Studio World Interface
+   ============================================ */
+.ssw-ui-mock {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  background: #1e1e1e;
+  color: #cccccc;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.mock-titlebar {
+  height: 35px;
+  background: #323233;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid #2b2b2b;
+  flex-shrink: 0;
+}
+.mock-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mock-brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.mock-brand-logo svg {
+  width: 14px;
+  height: 14px;
+}
+.mock-brand-name {
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mock-titlebar-menu {
+  display: flex;
+  gap: 4px;
+  color: #858585;
+  font-size: 12px;
+}
+.mock-titlebar-right {
+  display: flex;
+  gap: 8px;
+}
+.mock-winctrl {
+  color: #858585;
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.mock-winctrl.close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+.mock-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.mock-left-actbar {
+  width: 48px;
+  background: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+  gap: 2px;
+  flex-shrink: 0;
+  border-right: 1px solid #2b2b2b;
+}
+.mock-left-actbar .mock-act-item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #858585;
+  position: relative;
+  cursor: default;
+  font-size: 9px;
+}
+.mock-left-actbar .mock-act-item svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mock-left-actbar .mock-act-item.active {
+  color: #ffffff;
+}
+.mock-left-actbar .mock-act-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 2px;
+  background: #007acc;
+  border-radius: 0 2px 2px 0;
+}
+.mock-left-actbar .mock-act-item.more {
+  margin-top: auto;
+  margin-bottom: 10px;
+  font-size: 14px;
+  height: 32px;
+}
+
+.mock-right-actbar {
+  width: 48px;
+  background: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+  gap: 2px;
+  flex-shrink: 0;
+  border-left: 1px solid #2b2b2b;
+}
+.mock-right-actbar .mock-act-item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #858585;
+  position: relative;
+  cursor: default;
+  font-size: 9px;
+}
+.mock-right-actbar .mock-act-item svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mock-right-actbar .mock-act-item.active {
+  color: #ffffff;
+}
+.mock-right-actbar .mock-act-item.active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 10%;
+  bottom: 10%;
+  width: 2px;
+  background: #007acc;
+  border-radius: 2px 0 0 2px;
+}
+.mock-right-actbar .mock-act-item.more {
+  margin-top: auto;
+  margin-bottom: 10px;
+  font-size: 14px;
+  height: 32px;
+}
+
+.mock-sidebar {
+  width: 140px;
+  background: #252526;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid #2b2b2b;
+  overflow: hidden;
+}
+.mock-sidebar.wide { width: 160px; }
+.mock-sidebar-header {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #858585;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.mock-sidebar-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 6px;
+  gap: 2px;
+}
+.mock-toolbar-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #858585;
+  border-radius: 3px;
+}
+.mock-tree {
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mock-tree-item {
+  padding: 3px 10px;
+  color: #cccccc;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  margin: 0 2px;
+  border-radius: 3px;
+}
+.mock-tree-item.indent { padding-left: 22px; }
+.mock-tree-item.indent2 { padding-left: 36px; }
+.mock-tree-item.active {
+  background: rgba(0,122,204,0.18);
+  color: #ffffff;
+}
+.mock-tree-item.category {
+  color: #858585;
+  font-size: 11px;
+  padding-top: 6px;
+}
+.mock-toggle {
+  font-size: 8px;
+  color: #858585;
+  width: 12px;
+  text-align: center;
+}
+.mock-file-icon {
+  color: #007acc;
+  font-size: 10px;
+}
+.mock-cat-icon {
+  font-size: 11px;
+}
+
+.mock-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+  min-width: 0;
+}
+.mock-tabs {
+  height: 35px;
+  background: #252526;
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2b2b2b;
+}
+.mock-tab {
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #858585;
+  border-right: 1px solid #2b2b2b;
+  white-space: nowrap;
+  position: relative;
+  min-width: 80px;
+}
+.mock-tab.active {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+.mock-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #007acc;
+}
+.mock-tab-close {
+  font-size: 10px;
+  opacity: 0.3;
+  margin-left: auto;
+}
+
+.mock-editor-content {
+  flex: 1;
+  padding: 20px 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.mock-para {
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  font-size: 14px;
+  line-height: 2;
+  color: #cccccc;
+  margin: 0;
+  white-space: pre-wrap;
+}
+.mock-cursor {
+  color: #007acc;
+  animation: cursorBlink 1s step-end infinite;
+  font-weight: 300;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.mock-statusbar {
+  height: 22px;
+  background: #007acc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.9);
+  flex-shrink: 0;
+}
+.mock-status-left,
+.mock-status-right {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Setting panel inside mock (world view) */
+.setting-panel {
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.setting-field-label {
+  font-size: 9px;
+  color: #858585;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.setting-field-value {
+  font-size: 12px;
+  color: #ffffff;
+  font-weight: 500;
+}
+.setting-field-value.muted {
+  color: #858585;
+  font-style: italic;
+  font-weight: normal;
+}
+.setting-field-desc {
+  font-size: 11px;
+  color: #cccccc;
+  line-height: 1.6;
+}
+.setting-gallery-section {
+  margin-top: 6px;
+}
+.setting-gallery-label {
+  font-size: 9px;
+  color: #858585;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.setting-gallery-items {
+  display: flex;
+  gap: 6px;
+}
+.setting-gallery-thumb {
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.setting-gallery-thumb.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #858585;
+  font-size: 16px;
+}
+
+/* Plugin list inside mock */
+.mock-plugin-list {
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+.mock-plugin-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid transparent;
+}
+.mock-plugin-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+.mock-plugin-icon-wrap {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.mock-plugin-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mock-plugin-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mock-plugin-ver {
+  font-size: 11px;
+  color: #858585;
+}
+.mock-plugin-toggle {
+  width: 32px;
+  height: 18px;
+  background: #3e3e42;
+  border-radius: 18px;
+  position: relative;
+  flex-shrink: 0;
+  border: 1px solid #2b2b2b;
+}
+.mock-plugin-toggle::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ccc;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+.mock-plugin-toggle.on {
+  background: #007acc;
+  border-color: #007acc;
+}
+.mock-plugin-toggle.on::before {
+  transform: translateX(14px);
+  background: #fff;
+}
+.mock-plugin-footer {
+  padding: 10px 12px;
+  border-top: 1px solid #2b2b2b;
+  font-size: 12px;
+  color: #007acc;
+}
+
+/* ============================================
+   Export Mock Previews
+   ============================================ */
+.ssw-export-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #0f0f1a;
+}
+
+/* PDF Mock */
+.export-pdf-mock .pdf-page {
+  width: 70%;
+  max-width: 160px;
+  aspect-ratio: 3/4;
+  background: #f5f5f5;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pdf-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 6px;
+  text-align: center;
+  font-family: 'Noto Serif SC', Georgia, serif;
+}
+.pdf-line {
+  height: 3px;
+  background: #ddd;
+  border-radius: 1px;
+}
+.pdf-line.short { width: 60%; }
+
+/* EPUB Mock */
+.export-epub-mock .epub-device {
+  width: 55%;
+  max-width: 110px;
+  aspect-ratio: 3/4;
+  background: #2a2a2e;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.epub-screen {
+  width: 100%;
+  height: 100%;
+  background: #f0ece2;
+  border-radius: 4px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.epub-chapter {
+  font-size: 9px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 4px;
+  font-family: 'Noto Serif SC', Georgia, serif;
+}
+.epub-text {
+  height: 2px;
+  background: #ccc;
+  border-radius: 1px;
+}
+.epub-text.short { width: 70%; }
+
+/* Wiki Mock — Dark Wikipedia-style page */
+.export-wiki-mock .wiki-page {
+  width: 95%;
+  max-width: 320px;
+  background: #1e1e1e;
+  border-radius: 4px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #ccc;
+  line-height: 1.6;
+}
+.wiki-back {
+  font-size: 8px;
+  color: #3498db;
+  margin-bottom: 6px;
+}
+.wiki-header {
+  border-bottom: 1px solid #54595d;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+}
+.wiki-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: normal;
+  font-family: 'Linux Libertine', 'Georgia', 'Times', serif;
+  color: #fff;
+}
+.wiki-content {
+  position: relative;
+  display: flex;
+  gap: 10px;
+}
+.wiki-infobox {
+  width: 100px;
+  background: #2a2a2e;
+  border: 1px solid #54595d;
+  padding: 4px;
+  font-size: 7px;
+  flex-shrink: 0;
+}
+.wiki-infobox-name {
+  text-align: center;
+  font-weight: bold;
+  padding: 4px;
+  background: #3a3a3e;
+  margin-bottom: 4px;
+  border: 1px solid #54595d;
+  font-size: 8px;
+  color: #fff;
+}
+.wiki-infobox-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.wiki-infobox-table th {
+  text-align: left;
+  padding: 3px 2px;
+  color: #aaa;
+  font-weight: bold;
+  border-bottom: 1px solid #444;
+  width: 35%;
+  vertical-align: top;
+}
+.wiki-infobox-table td {
+  padding: 3px 2px;
+  border-bottom: 1px solid #444;
+}
+.wiki-main-content {
+  flex: 1;
+  min-width: 0;
+}
+.wiki-toc {
+  background: #2a2a2e;
+  border: 1px solid #54595d;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  display: inline-block;
+  min-width: 80px;
+}
+.wiki-toc-title {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 4px;
+  font-size: 8px;
+}
+.wiki-toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 7px;
+  color: #3498db;
+}
+.wiki-toc li {
+  margin-bottom: 2px;
+}
+.wiki-toc-num {
+  color: #ccc;
+  margin-right: 4px;
+}
+.wiki-section {
+  margin-bottom: 8px;
+}
+.wiki-section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: normal;
+  font-family: 'Linux Libertine', 'Georgia', 'Times', serif;
+  color: #fff;
+  border-bottom: 1px solid #54595d;
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+.wiki-section-text {
+  font-size: 7px;
+  color: #d1d1d1;
+  white-space: pre-wrap;
+}
+
+/* DOCX Mock */
+.export-docx-mock .docx-page {
+  width: 70%;
+  max-width: 150px;
+  aspect-ratio: 3/4;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.docx-h1 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2b579a;
+  margin-bottom: 6px;
+  font-family: 'Noto Serif SC', Georgia, serif;
+}
+.docx-p {
+  height: 3px;
+  background: #e0e0e0;
+  border-radius: 1px;
+}
+.docx-p.short { width: 65%; }
+
+/* Markdown Mock */
+.export-md-mock .md-content {
+  width: 85%;
+  max-width: 200px;
+  background: #1e1e1e;
+  border-radius: 4px;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.md-h1 {
+  font-size: 11px;
+  color: #569cd6;
+  font-weight: 600;
+}
+.md-p {
+  font-size: 9px;
+  color: #d4d4d4;
+  line-height: 1.4;
+}
+
+/* ============================================
    Image Frame (Common)
    ============================================ */
 .img-frame {
