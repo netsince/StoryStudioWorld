@@ -219,6 +219,14 @@
   }
 
   // ============================================
+  // Dynamic Footer Year
+  // ============================================
+  var footerYear = document.getElementById('footerYear')
+  if (footerYear) {
+    footerYear.textContent = '© ' + new Date().getFullYear()
+  }
+
+  // ============================================
   // Console Art
   // ============================================
   console.log('%c Story Studio World ', 'background: #30cfd0; color: #0a0a14; font-size: 18px; font-weight: bold; padding: 8px 16px; border-radius: 4px; font-family: serif;')

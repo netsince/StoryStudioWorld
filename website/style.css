@@ -159,6 +159,31 @@ body:hover .cursor-follower { opacity: 1; }
   background: var(--accent);
   color: var(--bg);
 }
+.lang-switch {
+  display: flex;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.lang-btn {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+.lang-btn:hover {
+  color: rgba(255,255,255,0.7);
+}
+.lang-btn.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -208,6 +233,15 @@ body:hover .cursor-follower { opacity: 1; }
   color: var(--accent);
   font-size: 14px;
   letter-spacing: 2px;
+}
+.mobile-lang-switch {
+  display: flex;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
+  align-self: flex-start;
 }
 
 /* ============================================
@@ -1000,7 +1034,7 @@ body:hover .cursor-follower { opacity: 1; }
 /* Wiki Mock — Dark Wikipedia-style page */
 .export-wiki-mock .wiki-page {
   width: 95%;
-  max-width: 320px;
+  max-width: 100%;
   background: #1e1e1e;
   border-radius: 4px;
   padding: 12px 14px;
@@ -1550,10 +1584,15 @@ body:hover .cursor-follower { opacity: 1; }
   .footer { padding: 40px 32px 32px; }
 }
 
+@media (pointer: coarse) {
+  body { cursor: auto; }
+  .cursor, .cursor-follower { display: none; }
+}
+
 @media (max-width: 768px) {
   body { cursor: auto; }
   .cursor, .cursor-follower { display: none; }
-  .nav-links, .nav-cta { display: none; }
+  .nav-links, .nav-cta, .lang-switch { display: none; }
   .nav-toggle { display: flex; }
   .section { padding: 80px 24px; }
   .hero { padding: 100px 24px 80px; }
