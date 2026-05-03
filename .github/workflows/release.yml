@@ -64,12 +64,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Remove mirror config for CI
+        shell: bash
+        run: echo "shamefully-hoist=true" > .npmrc
+
       - name: Build & package
         run: ${{ matrix.build_cmd }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ELECTRON_MIRROR: https://github.com/electron/electron/releases/download/
-          ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
