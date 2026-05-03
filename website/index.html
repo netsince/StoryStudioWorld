@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story Studio World — 创作即自由</title>
+  <meta name="description" content="专为小说创作者打造的桌面创作工具。离线、自由、无限可能。">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Noto+Serif+SC:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Grain Overlay -->
+  <div class="grain"></div>
+
+  <!-- Custom Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursorFollower"></div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <a href="#" class="nav-logo">
+      <img src="assets/logo.svg" alt="">
+    </a>
+    <div class="nav-links">
+      <a href="#editor" class="nav-link"><span>编辑器</span></a>
+      <a href="#world" class="nav-link"><span>世界观</span></a>
+      <a href="#export" class="nav-link"><span>导出</span></a>
+      <a href="#plugin" class="nav-link"><span>插件</span></a>
+    </div>
+    <a href="#download" class="nav-cta">下载</a>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单">
+      <span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#editor">编辑器</a>
+    <a href="#world">世界观</a>
+    <a href="#export">导出</a>
+    <a href="#plugin">插件</a>
+    <a href="#download" class="mobile-cta">下载应用</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="hero-orb orb-1"></div>
+      <div class="hero-orb orb-2"></div>
+      <div class="hero-orb orb-3"></div>
+    </div>
+    <div class="hero-content">
+      <p class="hero-eyebrow" data-reveal>Story Studio World</p>
+      <h1 class="hero-title" data-reveal>
+        <span class="line">创作</span>
+        <span class="line">即自由</span>
+      </h1>
+      <p class="hero-desc" data-reveal>
+        离线。本地。完全属于你自己。<br>
+        一款为小说作者打造的桌面创作工具。
+      </p>
+      <div class="hero-actions" data-reveal>
+        <a href="#download" class="btn-main">
+          <span>免费下载</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </a>
+        <a href="#editor" class="btn-ghost">探索功能</a>
+      </div>
+    </div>
+    <div class="hero-scroll" data-reveal>
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- Editor Section -->
+  <section class="section section-editor" id="editor">
+    <div class="section-bg-text">EDITOR</div>
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2 class="section-title" data-reveal>为写作<br>而生的编辑器</h2>
+      </div>
+      <div class="editor-showcase">
+        <div class="editor-img-wrap" data-reveal>
+          <div class="editor-img-frame">
+            <img src="https://picsum.photos/seed/ssw-editor/1200/750" alt="编辑器界面" loading="lazy">
+            <div class="img-glare"></div>
+          </div>
+          <div class="editor-caption">
+            <span>分屏编辑 · 多标签页 · 禅模式</span>
+          </div>
+        </div>
+        <div class="editor-details">
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>多标签页并行编辑，拖拽排序，像整理思绪一样整理章节。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>禅模式一键隐藏所有干扰，只留你和文字。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>自动保存，永不丢失。本地 SQLite 数据库，你的数据只属于你。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- World Building Section -->
+  <section class="section section-world" id="world">
+    <div class="section-bg-text">WORLD</div>
+    <div class="container">
+      <div class="section-header right">
+        <span class="section-num">02</span>
+        <h2 class="section-title" data-reveal>构建你的<br>世界观</h2>
+      </div>
+      <div class="world-showcase">
+        <div class="world-details">
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>独立的世界观面板，角色、地点、种族、历史，一切井井有条。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>画廊系统为每个节点关联图片，角色立绘、场景图，所见即所得。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>阅读编排自定义章节顺序，按你的节奏讲述故事。</p>
+          </div>
+        </div>
+        <div class="world-img-wrap" data-reveal>
+          <div class="world-img-frame">
+            <img src="https://picsum.photos/seed/ssw-world/1200/750" alt="世界观界面" loading="lazy">
+            <div class="img-glare"></div>
+          </div>
+          <div class="world-caption">
+            <span>世界观 · 画廊 · 阅读编排</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Export Section -->
+  <section class="section section-export" id="export">
+    <div class="section-bg-text">EXPORT</div>
+    <div class="container">
+      <div class="section-header center">
+        <span class="section-num">03</span>
+        <h2 class="section-title" data-reveal>任意形态<br>输出你的故事</h2>
+      </div>
+      <div class="export-gallery">
+        <div class="export-card" data-reveal>
+          <div class="export-card-img">
+            <img src="https://picsum.photos/seed/ssw-pdf/600/400" alt="PDF导出" loading="lazy">
+          </div>
+          <div class="export-card-info">
+            <h3>PDF</h3>
+            <p>专业排版，适合打印与分享</p>
+          </div>
+        </div>
+        <div class="export-card" data-reveal>
+          <div class="export-card-img">
+            <img src="https://picsum.photos/seed/ssw-epub/600/400" alt="EPUB导出" loading="lazy">
+          </div>
+          <div class="export-card-info">
+            <h3>EPUB</h3>
+            <p>电子书标准格式，全平台兼容</p>
+          </div>
+        </div>
+        <div class="export-card wide" data-reveal>
+          <div class="export-card-img">
+            <img src="https://picsum.photos/seed/ssw-wiki/1200/500" alt="Wiki导出" loading="lazy">
+          </div>
+          <div class="export-card-info">
+            <h3>Wiki 网站</h3>
+            <p>静态 HTML 维基，在线浏览你的世界观</p>
+          </div>
+        </div>
+        <div class="export-card" data-reveal>
+          <div class="export-card-img">
+            <img src="https://picsum.photos/seed/ssw-docx/600/400" alt="DOCX导出" loading="lazy">
+          </div>
+          <div class="export-card-info">
+            <h3>DOCX</h3>
+            <p>Word 格式，便于二次编辑</p>
+          </div>
+        </div>
+        <div class="export-card" data-reveal>
+          <div class="export-card-img">
+            <img src="https://picsum.photos/seed/ssw-md/600/400" alt="Markdown导出" loading="lazy">
+          </div>
+          <div class="export-card-info">
+            <h3>Markdown</h3>
+            <p>纯文本标记，版本控制友好</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Plugin Section -->
+  <section class="section section-plugin" id="plugin">
+    <div class="section-bg-text">PLUGIN</div>
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2 class="section-title" data-reveal>无限扩展<br>由你定义</h2>
+      </div>
+      <div class="plugin-showcase">
+        <div class="plugin-img-wrap" data-reveal>
+          <div class="plugin-img-frame">
+            <img src="https://picsum.photos/seed/ssw-plugin/1200/750" alt="插件系统" loading="lazy">
+            <div class="img-glare"></div>
+          </div>
+          <div class="plugin-caption">
+            <span>插件市场 · 自定义扩展 · 开放 API</span>
+          </div>
+        </div>
+        <div class="plugin-details">
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>JavaScript 插件系统，注册命令、扩展 UI、监听编辑器事件。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>社区插件市场，字数统计、AI 助手、多语言包，即装即用。</p>
+          </div>
+          <div class="detail-item" data-reveal>
+            <span class="detail-mark">—</span>
+            <p>完整的 API 文档，几行代码即可打造属于你的创作工具。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section -->
+  <section class="section section-download" id="download">
+    <div class="download-bg">
+      <div class="download-orb"></div>
+    </div>
+    <div class="container">
+      <div class="download-content">
+        <p class="download-eyebrow" data-reveal>开始创作</p>
+        <h2 class="download-title" data-reveal>你的故事<br>在等你</h2>
+        <p class="download-desc" data-reveal>
+          Windows · macOS · Linux<br>
+          完全免费，离线使用
+        </p>
+        <div class="download-buttons" data-reveal>
+          <a href="#" class="download-btn primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2H12v7H8.5A3.5 3.5 0 0 1 5 5.5z"/><path d="M12 2h3.5a3.5 3.5 0 1 1 0 7H12V2z"/><path d="M12 12.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 1 1-7 0z"/><path d="M5 19.5A3.5 3.5 0 0 0 8.5 23H12v-7H8.5A3.5 3.5 0 0 0 5 19.5z"/><path d="M5 12.5A3.5 3.5 0 0 1 8.5 9H12v7H8.5A3.5 3.5 0 0 1 5 12.5z"/></svg>
+            <span>Windows</span>
+          </a>
+          <a href="#" class="download-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>macOS</span>
+          </a>
+          <a href="#" class="download-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"/><path d="M12 6v12"/><path d="M6 12h12"/></svg>
+            <span>Linux</span>
+          </a>
+        </div>
+        <p class="download-version" data-reveal>v1.0.0 · 开源 · 跨平台</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/logo-nobg.svg" alt="">
+          <span>Story Studio World</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/netSince/story-studio-world" target="_blank">GitHub</a>
+          <a href="https://storystudioworld.netSince.com" target="_blank">文档</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p> 2024 netSince.com</p>
+        <p>PROJECT PUBLIC LICENSE</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
