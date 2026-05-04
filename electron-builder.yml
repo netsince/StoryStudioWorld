@@ -39,6 +39,8 @@ linux:
     - snap
   maintainer: electronjs.org
   category: Utility
+snap:
+  publish: never
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
