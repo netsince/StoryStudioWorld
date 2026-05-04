@@ -69,6 +69,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm
+          sudo snap install snapcraft --classic
+
+      - name: Setup LXD for snap build
+        if: runner.os == 'Linux'
+        uses: canonical/setup-lxd@v0.1.2
 
       - name: Set npm hoisting configuration
         shell: bash
@@ -78,6 +83,7 @@ jobs:
         run: ${{ matrix.build_cmd }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -89,6 +95,7 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/*.rpm
+            dist/*.snap
             dist/*.yml
             dist/*.blockmap
           if-no-files-found: ignore
