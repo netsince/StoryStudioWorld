@@ -1,6 +1,5 @@
 appId: com.netsince.storystudioworld
 productName: story-studio-world
-publish: github
 directories:
   buildResources: build
 files:
@@ -40,6 +39,8 @@ linux:
     - snap
   maintainer: electronjs.org
   category: Utility
+snap:
+  publish: github
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
