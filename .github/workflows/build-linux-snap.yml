@@ -31,7 +31,9 @@ jobs:
         run: sudo snap install snapcraft --classic
 
       - name: Build snap package
-        run: pnpm run build:linux -- --snap
+        run: |
+          pnpm run build
+          npx electron-builder --linux snap
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
