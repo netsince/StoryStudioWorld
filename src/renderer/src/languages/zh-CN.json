@@ -11,6 +11,7 @@
     "save": "保存",
     "delete": "删除",
     "rename": "重命名",
+    "edit": "编辑",
     "close": "关闭",
     "loading": "加载中...",
     "error": "错误",
@@ -183,7 +184,12 @@
     "notFilled": "未填写",
     "tableOfContents": "目录",
     "independentEdit": "独立编辑",
-    "noContent": "暂无内容。"
+    "noContent": "暂无内容。",
+    "content": "内容",
+    "contentPlaceholder": "使用 # 和 ## 创建标题来组织内容...",
+    "addMetadata": "添加元数据字段",
+    "metadataKey": "字段名",
+    "deleteMetadata": "删除字段"
   },
   "archive": {
     "title": "归档",

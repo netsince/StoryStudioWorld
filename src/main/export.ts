@@ -743,6 +743,8 @@ function buildDisambigPageHtml(
 </html>`
 }
 
+import { parseSettingSections, type SettingSection } from '../shared/settingParser'
+
 function buildSettingPageHtml(
   node: WikiNode,
   nodes: WikiNode[],
@@ -751,115 +753,36 @@ function buildSettingPageHtml(
   i18n: Record<string, string>,
   includedNodeIds: Set<string>
 ): string {
-  let data: Record<string, string> = {}
+  interface SettingData {
+    metadata: {
+      [key: string]: string
+    }
+    content: string
+  }
+
+  let data: SettingData = { metadata: {}, content: '' }
   try {
     if (node.content) {
-      data = JSON.parse(node.content)
+      const parsed = JSON.parse(node.content)
+      if (parsed.metadata && parsed.content !== undefined) {
+        data = parsed
+      } else {
+        const migrated: SettingData = { metadata: {}, content: '' }
+        for (const [key, value] of Object.entries(parsed)) {
+          if (key === 'content') {
+            migrated.content = value as string
+          } else {
+            migrated.metadata[key] = value as string
+          }
+        }
+        data = migrated
+      }
     }
   } catch {
-    data = {}
+    data = { metadata: {}, content: '' }
   }
 
-  const FIELD_CONFIG: Record<string, { single: string[]; multi: string[] }> = {
-    character: {
-      single: ['name', 'gender', 'age'],
-      multi: [
-        'background',
-        'motivation',
-        'arc',
-        'appearance',
-        'personality',
-        'speech',
-        'skills',
-        'notes'
-      ]
-    },
-    location: {
-      single: [],
-      multi: [
-        'locationDescription',
-        'visual',
-        'auditory',
-        'olfactory',
-        'atmosphere',
-        'danger',
-        'notes'
-      ]
-    },
-    item: {
-      single: ['type', 'quality'],
-      multi: ['description', 'stats', 'symbolism']
-    },
-    default: {
-      single: [],
-      multi: ['description', 'notes']
-    }
-  }
-
-  const FIELD_LABELS: Record<string, Record<string, string>> = {
-    'zh-CN': {
-      name: '角色',
-      gender: '性别',
-      age: '年龄',
-      background: '背景经历',
-      motivation: '动机目标',
-      arc: '成长弧线',
-      appearance: '外貌描写',
-      personality: '性格特征',
-      speech: '说话风格',
-      skills: '能力技能',
-      notes: '其他备注',
-      description: '设定描述',
-      locationDescription: '地点描述',
-      visual: '视觉',
-      auditory: '听觉',
-      olfactory: '嗅觉',
-      atmosphere: '氛围',
-      danger: '危险程度',
-      type: '类型',
-      quality: '品质',
-      stats: '数值属性',
-      symbolism: '象征意义'
-    },
-    en: {
-      name: 'Name',
-      gender: 'Gender',
-      age: 'Age',
-      background: 'Background',
-      motivation: 'Motivation',
-      arc: 'Character Arc',
-      appearance: 'Appearance',
-      personality: 'Personality',
-      speech: 'Speech Style',
-      skills: 'Skills & Abilities',
-      notes: 'Notes',
-      description: 'Description',
-      locationDescription: 'Location Description',
-      visual: 'Visual',
-      auditory: 'Auditory',
-      olfactory: 'Olfactory',
-      atmosphere: 'Atmosphere',
-      danger: 'Danger Level',
-      type: 'Type',
-      quality: 'Quality',
-      stats: 'Stats',
-      symbolism: 'Symbolism'
-    }
-  }
-
-  const labels = FIELD_LABELS[language] || FIELD_LABELS['en'] || FIELD_LABELS['zh-CN']
-
-  let category = 'default'
-  let current = node
-  while (current.parentId) {
-    const parent = nodes.find((n) => n.id === current.parentId)
-    if (!parent) break
-    current = parent
-  }
-  if (current && FIELD_CONFIG[current.name]) {
-    category = current.name
-  }
-  const config = FIELD_CONFIG[category] || FIELD_CONFIG.default
+  const { sections } = parseSettingSections(data.content)
 
   let infoboxHtml = ''
   const themeImg = node.gallery.find((g) => g.isTheme)
@@ -868,20 +791,21 @@ function buildSettingPageHtml(
       ? `<div style="margin-bottom:8px"><img src="images/${node.id}_${themeImg.id}.jpg" alt="${escapeHtml(themeImg.caption || node.name)}" style="width:100%;display:block;border-radius:2px" />${themeImg.caption ? `<div style="font-size:11px;color:#888;text-align:center;padding:4px 0">${escapeHtml(themeImg.caption)}</div>` : ''}</div>`
       : ''
 
-  if (config.single.length > 0 || themeImg) {
+  const metadataKeys = Object.keys(data.metadata)
+  if (metadataKeys.length > 0 || themeImg) {
     infoboxHtml = `<aside style="width:280px;background:#2a2a2e;border:1px solid #54595d;padding:8px;font-size:13px;float:right;margin-left:24px;margin-bottom:20px">
       <div style="text-align:center;font-weight:bold;padding:8px;background:#3a3a3e;margin-bottom:8px;border:1px solid #54595d">${escapeHtml(node.name)}</div>
       ${themeImgHtml}
       ${
-        config.single.length > 0
+        metadataKeys.length > 0
           ? `<table style="width:100%;border-collapse:collapse">
         <tbody>
-          ${config.single
-            .map((field) => {
-              const val = data[field]
+          ${metadataKeys
+            .map((key) => {
+              const val = data.metadata[key]
               return `<tr style="border-bottom:1px solid #444">
-              <th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${labels[field] || field}</th>
-              <td style="padding:6px 4px">${val ? escapeHtml(val) : '<span style="color:#666;font-style:italic">' + i18n.noContent + '</span>'}</td>
+              <th style="text-align:left;padding:6px 4px;width:35%;vertical-align:top;color:#aaa;font-weight:bold">${escapeHtml(key)}</th>
+              <td style="padding:6px 4px">${val ? processWikiRefsInText(val, nodes, includedNodeIds, i18n) : '<span style="color:#666;font-style:italic">' + i18n.noContent + '</span>'}</td>
             </tr>`
             })
             .join('\n')}
@@ -893,26 +817,50 @@ function buildSettingPageHtml(
   }
 
   let tocHtml = ''
-  if (config.multi.length >= 3) {
+  if (sections.length >= 1) {
+    const sectionNumbers: string[] = []
+    let h1Counter = 0
+    let h2Counter = 0
+
+    sections.forEach((section: SettingSection) => {
+      if (section.level === 1) {
+        h1Counter++
+        h2Counter = 0
+        sectionNumbers.push(`${h1Counter}`)
+      } else {
+        h2Counter++
+        sectionNumbers.push(`${h1Counter}.${h2Counter}`)
+      }
+    })
+
     tocHtml = `<nav style="background:#2a2a2e;border:1px solid #54595d;padding:12px 20px;margin-bottom:24px;display:inline-block;min-width:200px">
       <div style="font-weight:bold;text-align:center;margin-bottom:10px;font-size:14px">${i18n.tableOfContents}</div>
       <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:#3498db">
-        ${config.multi.map((field, index) => `<li style="margin-bottom:4px"><a href="#${field}" style="color:inherit;text-decoration:none"><span style="color:#ccc;margin-right:8px">${index + 1}</span>${labels[field] || field}</a></li>`).join('\n')}
+        ${sections
+          .map(
+            (section, index) =>
+              `<li style="margin-bottom:4px;padding-left:${section.level === 2 ? '16px' : '0'}"><a href="#${section.id}" style="color:inherit;text-decoration:none"><span style="color:#ccc;margin-right:8px">${sectionNumbers[index]}</span>${escapeHtml(section.title)}</a></li>`
+          )
+          .join('\n')}
       </ul>
     </nav>`
   }
 
-  const sectionsHtml = config.multi
-    .map((field) => {
-      const val = data[field]
-      return `<section id="${field}" style="margin-bottom:24px">
+  const sectionsHtml =
+    sections.length > 0
+      ? sections
+          .map((section) => {
+            return `<section id="${section.id}" style="margin-bottom:24px">
       <div style="border-bottom:1px solid #54595d;margin-bottom:12px;padding-bottom:2px">
-        <h2 style="margin:0;font-size:22px;font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${labels[field] || field}</h2>
+        <h2 style="margin:0;font-size:${section.level === 1 ? '28px' : '22px'};font-weight:normal;font-family:'Linux Libertine','Georgia','Times',serif;color:#fff">${escapeHtml(section.title)}</h2>
       </div>
-      <div style="font-size:14px;white-space:pre-wrap;color:${val ? '#d1d1d1' : '#666'};font-style:${val ? 'normal' : 'italic'}">${val ? processWikiRefsInText(val, nodes, includedNodeIds, i18n) : i18n.noContent}</div>
+      <div style="font-size:14px;white-space:pre-wrap;color:${section.content ? '#d1d1d1' : '#666'};font-style:${section.content ? 'normal' : 'italic'}">${section.content ? processWikiRefsInText(section.content, nodes, includedNodeIds, i18n) : i18n.noContent}</div>
     </section>`
-    })
-    .join('\n')
+          })
+          .join('\n')
+      : data.content
+        ? `<div style="font-size:14px;white-space:pre-wrap;color:#d1d1d1">${processWikiRefsInText(data.content, nodes, includedNodeIds, i18n)}</div>`
+        : `<div style="color:#666;font-style:italic">${i18n.noContent}</div>`
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(language)}">

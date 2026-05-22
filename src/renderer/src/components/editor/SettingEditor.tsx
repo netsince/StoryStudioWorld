@@ -4,6 +4,7 @@ import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
 import { getAppSettings } from './PreferencesPage'
 import { buildNodeDisplayPath, getNodeDisplayName } from '../../utils/nodeUtils'
+import { parseSettingSections, type SettingSection } from '../../../../shared/settingParser'
 import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
 import SettingGallery from './SettingGallery'
 import type { StoryNode } from '../../models'
@@ -16,50 +17,17 @@ interface SettingEditorProps {
 }
 
 interface SettingData {
-  [key: string]: string
-}
-
-const FIELD_CONFIG = {
-  character: {
-    single: ['name', 'gender', 'age'],
-    multi: [
-      'background',
-      'motivation',
-      'arc',
-      'appearance',
-      'personality',
-      'speech',
-      'skills',
-      'notes'
-    ]
-  },
-  location: {
-    single: [],
-    multi: [
-      'locationDescription',
-      'visual',
-      'auditory',
-      'olfactory',
-      'atmosphere',
-      'danger',
-      'notes'
-    ]
-  },
-  item: {
-    single: ['type', 'quality'],
-    multi: ['description', 'stats', 'symbolism']
-  },
-  default: {
-    single: [],
-    multi: ['description', 'notes']
+  metadata: {
+    [key: string]: string
   }
+  content: string
 }
 
 const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId }) => {
   const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState<'content' | 'gallery'>('content')
-  const [data, setData] = useState<SettingData>({})
+  const [data, setData] = useState<SettingData>({ metadata: {}, content: '' })
   const [loading, setLoading] = useState(true)
   const [appSettings, setAppSettings] = useState(getAppSettings())
   const [hasLoaded, setHasLoaded] = useState(false)
@@ -68,6 +36,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [refPanelTitle, setRefPanelTitle] = useState('')
   const [refPanelIs404, setRefPanelIs404] = useState(false)
   const [refPanelOpen, setRefPanelOpen] = useState(false)
+  const [newMetadataKey, setNewMetadataKey] = useState('')
 
   const openTab = useEditorStore((s) => s.openTab)
 
@@ -80,7 +49,6 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const setDirtyTab = useEditorStore((s) => s.setDirtyTab)
   const openTabInSplit = useEditorStore((s) => s.openTabInSplit)
 
-  // 使用 Map 缓存节点查找，优化性能
   const nodeMap = useMemo(() => {
     const map = new Map<string, StoryNode>()
     storyNodes.forEach((n) => map.set(n.id, n))
@@ -89,25 +57,28 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
   const node = useMemo(() => nodeMap.get(nodeId), [nodeMap, nodeId])
 
-  const category = useMemo(() => {
-    if (!node) return 'default'
-    let current: StoryNode | undefined = node
-    while (current?.parentId) {
-      const parent = nodeMap.get(current.parentId)
-      if (!parent) break
-      current = parent
-    }
-    if (current && FIELD_CONFIG[current.name as keyof typeof FIELD_CONFIG]) {
-      return current.name
-    }
-    return 'default'
-  }, [node, nodeMap])
+  const parsedContent = useMemo(() => {
+    return parseSettingSections(data.content)
+  }, [data.content])
 
-  const config = FIELD_CONFIG[category as keyof typeof FIELD_CONFIG] || FIELD_CONFIG.default
+  const sectionNumbers = useMemo(() => {
+    const numbers: string[] = []
+    let h1Counter = 0
+    let h2Counter = 0
 
-  const getFieldLabel = (fieldKey: string): string => {
-    return t(`setting.field.${fieldKey}`, fieldKey)
-  }
+    parsedContent.sections.forEach((section) => {
+      if (section.level === 1) {
+        h1Counter++
+        h2Counter = 0
+        numbers.push(`${h1Counter}`)
+      } else {
+        h2Counter++
+        numbers.push(`${h1Counter}.${h2Counter}`)
+      }
+    })
+
+    return numbers
+  }, [parsedContent.sections])
 
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
@@ -129,13 +100,29 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (content) {
-          setData(JSON.parse(content))
+          const parsed = JSON.parse(content)
+          if (parsed.metadata && parsed.content !== undefined) {
+            setData(parsed)
+          } else {
+            const migrated: SettingData = {
+              metadata: {},
+              content: ''
+            }
+            for (const [key, value] of Object.entries(parsed)) {
+              if (key === 'content') {
+                migrated.content = value as string
+              } else {
+                migrated.metadata[key] = value as string
+              }
+            }
+            setData(migrated)
+          }
         } else {
-          setData({})
+          setData({ metadata: {}, content: '' })
         }
       } catch (e) {
         console.error('Failed to load setting content', e)
-        setData({})
+        setData({ metadata: {}, content: '' })
       } finally {
         setLoading(false)
         setHasLoaded(true)
@@ -149,6 +136,20 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
 
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
+      try {
+        const draftData = JSON.parse(draft)
+        setData(draftData)
+      } catch (e) {
+        console.error('Failed to parse draft for real-time preview', e)
+      }
+    }
+  }, [draftsByNodeId[nodeId], hasLoaded, currentProject, nodeId])
+
+  useEffect(() => {
+    if (!hasLoaded || !currentProject || !nodeId) return
+
+    const draft = draftsByNodeId[nodeId]
+    if (typeof draft === 'string') {
       return
     }
 
@@ -156,9 +157,25 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       try {
         const content = await window.api.readNodeContent(currentProject.projectSettingsPath, nodeId)
         if (content) {
-          setData(JSON.parse(content))
+          const parsed = JSON.parse(content)
+          if (parsed.metadata && parsed.content !== undefined) {
+            setData(parsed)
+          } else {
+            const migrated: SettingData = {
+              metadata: {},
+              content: ''
+            }
+            for (const [key, value] of Object.entries(parsed)) {
+              if (key === 'content') {
+                migrated.content = value as string
+              } else {
+                migrated.metadata[key] = value as string
+              }
+            }
+            setData(migrated)
+          }
         } else {
-          setData({})
+          setData({ metadata: {}, content: '' })
         }
       } catch (e) {
         console.error('Failed to reload setting content', e)
@@ -195,22 +212,49 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     setDirtyTab(groupId, tabId, false)
   }
 
-  const handleChange = (field: string, value: string) => {
-    const newData = { ...data, [field]: value }
+  const handleMetadataChange = (key: string, value: string) => {
+    const newData = {
+      ...data,
+      metadata: { ...data.metadata, [key]: value }
+    }
     setData(newData)
     setDraft(nodeId, JSON.stringify(newData))
     setDirtyTab(groupId, tabId, true)
   }
 
-  const openMultiLineEdit = (field: string) => {
+  const handleAddMetadata = () => {
+    if (!newMetadataKey.trim()) return
+    const key = newMetadataKey.trim()
+    if (Object.prototype.hasOwnProperty.call(data.metadata, key)) return
+
+    const newData = {
+      ...data,
+      metadata: { ...data.metadata, [key]: '' }
+    }
+    setData(newData)
+    setDraft(nodeId, JSON.stringify(newData))
+    setDirtyTab(groupId, tabId, true)
+    setNewMetadataKey('')
+  }
+
+  const handleDeleteMetadata = (key: string) => {
+    const newMetadata = { ...data.metadata }
+    delete newMetadata[key]
+    const newData = { ...data, metadata: newMetadata }
+    setData(newData)
+    setDraft(nodeId, JSON.stringify(newData))
+    setDirtyTab(groupId, tabId, true)
+  }
+
+  const openMultiLineEdit = () => {
     openTabInSplit(
       {
-        id: `${nodeId}-${field}`,
-        title: `${node?.name} - ${getFieldLabel(field)}`,
+        id: `${nodeId}-content`,
+        title: `${node?.name} - ${t('setting.content')}`,
         type: 'file',
         nodeId: nodeId,
         kind: 'setting',
-        field: field
+        field: 'content'
       },
       groupId
     )
@@ -367,8 +411,74 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     [resolveWikiRef, handleRefClick]
   )
 
+  const renderSection = (section: SettingSection) => {
+    return (
+      <section key={section.id} id={section.id} style={{ marginBottom: '24px' }}>
+        <div
+          style={{
+            borderBottom: '1px solid #54595d',
+            marginBottom: '12px',
+            paddingBottom: '2px'
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: section.level === 1 ? '28px' : '22px',
+              fontWeight: 'normal',
+              fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
+              color: '#fff'
+            }}
+          >
+            {section.title}
+          </h2>
+        </div>
+
+        <div
+          style={{
+            fontSize: `${appSettings.editorFontSize}px`,
+            lineHeight: appSettings.editorLineHeight,
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            color: section.content ? '#d1d1d1' : '#666',
+            fontFamily: appSettings.editorFontFamily
+          }}
+        >
+          {section.content ? (
+            renderContentWithRefs(section.content)
+          ) : (
+            <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  const renderContentWithoutSections = () => {
+    return (
+      <div
+        style={{
+          fontSize: `${appSettings.editorFontSize}px`,
+          lineHeight: appSettings.editorLineHeight,
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word',
+          color: data.content ? '#d1d1d1' : '#666',
+          fontFamily: appSettings.editorFontFamily
+        }}
+      >
+        {data.content ? (
+          renderContentWithRefs(data.content)
+        ) : (
+          <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
+        )}
+      </div>
+    )
+  }
+
   if (loading) return <div style={{ padding: '20px', color: '#ccc' }}>{t('common.loading')}</div>
   if (!node) return <div style={{ padding: '20px', color: '#ccc' }}>{t('errors.fileNotFound')}</div>
+
+  const metadataKeys = Object.keys(data.metadata)
 
   return (
     <div
@@ -403,27 +513,47 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
           >
             {node.name}
           </h1>
-          <button
-            onClick={() => {
-              if (isEditing) {
-                handleSave(data)
-              }
-              setIsEditing(!isEditing)
-            }}
-            style={{
-              padding: '2px 10px',
-              backgroundColor: 'transparent',
-              color: '#3498db',
-              border: 'none',
-              fontSize: '14px',
-              cursor: 'pointer',
-              textDecoration: 'none'
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-            onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
-          >
-            [ {isEditing ? t('common.save') : t('common.rename')} ]
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {isEditing && (
+              <button
+                onClick={openMultiLineEdit}
+                style={{
+                  padding: '2px 10px',
+                  backgroundColor: 'transparent',
+                  color: '#3498db',
+                  border: 'none',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  textDecoration: 'none'
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+              >
+                [ {t('setting.independentEdit')} ]
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (isEditing) {
+                  handleSave(data)
+                }
+                setIsEditing(!isEditing)
+              }}
+              style={{
+                padding: '2px 10px',
+                backgroundColor: 'transparent',
+                color: '#3498db',
+                border: 'none',
+                fontSize: '14px',
+                cursor: 'pointer',
+                textDecoration: 'none'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              [ {isEditing ? t('common.save') : t('common.edit')} ]
+            </button>
+          </div>
         </header>
 
         <div className="wiki-tabs">
@@ -445,103 +575,164 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
           <SettingGallery nodeId={nodeId} />
         ) : (
           <div style={{ position: 'relative', display: 'block' }}>
-            {config.single.length > 0 && (
-              <aside
-                className="wiki-infobox"
+            <aside
+              className="wiki-infobox"
+              style={{
+                width: '280px',
+                backgroundColor: '#2a2a2e',
+                border: '1px solid #54595d',
+                padding: '8px',
+                fontSize: '13px',
+                float: 'right',
+                marginLeft: '24px',
+                marginBottom: '20px'
+              }}
+            >
+              <div
                 style={{
-                  width: '280px',
-                  backgroundColor: '#2a2a2e',
-                  border: '1px solid #54595d',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
                   padding: '8px',
-                  fontSize: '13px',
-                  float: 'right',
-                  marginLeft: '24px',
-                  marginBottom: '20px'
+                  backgroundColor: '#3a3a3e',
+                  marginBottom: '8px',
+                  border: '1px solid #54595d'
                 }}
               >
-                <div
-                  style={{
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                    padding: '8px',
-                    backgroundColor: '#3a3a3e',
-                    marginBottom: '8px',
-                    border: '1px solid #54595d'
-                  }}
-                >
-                  {node.name}
+                {node.name}
+              </div>
+              {themeImage && themeImage.dataUrl && (
+                <div style={{ marginBottom: '8px' }}>
+                  <img
+                    src={themeImage.dataUrl}
+                    alt={themeImage.caption || node.name}
+                    style={{ width: '100%', display: 'block', borderRadius: '2px' }}
+                  />
+                  {themeImage.caption && (
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#888',
+                        textAlign: 'center',
+                        padding: '4px 0'
+                      }}
+                    >
+                      {themeImage.caption}
+                    </div>
+                  )}
                 </div>
-                {themeImage && themeImage.dataUrl && (
-                  <div style={{ marginBottom: '8px' }}>
-                    <img
-                      src={themeImage.dataUrl}
-                      alt={themeImage.caption || node.name}
-                      style={{ width: '100%', display: 'block', borderRadius: '2px' }}
-                    />
-                    {themeImage.caption && (
-                      <div
+              )}
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {metadataKeys.map((key) => (
+                    <tr key={key} style={{ borderBottom: '1px solid #444' }}>
+                      <th
                         style={{
-                          fontSize: '11px',
-                          color: '#888',
-                          textAlign: 'center',
-                          padding: '4px 0'
+                          textAlign: 'left',
+                          padding: '6px 4px',
+                          width: '35%',
+                          verticalAlign: 'top',
+                          color: '#aaa',
+                          fontWeight: 'bold'
                         }}
                       >
-                        {themeImage.caption}
-                      </div>
-                    )}
-                  </div>
-                )}
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <tbody>
-                    {config.single.map((field: string) => (
-                      <tr key={field} style={{ borderBottom: '1px solid #444' }}>
-                        <th
-                          style={{
-                            textAlign: 'left',
-                            padding: '6px 4px',
-                            width: '35%',
-                            verticalAlign: 'top',
-                            color: '#aaa',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          {getFieldLabel(field)}
-                        </th>
-                        <td style={{ padding: '6px 4px' }}>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={data[field] || ''}
-                              onChange={(e) => handleChange(field, e.target.value)}
+                        {isEditing ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>{key}</span>
+                            <button
+                              onClick={() => handleDeleteMetadata(key)}
                               style={{
-                                width: '100%',
-                                backgroundColor: '#1e1e1e',
-                                border: '1px solid #54595d',
-                                color: '#fff',
-                                padding: '2px 4px',
-                                fontSize: '13px'
+                                padding: '0',
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                color: '#e74c3c',
+                                cursor: 'pointer',
+                                fontSize: '12px'
                               }}
-                            />
-                          ) : (
-                            <span>
-                              {data[field] || (
-                                <span style={{ color: '#666', fontStyle: 'italic' }}>
-                                  {t('setting.notFilled')}
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </aside>
-            )}
+                              title={t('setting.deleteMetadata')}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          key
+                        )}
+                      </th>
+                      <td style={{ padding: '6px 4px' }}>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={data.metadata[key] || ''}
+                            onChange={(e) => handleMetadataChange(key, e.target.value)}
+                            style={{
+                              width: '100%',
+                              backgroundColor: '#1e1e1e',
+                              border: '1px solid #54595d',
+                              color: '#fff',
+                              padding: '2px 4px',
+                              fontSize: '13px'
+                            }}
+                          />
+                        ) : (
+                          <span>
+                            {data.metadata[key] ? (
+                              renderContentWithRefs(data.metadata[key])
+                            ) : (
+                              <span style={{ color: '#666', fontStyle: 'italic' }}>
+                                {t('setting.notFilled')}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {isEditing && (
+                <div style={{ marginTop: '8px', padding: '8px', borderTop: '1px solid #54595d' }}>
+                  <div style={{ marginBottom: '4px', fontSize: '11px', color: '#888' }}>
+                    {t('setting.addMetadata')}
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      type="text"
+                      value={newMetadataKey}
+                      onChange={(e) => setNewMetadataKey(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddMetadata()
+                        }
+                      }}
+                      placeholder={t('setting.metadataKey')}
+                      style={{
+                        flex: 1,
+                        backgroundColor: '#1e1e1e',
+                        border: '1px solid #54595d',
+                        color: '#fff',
+                        padding: '2px 4px',
+                        fontSize: '12px'
+                      }}
+                    />
+                    <button
+                      onClick={handleAddMetadata}
+                      style={{
+                        padding: '2px 8px',
+                        backgroundColor: '#3498db',
+                        border: 'none',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+            </aside>
 
             <div className="wiki-content">
-              {config.multi.length >= 3 && !isEditing && (
+              {parsedContent.sections.length >= 1 && !isEditing && (
                 <nav
                   className="wiki-toc"
                   style={{
@@ -572,20 +763,30 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       color: '#3498db'
                     }}
                   >
-                    {config.multi.map((field: string, index: number) => (
-                      <li key={field} style={{ marginBottom: '4px' }}>
+                    {parsedContent.sections.map((section, index) => (
+                      <li
+                        key={section.id}
+                        style={{
+                          marginBottom: '4px',
+                          paddingLeft: section.level === 2 ? '16px' : '0'
+                        }}
+                      >
                         <a
-                          href={`#${field}`}
+                          href={`#${section.id}`}
                           onClick={(e) => {
                             e.preventDefault()
-                            document.getElementById(field)?.scrollIntoView({ behavior: 'smooth' })
+                            document
+                              .getElementById(section.id)
+                              ?.scrollIntoView({ behavior: 'smooth' })
                           }}
                           style={{ color: 'inherit', textDecoration: 'none' }}
                           onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                           onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
                         >
-                          <span style={{ color: '#ccc', marginRight: '8px' }}>{index + 1}</span>
-                          {getFieldLabel(field)}
+                          <span style={{ color: '#ccc', marginRight: '8px' }}>
+                            {sectionNumbers[index]}
+                          </span>
+                          {section.title}
                         </a>
                       </li>
                     ))}
@@ -593,70 +794,9 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                 </nav>
               )}
 
-              {config.multi.map((field: string) => (
-                <section key={field} id={field} style={{ marginBottom: '24px' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      borderBottom: '1px solid #54595d',
-                      marginBottom: '12px',
-                      paddingBottom: '2px'
-                    }}
-                  >
-                    <h2
-                      style={{
-                        margin: 0,
-                        fontSize: '22px',
-                        fontWeight: 'normal',
-                        fontFamily: '"Linux Libertine", "Georgia", "Times", serif',
-                        color: '#fff'
-                      }}
-                    >
-                      {getFieldLabel(field)}
-                    </h2>
-                    <button
-                      onClick={() => openMultiLineEdit(field)}
-                      style={{
-                        fontSize: '12px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#3498db',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                      onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                    >
-                      [ {t('setting.independentEdit')} ]
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: `${appSettings.editorFontSize}px`,
-                      lineHeight: appSettings.editorLineHeight,
-                      whiteSpace: 'pre-wrap',
-                      color: data[field] ? '#d1d1d1' : '#666',
-                      fontFamily: appSettings.editorFontFamily,
-                      border: isEditing ? '1px dashed #444' : 'none',
-                      padding: isEditing ? '8px' : '0',
-                      backgroundColor: isEditing ? 'rgba(255,255,255,0.02)' : 'transparent'
-                    }}
-                  >
-                    {isEditing ? (
-                      data[field] || (
-                        <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
-                      )
-                    ) : data[field] ? (
-                      renderContentWithRefs(data[field])
-                    ) : (
-                      <span style={{ fontStyle: 'italic' }}>{t('setting.noContent')}</span>
-                    )}
-                  </div>
-                </section>
-              ))}
+              {parsedContent.sections.length > 0
+                ? parsedContent.sections.map(renderSection)
+                : renderContentWithoutSections()}
             </div>
           </div>
         )}

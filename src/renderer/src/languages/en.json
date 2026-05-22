@@ -11,6 +11,7 @@
     "save": "Save",
     "delete": "Delete",
     "rename": "Rename",
+    "edit": "Edit",
     "close": "Close",
     "loading": "Loading...",
     "error": "Error",
@@ -183,7 +184,12 @@
     "notFilled": "Not filled",
     "tableOfContents": "Contents",
     "independentEdit": "Edit",
-    "noContent": "No content yet."
+    "noContent": "No content yet.",
+    "content": "Content",
+    "contentPlaceholder": "Use # and ## to create headings and organize content...",
+    "addMetadata": "Add metadata field",
+    "metadataKey": "Field name",
+    "deleteMetadata": "Delete field"
   },
   "archive": {
     "title": "Archive",

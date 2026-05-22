@@ -765,23 +765,6 @@ var categories = api.worldsetting.getCategories();
 // ['人物', '地点', '物品', ...]
 ```
 
-### worldsetting.getFieldConfig(path)
-
-获取设定文件的字段配置。
-
-**参数：**
-- `path` (string): 文件路径
-
-**返回：**
-- `{ single: string[]; multi: string[] }`: 字段配置
-
-**示例：**
-
-```javascript
-var config = api.worldsetting.getFieldConfig('人物/主角');
-// { single: ['name', 'gender', 'age'], multi: ['background', 'motivation'] }
-```
-
 ### worldsetting.rename(path, newPath)
 
 重命名设定文件或文件夹。

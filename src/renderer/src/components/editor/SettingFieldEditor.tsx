@@ -11,6 +11,13 @@ interface SettingFieldEditorProps {
   tabId: string
 }
 
+interface SettingData {
+  metadata: {
+    [key: string]: string
+  }
+  content: string
+}
+
 const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
   nodeId,
   field,
@@ -19,7 +26,7 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
 }) => {
   const { t } = useTranslation()
   const [content, setContent] = useState('')
-  const [fullData, setFullData] = useState<Record<string, string>>({})
+  const [fullData, setFullData] = useState<SettingData>({ metadata: {}, content: '' })
   const [loading, setLoading] = useState(true)
   const [hasLoaded, setHasLoaded] = useState(false)
 
@@ -34,10 +41,6 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
     useCallback((s) => s.storyNodes.find((n) => n.id === nodeId), [nodeId])
   )
 
-  const getFieldLabel = (fieldKey: string): string => {
-    return t(`setting.field.${fieldKey}`, fieldKey)
-  }
-
   useEffect(() => {
     if (hasLoaded || !currentProject || !nodeId) return
 
@@ -48,7 +51,11 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
           try {
             const draftData = JSON.parse(draft)
             setFullData(draftData)
-            setContent(draftData[field] || '')
+            if (field === 'content') {
+              setContent(draftData.content || '')
+            } else {
+              setContent(draftData.metadata?.[field] || '')
+            }
             setLoading(false)
             setHasLoaded(true)
             return
@@ -62,9 +69,31 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
           nodeId
         )
         if (jsonContent) {
-          const data = JSON.parse(jsonContent)
+          const parsed = JSON.parse(jsonContent)
+          let data: SettingData
+
+          if (parsed.metadata && parsed.content !== undefined) {
+            data = parsed
+          } else {
+            data = {
+              metadata: {},
+              content: ''
+            }
+            for (const [key, value] of Object.entries(parsed)) {
+              if (key === 'content') {
+                data.content = value as string
+              } else {
+                data.metadata[key] = value as string
+              }
+            }
+          }
+
           setFullData(data)
-          setContent(data[field] || '')
+          if (field === 'content') {
+            setContent(data.content || '')
+          } else {
+            setContent(data.metadata?.[field] || '')
+          }
         }
       } catch (e) {
         console.error('Failed to load field content', e)
@@ -91,9 +120,31 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
           nodeId
         )
         if (jsonContent) {
-          const data = JSON.parse(jsonContent)
+          const parsed = JSON.parse(jsonContent)
+          let data: SettingData
+
+          if (parsed.metadata && parsed.content !== undefined) {
+            data = parsed
+          } else {
+            data = {
+              metadata: {},
+              content: ''
+            }
+            for (const [key, value] of Object.entries(parsed)) {
+              if (key === 'content') {
+                data.content = value as string
+              } else {
+                data.metadata[key] = value as string
+              }
+            }
+          }
+
           setFullData(data)
-          setContent(data[field] || '')
+          if (field === 'content') {
+            setContent(data.content || '')
+          } else {
+            setContent(data.metadata?.[field] || '')
+          }
         }
       } catch (e) {
         console.error('Failed to reload field content', e)
@@ -105,7 +156,12 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
   const handleSave = async () => {
     if (!currentProject || !nodeId) return
     try {
-      const newData = { ...fullData, [field]: content }
+      const newData: SettingData = { ...fullData }
+      if (field === 'content') {
+        newData.content = content
+      } else {
+        newData.metadata = { ...fullData.metadata, [field]: content }
+      }
       const jsonString = JSON.stringify(newData)
       await saveNodeContent(nodeId, jsonString)
       setFullData(newData)
@@ -118,7 +174,12 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
 
   const handleChange = (newContent: string) => {
     setContent(newContent)
-    const newData = { ...fullData, [field]: newContent }
+    const newData: SettingData = { ...fullData }
+    if (field === 'content') {
+      newData.content = newContent
+    } else {
+      newData.metadata = { ...fullData.metadata, [field]: newContent }
+    }
     setDraft(nodeId, JSON.stringify(newData))
     setDirtyTab(groupId, tabId, true)
   }
@@ -139,7 +200,9 @@ const SettingFieldEditor: React.FC<SettingFieldEditorProps> = ({
         content={content}
         onChange={handleChange}
         onSave={handleSave}
-        placeholder={t('setting.placeholder', { field: getFieldLabel(field) })}
+        placeholder={t('setting.placeholder', {
+          field: field === 'content' ? t('setting.content') : field
+        })}
         tabId={tabId}
         groupId={groupId}
       />

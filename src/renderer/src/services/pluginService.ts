@@ -211,8 +211,6 @@ export interface PluginAPI {
     list: (path: string) => Array<{ name: string; type: 'file' | 'folder'; path: string }>
     // Get all categories (first-level folders)
     getCategories: () => string[]
-    // Get field configuration for a file based on its category
-    getFieldConfig: (path: string) => { single: string[]; multi: string[] }
     rename: (path: string, newPath: string) => Promise<void>
     delete: (path: string) => Promise<void>
     // Returns error message if creation is not allowed, null if successful
@@ -417,78 +415,6 @@ const getChildrenByPath = (
     }))
 }
 
-// Setting field configurations (from SettingEditor)
-// Internal keys are in English, UI display uses i18n
-const SETTING_FIELD_CONFIG = {
-  character: {
-    single: ['name', 'gender', 'age'],
-    multi: [
-      'background',
-      'motivation',
-      'arc',
-      'appearance',
-      'personality',
-      'speech',
-      'skills',
-      'notes'
-    ]
-  },
-  location: {
-    single: [],
-    multi: [
-      'locationDescription',
-      'visual',
-      'auditory',
-      'olfactory',
-      'atmosphere',
-      'danger',
-      'notes'
-    ]
-  },
-  item: {
-    single: ['type', 'quality'],
-    multi: ['description', 'stats', 'symbolism']
-  },
-  default: {
-    single: [],
-    multi: ['description', 'notes']
-  }
-}
-
-// Category name mapping: Chinese name -> English key (for backward compatibility with existing data)
-const CATEGORY_NAME_MAP: Record<string, string> = {
-  人物: 'character',
-  地点: 'location',
-  物品: 'item',
-  character: 'character',
-  location: 'location',
-  item: 'item'
-}
-
-// Helper to get category from path
-const getCategoryFromPath = (nodes: StoryNode[], filePath: string): string => {
-  const node = findNodeByPath(nodes, filePath, 'setting')
-  if (!node) return 'default'
-
-  // Find root parent
-  let current: StoryNode | undefined = node
-  while (current?.parentId) {
-    const parent = nodes.find((n) => n.id === current!.parentId)
-    if (!parent) break
-    current = parent
-  }
-
-  if (!current?.name) return 'default'
-
-  // Map the category name to English key
-  const mappedKey = CATEGORY_NAME_MAP[current.name]
-  if (mappedKey && SETTING_FIELD_CONFIG[mappedKey as keyof typeof SETTING_FIELD_CONFIG]) {
-    return mappedKey
-  }
-
-  return 'default'
-}
-
 // Create abstract file API for story (no restrictions)
 const createStoryFileAPI = () => {
   return {
@@ -613,15 +539,6 @@ const createWorldSettingFileAPI = () => {
       return nodes
         .filter((n) => n.kind === 'setting' && n.parentId === null && n.type === 'folder')
         .map((n) => n.name)
-    },
-
-    getFieldConfig: (filePath: string): { single: string[]; multi: string[] } => {
-      const nodes = useProjectStore.getState().storyNodes
-      const category = getCategoryFromPath(nodes, filePath)
-      return (
-        (SETTING_FIELD_CONFIG as Record<string, { single: string[]; multi: string[] }>)[category] ||
-        SETTING_FIELD_CONFIG.default
-      )
     },
 
     rename: async (oldPath: string, newPath: string): Promise<void> => {
