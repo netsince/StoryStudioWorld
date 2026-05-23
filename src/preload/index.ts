@@ -463,6 +463,17 @@ const api = {
     getAppPath: (
       name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'
     ): Promise<string> => ipcRenderer.invoke('plugin-native:getAppPath', name)
+  },
+  // Mobile Server APIs
+  mobileServer: {
+    start: (): Promise<{ success: boolean; port?: number; token?: string; error?: string }> =>
+      ipcRenderer.invoke('start-mobile-server'),
+    stop: (): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('stop-mobile-server'),
+    getStatus: (): Promise<{ isRunning: boolean; port: number; token: string }> =>
+      ipcRenderer.invoke('get-mobile-server-status'),
+    getLocalIP: (): Promise<string> =>
+      ipcRenderer.invoke('get-local-ip')
   }
 }
 

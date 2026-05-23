@@ -165,6 +165,13 @@ declare global {
           name: 'home' | 'appData' | 'userData' | 'temp' | 'desktop' | 'documents'
         ) => Promise<string>
       }
+      // Mobile Server APIs
+      mobileServer: {
+        start: () => Promise<{ success: boolean; port?: number; token?: string; error?: string }>
+        stop: () => Promise<{ success: boolean; error?: string }>
+        getStatus: () => Promise<{ isRunning: boolean; port: number; token: string }>
+        getLocalIP: () => Promise<string>
+      }
     }
   }
 }

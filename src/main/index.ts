@@ -42,6 +42,7 @@ import {
   compareWithCurrent
 } from './snapshot'
 import { pluginLoader } from './pluginLoader'
+import { MobileServer } from './mobileServer'
 import {
   exportToDocx,
   exportToPdf,
@@ -941,6 +942,50 @@ function createWindow(): void {
 
   ipcMain.on('open-new-window', () => {
     createWindow()
+  })
+
+  // Mobile Server IPC handlers
+  let mobileServer: MobileServer | null = null
+
+  ipcMain.handle('start-mobile-server', async () => {
+    if (!mobileServer) {
+      mobileServer = new MobileServer()
+    }
+
+    try {
+      const { port, token } = await mobileServer.start()
+      return { success: true, port, token }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  ipcMain.handle('stop-mobile-server', async () => {
+    if (mobileServer) {
+      await mobileServer.stop()
+      return { success: true }
+    }
+    return { success: false, error: 'Server not running' }
+  })
+
+  ipcMain.handle('get-mobile-server-status', async () => {
+    if (mobileServer) {
+      return mobileServer.getServerInfo()
+    }
+    return { isRunning: false, port: 0, token: '' }
+  })
+
+  ipcMain.handle('get-local-ip', async () => {
+    const os = require('os')
+    const interfaces = os.networkInterfaces()
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address
+        }
+      }
+    }
+    return '127.0.0.1'
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

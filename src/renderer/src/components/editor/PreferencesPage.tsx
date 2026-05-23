@@ -7,6 +7,7 @@ import {
   type LanguageMetadata,
   type SupportedLanguage
 } from '../../i18n'
+import { MobileServerPanel } from '../MobileServerPanel'
 
 const SETTINGS_KEY = 'ssw:app-settings'
 
@@ -611,6 +612,16 @@ const PreferencesPage: React.FC = () => {
           </div>
         )
 
+      case 'mobile':
+        return (
+          <div style={{ padding: '24px', paddingBottom: '48px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '20px' }}>
+              移动服务器
+            </h3>
+            <MobileServerPanel />
+          </div>
+        )
+
       default:
         return null
     }
@@ -619,7 +630,8 @@ const PreferencesPage: React.FC = () => {
   const sections = [
     { id: 'editor', label: t('preferences.editor'), icon: '📝' },
     { id: 'interface', label: t('preferences.interface'), icon: '🖥️' },
-    { id: 'localization', label: t('preferences.localization'), icon: '🌐' }
+    { id: 'localization', label: t('preferences.localization'), icon: '🌐' },
+    { id: 'mobile', label: '移动服务器', icon: '📱' }
   ]
 
   return (
