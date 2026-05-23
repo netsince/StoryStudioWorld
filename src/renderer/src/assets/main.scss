@@ -3090,16 +3090,8 @@ input:focus + .ssw-slider {
   .plain-text-editor {
     height: 100%;
     
-    .plain-text-editor-container {
+    .monaco-editor-container {
       height: 100%;
-    }
-    
-    .plain-text-editor-textarea {
-      border: none;
-      border-radius: 0;
-      padding: 16px;
-      font-size: 14px;
-      line-height: 1.8;
     }
   }
 }

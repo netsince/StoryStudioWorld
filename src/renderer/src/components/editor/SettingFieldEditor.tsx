@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
-import PlainTextEditor from '../PlainTextEditor'
+import PlainTextEditor from '../MonacoEditor'
 
 interface SettingFieldEditorProps {
   nodeId: string

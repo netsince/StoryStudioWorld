@@ -50,6 +50,8 @@ export interface GroupEditorState {
 export interface TabScrollPosition {
   scrollTop: number
   scrollLeft: number
+  /** Monaco 编辑器的完整视图状态（滚动位置、光标位置、折叠状态等），可 JSON 序列化 */
+  monacoViewState?: unknown
 }
 
 interface EditorState {

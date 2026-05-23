@@ -4,7 +4,7 @@ import { useEditorStore } from '../stores/editorStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useChapterMetaStore, scheduleSave, clearSaveTimer } from '../stores/chapterMetaStore'
 import { findGroupNode } from '../editor/editorTree'
-import PlainTextEditor from './PlainTextEditor'
+import PlainTextEditor from './MonacoEditor'
 
 type MetaTab = 'summary' | 'outline'
 
