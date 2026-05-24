@@ -110,14 +110,17 @@ function buildMonacoOptions(
     minimap: { enabled: false },
     scrollbar: {
       vertical: 'visible',
-      horizontal: 'visible',
+      horizontal: 'hidden',
       verticalScrollbarSize: 10,
       horizontalScrollbarSize: 10,
       alwaysConsumeMouseWheel: false
     },
+    scrollPredominantAxis: true,
     lineNumbers: 'off',
     folding: false,
     wordWrap: 'on',
+    wrappingStrategy: 'advanced',
+    wordBreak: 'keepAll',
     selectionHighlight: false,
     contextmenu: false,
     scrollBeyondLastLine: false,
@@ -128,16 +131,49 @@ function buildMonacoOptions(
     smoothScrolling: true,
     cursorBlinking: 'smooth',
     cursorSmoothCaretAnimation: 'on',
-    links: false,
+    links: true,
     stickyScroll: { enabled: false },
     matchBrackets: 'never',
     formatOnType: false,
+    formatOnPaste: false,
     quickSuggestions: false,
     suggestOnTriggerCharacters: false,
+    suggest: {
+      preview: false,
+      snippetsPreventQuickSuggestions: true
+    },
+    snippetSuggestions: 'none',
+    acceptSuggestionOnCommitCharacter: false,
+    lightbulb: { enabled: 'off' as unknown as Exclude<monaco.editor.IEditorLightbulbOptions['enabled'], undefined> },
     autoIndent: autoIndentSettings.enabled ? 'advanced' : 'none',
-    formatOnPaste: false,
     tabSize,
     insertSpaces,
+    unicodeHighlight: {
+      nonBasicASCII: false,
+      ambiguousCharacters: false,
+      invisibleCharacters: false
+    },
+    guides: {
+      bracketPairs: false,
+      indentation: false
+    },
+    renderLineHighlight: 'none',
+    occurrencesHighlight: 'off',
+    copyWithSyntaxHighlighting: false,
+    find: {
+      seedSearchStringFromSelection: 'always'
+    },
+    mouseWheelZoom: true,
+    multiCursorMergeOverlapping: false,
+    multiCursorModifier: 'ctrlCmd',
+    showDeprecated: false,
+    unfoldOnClickAfterEndOfLine: false,
+    wordBasedSuggestions: 'off',
+    dragAndDrop: false,
+    hideCursorInOverviewRuler: false,
+    renderFinalNewline: 'on',
+    wordWrapBreakBeforeCharacters: '',
+    wordWrapBreakAfterCharacters: '',
     ...overrides
   }
 }
@@ -804,7 +840,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       <div
         ref={containerRef}
         className="monaco-editor-container"
-        style={{ flex: 1, minHeight: 0 }}
+        style={{ flex: 1, minHeight: 0, overflowWrap: 'break-word', wordBreak: 'break-all' }}
         onContextMenu={handleContextMenu}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
