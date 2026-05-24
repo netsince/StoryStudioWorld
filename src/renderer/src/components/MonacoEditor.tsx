@@ -172,8 +172,8 @@ function buildMonacoOptions(
     dragAndDrop: false,
     hideCursorInOverviewRuler: false,
     renderFinalNewline: 'on',
-    wordWrapBreakBeforeCharacters: '',
-    wordWrapBreakAfterCharacters: '',
+    wordWrapBreakBeforeCharacters: '([{《「『【〔｛〈［（',
+    wordWrapBreakAfterCharacters: ' ,./–—…）〕］｝〉》」』】〙〗〛！？，。、：；’”）',
     ...overrides
   }
 }
@@ -840,7 +840,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       <div
         ref={containerRef}
         className="monaco-editor-container"
-        style={{ flex: 1, minHeight: 0, overflowWrap: 'break-word', wordBreak: 'break-all' }}
+        style={{ flex: 1, minHeight: 0 }}
         onContextMenu={handleContextMenu}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

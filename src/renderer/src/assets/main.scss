@@ -1608,19 +1608,9 @@ input:focus + .ssw-slider {
   width: 100%;
   background: var(--editor-bg, var(--panel-bg));
   
-  .monaco-editor .view-lines {
-    overflow-wrap: anywhere !important;
-    word-break: break-all !important;
-  }
-  
   .monaco-editor .overflow-guard > .monaco-scrollable-element {
     overflow-x: hidden !important;
   }
-}
-
-div[style*="position: absolute"][style*="top: 10000px"] {
-  word-break: break-all !important;
-  overflow-wrap: anywhere !important;
 }
 
 .plain-text-editor-textarea {
