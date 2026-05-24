@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Tab, ProjectData } from '../../models'
 import { useProjectStore } from '../../stores/projectStore'
@@ -52,27 +52,50 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
     }
     return ''
   })
+  const lastUpdatedAtRef = useRef<string | null>(null)
+  const storyNodes = useProjectStore((s) => s.storyNodes)
+
+  const loadContent = useCallback(async (): Promise<void> => {
+    if (tab.type !== 'file' || !tab.nodeId || !currentProject) return
+
+    const draft = useProjectStore.getState().draftsByNodeId[tab.nodeId]
+    if (typeof draft === 'string') {
+      setEditorContent(draft)
+      triggerTabChange(tab)
+      return
+    }
+
+    const content = await window.api.readNodeContent(
+      currentProject.projectSettingsPath,
+      tab.nodeId
+    )
+    setEditorContent(content || '')
+    triggerTabChange(tab)
+  }, [tab, currentProject])
 
   useEffect(() => {
-    const loadContent = async (): Promise<void> => {
-      if (tab.type === 'file' && tab.nodeId && currentProject) {
-        const draft = useProjectStore.getState().draftsByNodeId[tab.nodeId]
-        if (typeof draft === 'string') {
-          setEditorContent(draft)
-          triggerTabChange(tab)
-          return
-        }
-
-        const content = await window.api.readNodeContent(
-          currentProject.projectSettingsPath,
-          tab.nodeId
-        )
-        setEditorContent(content || '')
-        triggerTabChange(tab)
-      }
-    }
     void loadContent()
-  }, [tab.id, tab.nodeId, tab.type, currentProject])
+  }, [tab.id, tab.nodeId, tab.type, currentProject, loadContent])
+
+  useEffect(() => {
+    if (tab.type !== 'file' || !tab.nodeId) return
+
+    const node = storyNodes.find((n) => n.id === tab.nodeId)
+    if (!node) return
+
+    const currentUpdatedAt = node.updatedAt || null
+    const hasDraft = typeof useProjectStore.getState().draftsByNodeId[tab.nodeId] === 'string'
+
+    if (lastUpdatedAtRef.current === null) {
+      lastUpdatedAtRef.current = currentUpdatedAt
+      return
+    }
+
+    if (!hasDraft && currentUpdatedAt !== lastUpdatedAtRef.current) {
+      lastUpdatedAtRef.current = currentUpdatedAt
+      void loadContent()
+    }
+  }, [storyNodes, tab.type, tab.nodeId, loadContent])
 
   const handleEditorChange = useCallback(
     (content: string): void => {

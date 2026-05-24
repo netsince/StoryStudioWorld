@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import { useEditorStore } from '../../stores/editorStore'
@@ -145,8 +145,19 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     }
   }, [draftsByNodeId[nodeId], hasLoaded, currentProject, nodeId])
 
+  const lastUpdatedAtRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
+
+    const currentUpdatedAt = node?.updatedAt || null
+    if (lastUpdatedAtRef.current === null) {
+      lastUpdatedAtRef.current = currentUpdatedAt
+      return
+    }
+
+    if (currentUpdatedAt === lastUpdatedAtRef.current) return
+    lastUpdatedAtRef.current = currentUpdatedAt
 
     const draft = draftsByNodeId[nodeId]
     if (typeof draft === 'string') {
@@ -182,7 +193,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       }
     }
     reloadContent()
-  }, [node?.updatedAt])
+  }, [node?.updatedAt, hasLoaded, currentProject, nodeId, draftsByNodeId])
 
   useEffect(() => {
     if (!isEditing) {
