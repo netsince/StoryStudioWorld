@@ -7,7 +7,12 @@ import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
 import { useUiStore } from '../stores/uiStore'
 import { commandService, Commands } from '../services/commandService'
-import { getAutoSaveSettings, getAppSettings, getTabBehavior, getAutoIndentSettings } from './editor/PreferencesPage'
+import {
+  getAutoSaveSettings,
+  getAppSettings,
+  getTabBehavior,
+  getAutoIndentSettings
+} from './editor/PreferencesPage'
 import { useEditorStatusBar } from '../hooks/useEditorStatusBar'
 import { getPageLifecycleManager } from '../utils/pageLifecycle'
 import { editorRegistry } from '../services/editorRegistry'
@@ -80,7 +85,9 @@ function countTextStats(text: string): {
   return { chars, words, readingTime, charsWithoutSpaces, paragraphs }
 }
 
-function buildMonacoOptions(overrides?: Partial<monaco.editor.IStandaloneEditorConstructionOptions>): monaco.editor.IStandaloneEditorConstructionOptions {
+function buildMonacoOptions(
+  overrides?: Partial<monaco.editor.IStandaloneEditorConstructionOptions>
+): monaco.editor.IStandaloneEditorConstructionOptions {
   const root = document.documentElement
   const fs = getComputedStyle(root).getPropertyValue('--editor-font-size').trim()
   const lh = getComputedStyle(root).getPropertyValue('--editor-line-height').trim()
@@ -223,7 +230,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       const vs = editor.saveViewState()
       editor.layout()
       if (vs) {
-        try { editor.restoreViewState(vs) } catch { /* ignore */ }
+        try {
+          editor.restoreViewState(vs)
+        } catch {
+          /* ignore */
+        }
       }
     })
     resizeObserver.observe(containerRef.current)
@@ -378,13 +389,18 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
 
     const unregisterUndo = commandService.registerCommand(
-      Commands.UNDO, () => exec('undo'), groupId
+      Commands.UNDO,
+      () => exec('undo'),
+      groupId
     )
     const unregisterRedo = commandService.registerCommand(
-      Commands.REDO, () => exec('redo'), groupId
+      Commands.REDO,
+      () => exec('redo'),
+      groupId
     )
     const unregisterCut = commandService.registerCommand(
-      Commands.CUT, async () => {
+      Commands.CUT,
+      async () => {
         const editor = editorRef.current
         if (!editor) return
         const selection = editor.getSelection()
@@ -404,10 +420,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
             forceMoveMarkers: true
           }
         ])
-      }, groupId
+      },
+      groupId
     )
     const unregisterCopy = commandService.registerCommand(
-      Commands.COPY, async () => {
+      Commands.COPY,
+      async () => {
         const editor = editorRef.current
         if (!editor) return
         const selection = editor.getSelection()
@@ -420,10 +438,12 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         } catch {
           // fallback
         }
-      }, groupId
+      },
+      groupId
     )
     const unregisterPaste = commandService.registerCommand(
-      Commands.PASTE, async () => {
+      Commands.PASTE,
+      async () => {
         const editor = editorRef.current
         if (!editor) return
         try {
@@ -438,16 +458,22 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         } catch {
           // clipboard access denied
         }
-      }, groupId
+      },
+      groupId
     )
     const unregisterSelectAll = commandService.registerCommand(
-      Commands.SELECT_ALL, () => exec('editor.action.selectAll'), groupId
+      Commands.SELECT_ALL,
+      () => exec('editor.action.selectAll'),
+      groupId
     )
     const unregisterFind = commandService.registerCommand(
-      Commands.FIND, () => exec('actions.find'), groupId
+      Commands.FIND,
+      () => exec('actions.find'),
+      groupId
     )
     const unregisterSave = commandService.registerCommand(
-      Commands.SAVE, () => {
+      Commands.SAVE,
+      () => {
         if (onSaveRef.current) {
           onSaveRef.current()
           lastSavedTextRef.current = editorValue()
@@ -455,37 +481,58 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
           updateLastSaved(timeStr)
         }
-      }, groupId
+      },
+      groupId
     )
     const unregisterExpandSelection = commandService.registerCommand(
-      Commands.EXPAND_SELECTION, () => exec('editor.action.smartSelect.expand'), groupId
+      Commands.EXPAND_SELECTION,
+      () => exec('editor.action.smartSelect.expand'),
+      groupId
     )
     const unregisterShrinkSelection = commandService.registerCommand(
-      Commands.SHRINK_SELECTION, () => exec('editor.action.smartSelect.shrink'), groupId
+      Commands.SHRINK_SELECTION,
+      () => exec('editor.action.smartSelect.shrink'),
+      groupId
     )
     const unregisterSelectParagraph = commandService.registerCommand(
-      Commands.SELECT_PARAGRAPH, () => exec('editor.action.selectAll'), groupId
+      Commands.SELECT_PARAGRAPH,
+      () => exec('editor.action.selectAll'),
+      groupId
     )
     const unregisterCursorUp = commandService.registerCommand(
-      Commands.CURSOR_UP, () => exec('cursorUp'), groupId
+      Commands.CURSOR_UP,
+      () => exec('cursorUp'),
+      groupId
     )
     const unregisterCursorDown = commandService.registerCommand(
-      Commands.CURSOR_DOWN, () => exec('cursorDown'), groupId
+      Commands.CURSOR_DOWN,
+      () => exec('cursorDown'),
+      groupId
     )
     const unregisterCursorLeft = commandService.registerCommand(
-      Commands.CURSOR_LEFT, () => exec('cursorLeft'), groupId
+      Commands.CURSOR_LEFT,
+      () => exec('cursorLeft'),
+      groupId
     )
     const unregisterCursorRight = commandService.registerCommand(
-      Commands.CURSOR_RIGHT, () => exec('cursorRight'), groupId
+      Commands.CURSOR_RIGHT,
+      () => exec('cursorRight'),
+      groupId
     )
     const unregisterNavBack = commandService.registerCommand(
-      Commands.NAV_BACK, () => goBack(), groupId
+      Commands.NAV_BACK,
+      () => goBack(),
+      groupId
     )
     const unregisterNavForward = commandService.registerCommand(
-      Commands.NAV_FORWARD, () => goForward(), groupId
+      Commands.NAV_FORWARD,
+      () => goForward(),
+      groupId
     )
     const unregisterZenMode = commandService.registerCommand(
-      Commands.ZEN_MODE, () => useUiStore.getState().toggleZenMode(), groupId
+      Commands.ZEN_MODE,
+      () => useUiStore.getState().toggleZenMode(),
+      groupId
     )
 
     return () => {
@@ -510,34 +557,33 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   }, [goBack, goForward, groupId])
 
-  const insertNewlineWithIndent = useCallback(
-    (fallbackIndent: string) => {
-      const editor = editorRef.current
-      if (!editor) return
-      const selection = editor.getSelection()
-      if (!selection) return
-      const model = editor.getModel()
-      if (!model) return
+  const insertNewlineWithIndent = useCallback((fallbackIndent: string) => {
+    const editor = editorRef.current
+    if (!editor) return
+    const selection = editor.getSelection()
+    if (!selection) return
+    const model = editor.getModel()
+    if (!model) return
 
-      const startLineNum = selection.startLineNumber
-      const startLineContent = model.getLineContent(startLineNum)
-      const indentMatch = startLineContent.match(/^[\t ]+/)
-      const indent = (indentMatch?.[0] ?? '') || fallbackIndent
+    const startLineNum = selection.startLineNumber
+    const startLineContent = model.getLineContent(startLineNum)
+    const indentMatch = startLineContent.match(/^[\t ]+/)
+    const indent = (indentMatch?.[0] ?? '') || fallbackIndent
 
-      editor.executeEdits('auto-indent', [
-        {
-          range: new monaco.Range(
-            selection.startLineNumber, selection.startColumn,
-            selection.endLineNumber, selection.endColumn
-          ),
-          text: `\n${indent}`,
-          forceMoveMarkers: true
-        }
-      ])
-      editor.focus()
-    },
-    []
-  )
+    editor.executeEdits('auto-indent', [
+      {
+        range: new monaco.Range(
+          selection.startLineNumber,
+          selection.startColumn,
+          selection.endLineNumber,
+          selection.endColumn
+        ),
+        text: `\n${indent}`,
+        forceMoveMarkers: true
+      }
+    ])
+    editor.focus()
+  }, [])
 
   // Fix 3: handle Ctrl+S outside Monaco's command system for reliable capture
   const handleKeyDownOnContainer = useCallback(
@@ -683,7 +729,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       onSelect: () => {
         const editor = editorRef.current
         if (!editor) return
-        navigator.clipboard.readText()
+        navigator.clipboard
+          .readText()
           .then((text) => {
             editor.executeEdits('paste', [
               { range: editor.getSelection()!, text, forceMoveMarkers: true }
@@ -712,38 +759,33 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
   ]
 
-  const handleInsertPunctuation = useCallback(
-    (symbol: string) => {
-      const editor = editorRef.current
-      if (!editor) return
-      const selection = editor.getSelection()
-      if (!selection) return
+  const handleInsertPunctuation = useCallback((symbol: string) => {
+    const editor = editorRef.current
+    if (!editor) return
+    const selection = editor.getSelection()
+    if (!selection) return
 
-      const isPair = symbol.length === 2 && ['「」', '『』', '""', '（）', '【】', '《》'].includes(symbol)
-      editor.executeEdits('chinese-punctuation', [
-        {
-          range: new monaco.Range(
-            selection.startLineNumber,
-            selection.startColumn,
-            selection.endLineNumber,
-            selection.endColumn
-          ),
-          text: symbol,
-          forceMoveMarkers: true
-        }
-      ])
-      editor.focus()
-
-      if (isPair) {
-        const newPos = new monaco.Position(
+    const isPair =
+      symbol.length === 2 && ['「」', '『』', '""', '（）', '【】', '《》'].includes(symbol)
+    editor.executeEdits('chinese-punctuation', [
+      {
+        range: new monaco.Range(
           selection.startLineNumber,
-          selection.startColumn + 1
-        )
-        editor.setPosition(newPos)
+          selection.startColumn,
+          selection.endLineNumber,
+          selection.endColumn
+        ),
+        text: symbol,
+        forceMoveMarkers: true
       }
-    },
-    []
-  )
+    ])
+    editor.focus()
+
+    if (isPair) {
+      const newPos = new monaco.Position(selection.startLineNumber, selection.startColumn + 1)
+      editor.setPosition(newPos)
+    }
+  }, [])
 
   const handleClosePunctuationBar = useCallback(() => {
     setPunctuationBarVisible(false)

@@ -65,10 +65,7 @@ const TabContentRenderer: React.FC<TabContentRendererProps> = ({
       return
     }
 
-    const content = await window.api.readNodeContent(
-      currentProject.projectSettingsPath,
-      tab.nodeId
-    )
+    const content = await window.api.readNodeContent(currentProject.projectSettingsPath, tab.nodeId)
     setEditorContent(content || '')
     triggerTabChange(tab)
   }, [tab, currentProject])
