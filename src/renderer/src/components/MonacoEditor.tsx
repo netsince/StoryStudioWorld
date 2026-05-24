@@ -120,7 +120,7 @@ function buildMonacoOptions(
     folding: false,
     wordWrap: 'on',
     wrappingStrategy: 'advanced',
-    wordBreak: 'keepAll',
+    wordBreak: 'normal',
     selectionHighlight: false,
     contextmenu: false,
     scrollBeyondLastLine: false,
