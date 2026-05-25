@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { useProjectStore } from '../stores/projectStore'
 import { APP_NAME } from '../constants/config'
+import { DEFAULT_SETTINGS, applyAppSettings } from './editor/PreferencesPage'
 
 interface DebugAction {
   id: string
@@ -102,6 +103,19 @@ const DebugPanel: React.FC = () => {
             `Node: ${info.node}\n` +
             `Platform: ${info.platform}${projectInfo}${nodesInfo}`
         )
+      }
+    },
+    {
+      id: 'reset-preferences',
+      label: t('debugPanel.resetPreferences', '重置首选项'),
+      description: t('debugPanel.resetPreferencesDesc', '将所有首选项恢复为默认值'),
+      requireConfirm: true,
+      confirmText: t('debugPanel.confirmReset', '确认重置'),
+      onExecute: () => {
+        localStorage.setItem('ssw:app-settings', JSON.stringify(DEFAULT_SETTINGS))
+        applyAppSettings(DEFAULT_SETTINGS)
+        window.dispatchEvent(new CustomEvent('app-settings-changed'))
+        window.alert(t('debugPanel.preferencesReset', '首选项已重置为默认值'))
       }
     }
   ]

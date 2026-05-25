@@ -457,7 +457,11 @@
     "confirmInstruction": "请输入 \"{{text}}\" 以确认此操作",
     "confirmFailed": "确认文本不匹配，操作已取消",
     "showSystemInfo": "显示系统信息",
-    "showSystemInfoDesc": "显示应用和系统的详细信息"
+    "showSystemInfoDesc": "显示应用和系统的详细信息",
+    "resetPreferences": "重置首选项",
+    "resetPreferencesDesc": "将所有首选项恢复为默认值",
+    "confirmReset": "确认重置",
+    "preferencesReset": "首选项已重置为默认值"
   },
   "findReplace": {
     "find": "查找",

@@ -457,7 +457,11 @@
     "confirmInstruction": "Please type \"{{text}}\" to confirm this action",
     "confirmFailed": "Confirmation text does not match, operation cancelled",
     "showSystemInfo": "Show System Info",
-    "showSystemInfoDesc": "Display detailed app and system information"
+    "showSystemInfoDesc": "Display detailed app and system information",
+    "resetPreferences": "Reset Preferences",
+    "resetPreferencesDesc": "Restore all preferences to default values",
+    "confirmReset": "CONFIRM RESET",
+    "preferencesReset": "Preferences have been reset to default values"
   },
   "findReplace": {
     "find": "Find",
