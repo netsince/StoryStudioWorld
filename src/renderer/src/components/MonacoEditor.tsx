@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import monaco from 'vs/editor/editor.api'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import ChinesePunctuationBar from './ChinesePunctuationBar'
 import { useEditorStore } from '../stores/editorStore'
@@ -17,9 +16,11 @@ import { useEditorStatusBar } from '../hooks/useEditorStatusBar'
 import { getPageLifecycleManager } from '../utils/pageLifecycle'
 import { editorRegistry } from '../services/editorRegistry'
 
-self.MonacoEnvironment = {
-  getWorker() {
-    return new editorWorker()
+import editorWorkerUrl from '../workers/editor.worker?worker&url'
+
+;(globalThis as any).MonacoEnvironment = {
+  getWorkerUrl() {
+    return editorWorkerUrl
   }
 }
 

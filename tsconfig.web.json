@@ -4,14 +4,37 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
-    "src/preload/*.d.ts"
+    "src/preload/*.d.ts",
+    "src/vse/**/*",
+    "src/vse/typings/*.d.ts",
+    "src/vse/monaco.d.ts",
+    "src/shared/**/*.ts"
   ],
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["trusted-types"],
+    "skipLibCheck": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "paths": {
       "@renderer/*": [
         "./src/renderer/src/*"
+      ],
+      "vs/base/*": [
+        "./src/vse/base/*"
+      ],
+      "vs/editor/*": [
+        "./src/vse/editor/*"
+      ],
+      "vs/platform/*": [
+        "./src/vse/platform/*"
       ]
     }
   }

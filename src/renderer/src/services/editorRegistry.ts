@@ -1,4 +1,4 @@
-import type * as monaco from 'monaco-editor'
+import type monaco from 'vs/editor/editor.api'
 
 const editors = new Map<string, monaco.editor.IStandaloneCodeEditor>()
 
