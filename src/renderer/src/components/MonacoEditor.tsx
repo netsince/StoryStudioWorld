@@ -742,13 +742,22 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
 
       if (e.key === 'F3') {
         e.preventDefault()
+        e.stopPropagation()
         const editor = editorRef.current
         if (editor) {
           editor.focus()
-          if (e.shiftKey) {
-            editor.trigger('keyboard', 'editor.action.previousMatchFindAction', null)
+          const findController = editor.getContribution('editor.contrib.findController')
+          if (findController && typeof (findController as any).getState === 'function') {
+            const findState = (findController as any).getState()
+            if (!findState || !findState.isRevealed) {
+              editor.trigger('keyboard', 'actions.find', null)
+            } else if (e.shiftKey) {
+              editor.trigger('keyboard', 'editor.action.previousMatchFindAction', null)
+            } else {
+              editor.trigger('keyboard', 'editor.action.nextMatchFindAction', null)
+            }
           } else {
-            editor.trigger('keyboard', 'editor.action.nextMatchFindAction', null)
+            editor.trigger('keyboard', 'actions.find', null)
           }
         }
         return
