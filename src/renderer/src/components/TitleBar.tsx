@@ -21,7 +21,8 @@ const TitleBar: React.FC = () => {
     openPreferencesTab,
     openReadingOrderTab,
     openExportStoryTab,
-    openExportWikiTab
+    openExportWikiTab,
+    focusedGroupId
   } = useEditorStore()
   const { hideAppLogoText } = useUiSettings()
 
@@ -40,6 +41,12 @@ const TitleBar: React.FC = () => {
     view: useRef<HTMLSpanElement>(null),
     goto: useRef<HTMLSpanElement>(null),
     help: useRef<HTMLSpanElement>(null)
+  }
+
+  const executeCommand = (commandId: string): void => {
+    commandService.setActiveGroup(focusedGroupId)
+    commandService.executeCommand(commandId)
+    setActiveMenu(null)
   }
 
   useEffect(() => {
@@ -126,8 +133,7 @@ const TitleBar: React.FC = () => {
       key: 'save',
       label: `${t('menu.save')} (Ctrl+S)`,
       onSelect: () => {
-        commandService.executeCommand(Commands.SAVE)
-        setActiveMenu(null)
+        executeCommand(Commands.SAVE)
       }
     },
     {
@@ -182,18 +188,12 @@ const TitleBar: React.FC = () => {
     {
       key: 'undo',
       label: `${t('menu.undo')} (Ctrl+Z)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.UNDO)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.UNDO)
     },
     {
       key: 'redo',
       label: `${t('menu.redo')} (Ctrl+Y)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.REDO)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.REDO)
     },
     {
       key: 'separator1',
@@ -203,26 +203,17 @@ const TitleBar: React.FC = () => {
     {
       key: 'cut',
       label: `${t('menu.cut')} (Ctrl+X)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.CUT)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.CUT)
     },
     {
       key: 'copy',
       label: `${t('menu.copy')} (Ctrl+C)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.COPY)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.COPY)
     },
     {
       key: 'paste',
       label: `${t('menu.paste')} (Ctrl+V)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.PASTE)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.PASTE)
     },
     {
       key: 'separator2',
@@ -232,10 +223,7 @@ const TitleBar: React.FC = () => {
     {
       key: 'find',
       label: `${t('menu.find')} (Ctrl+F)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.FIND)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.FIND)
     }
   ]
 
@@ -243,26 +231,17 @@ const TitleBar: React.FC = () => {
     {
       key: 'select-all',
       label: `${t('menu.selectAll')} (Ctrl+A)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.SELECT_ALL)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.SELECT_ALL)
     },
     {
       key: 'expand-selection',
       label: t('menu.expandSelection'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.EXPAND_SELECTION)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.EXPAND_SELECTION)
     },
     {
       key: 'shrink-selection',
       label: t('menu.shrinkSelection'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.SHRINK_SELECTION)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.SHRINK_SELECTION)
     },
     {
       key: 'separator1',
@@ -272,10 +251,7 @@ const TitleBar: React.FC = () => {
     {
       key: 'select-paragraph',
       label: t('menu.selectParagraph'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.SELECT_PARAGRAPH)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.SELECT_PARAGRAPH)
     },
     {
       key: 'separator2',
@@ -285,34 +261,22 @@ const TitleBar: React.FC = () => {
     {
       key: 'cursor-up',
       label: t('menu.cursorUp'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.CURSOR_UP)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.CURSOR_UP)
     },
     {
       key: 'cursor-down',
       label: t('menu.cursorDown'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.CURSOR_DOWN)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.CURSOR_DOWN)
     },
     {
       key: 'cursor-left',
       label: t('menu.cursorLeft'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.CURSOR_LEFT)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.CURSOR_LEFT)
     },
     {
       key: 'cursor-right',
       label: t('menu.cursorRight'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.CURSOR_RIGHT)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.CURSOR_RIGHT)
     }
   ]
 
@@ -344,10 +308,7 @@ const TitleBar: React.FC = () => {
     {
       key: 'quick-open',
       label: `${t('menu.quickOpen')} (Ctrl+P)`,
-      onSelect: () => {
-        commandService.executeCommand(Commands.QUICK_OPEN)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.QUICK_OPEN)
     },
     {
       key: 'separator-quickopen',
@@ -378,18 +339,12 @@ const TitleBar: React.FC = () => {
     {
       key: 'back',
       label: t('menu.back'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.NAV_BACK)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.NAV_BACK)
     },
     {
       key: 'forward',
       label: t('menu.forward'),
-      onSelect: () => {
-        commandService.executeCommand(Commands.NAV_FORWARD)
-        setActiveMenu(null)
-      }
+      onSelect: () => executeCommand(Commands.NAV_FORWARD)
     }
   ]
 

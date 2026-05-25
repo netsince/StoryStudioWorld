@@ -121,6 +121,8 @@ export const Commands = {
   PASTE: 'editor.paste',
   SELECT_ALL: 'editor.selectAll',
   FIND: 'editor.find',
+  FIND_NEXT: 'editor.findNext',
+  FIND_PREV: 'editor.findPrev',
 
   // 选择
   EXPAND_SELECTION: 'editor.expandSelection',

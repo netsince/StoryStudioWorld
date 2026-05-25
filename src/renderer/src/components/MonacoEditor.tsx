@@ -515,6 +515,16 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       () => exec('actions.find'),
       groupId
     )
+    const unregisterFindNext = commandService.registerCommand(
+      Commands.FIND_NEXT,
+      () => exec('editor.action.nextMatchFindAction'),
+      groupId
+    )
+    const unregisterFindPrev = commandService.registerCommand(
+      Commands.FIND_PREV,
+      () => exec('editor.action.previousMatchFindAction'),
+      groupId
+    )
     const unregisterSave = commandService.registerCommand(
       Commands.SAVE,
       () => {
@@ -587,6 +597,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterPaste()
       unregisterSelectAll()
       unregisterFind()
+      unregisterFindNext()
+      unregisterFindPrev()
       unregisterSave()
       unregisterExpandSelection()
       unregisterShrinkSelection()
@@ -644,7 +656,20 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         return
       }
 
-      // Alt+. 中文标点工具栏
+      if (e.key === 'F3') {
+        e.preventDefault()
+        const editor = editorRef.current
+        if (editor) {
+          editor.focus()
+          if (e.shiftKey) {
+            editor.trigger('keyboard', 'editor.action.previousMatchFindAction', null)
+          } else {
+            editor.trigger('keyboard', 'editor.action.nextMatchFindAction', null)
+          }
+        }
+        return
+      }
+
       if (e.altKey && e.key === '.') {
         e.preventDefault()
         const pos = mousePositionRef.current
@@ -655,13 +680,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         return
       }
 
-      // Escape 退出禅模式
       if (e.key === 'Escape') {
         useUiStore.getState().setZenMode(false)
         return
       }
 
-      // Enter 自动缩进
       if (e.key === 'Enter') {
         const autoIndentSettings = getAutoIndentSettings()
         if (autoIndentSettings.enabled) {
