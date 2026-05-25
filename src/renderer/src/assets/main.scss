@@ -1607,10 +1607,10 @@ input:focus + .ssw-slider {
   height: 100%;
   width: 100%;
   background: var(--editor-bg, var(--panel-bg));
-  
-  .monaco-editor .overflow-guard > .monaco-scrollable-element {
-    overflow-x: hidden !important;
-  }
+}
+
+.monaco-editor-container {
+  min-height: 0;
 }
 
 .plain-text-editor-textarea {

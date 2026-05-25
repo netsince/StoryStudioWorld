@@ -106,11 +106,11 @@ function buildMonacoOptions(
     fontFamily: ff || "'Noto Serif SC', serif",
     fontSize,
     lineHeight,
-    language: 'plaintext',
+    language: 'markdown',
     minimap: { enabled: false },
     scrollbar: {
       vertical: 'visible',
-      horizontal: 'hidden',
+      horizontal: 'visible',
       verticalScrollbarSize: 10,
       horizontalScrollbarSize: 10,
       alwaysConsumeMouseWheel: false
@@ -172,8 +172,6 @@ function buildMonacoOptions(
     dragAndDrop: false,
     hideCursorInOverviewRuler: false,
     renderFinalNewline: 'on',
-    wordWrapBreakBeforeCharacters: '([{《「『【〔｛〈［（',
-    wordWrapBreakAfterCharacters: ' ,./–—…）〕］｝〉》」』】〙〗〛！？，。、：；’”）',
     ...overrides
   }
 }
@@ -244,6 +242,14 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     }
 
     editor.focus()
+
+    requestAnimationFrame(() => {
+      editor.layout()
+    })
+
+    document.fonts.ready.then(() => {
+      editor.layout()
+    })
 
     // 编辑器创建后立即推送统计数据（解决首次打开显示 0）
     const initialStats = countTextStats(editor.getValue())
@@ -333,6 +339,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         fontSize: settings.editorFontSize,
         lineHeight: Math.round(settings.editorLineHeight * settings.editorFontSize)
       })
+      editor.layout()
     }
     window.addEventListener('app-settings-changed', handler)
     return () => window.removeEventListener('app-settings-changed', handler)
