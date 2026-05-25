@@ -26,7 +26,7 @@ interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  editorFontFamily: '"Noto Serif SC", serif',
+  editorFontFamily: '"Noto Sans SC", sans-serif',
   editorFontSize: 18,
   editorLineHeight: 2.0,
   editorTabBehavior: 'tab',
