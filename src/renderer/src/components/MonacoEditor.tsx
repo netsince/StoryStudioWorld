@@ -538,19 +538,103 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       },
       groupId
     )
+    const selectParagraph = (): void => {
+      const editor = editorRef.current
+      if (!editor) return
+      const model = editor.getModel()
+      if (!model) return
+      const position = editor.getPosition()
+      if (!position) return
+
+      const lineCount = model.getLineCount()
+      let startLine = position.lineNumber
+      let endLine = position.lineNumber
+
+      while (startLine > 1 && model.getLineContent(startLine - 1).trim().length > 0) {
+        startLine--
+      }
+      while (endLine < lineCount && model.getLineContent(endLine + 1).trim().length > 0) {
+        endLine++
+      }
+
+      const startColumn = model.getLineContent(startLine).trim().length > 0 ? 1 : model.getLineContent(startLine).length + 1
+      const endColumn = model.getLineContent(endLine).length + 1
+
+      editor.setSelection(new monaco.Range(startLine, startColumn, endLine, endColumn))
+      editor.focus()
+    }
+
+    const expandSelection = (): void => {
+      const editor = editorRef.current
+      if (!editor) return
+      const model = editor.getModel()
+      if (!model) return
+      const selection = editor.getSelection()
+      if (!selection) return
+
+      const startLine = selection.startLineNumber
+      const endLine = selection.endLineNumber
+      const lineCount = model.getLineCount()
+
+      let newStartLine = startLine
+      let newEndLine = endLine
+
+      if (startLine > 1) {
+        newStartLine = startLine - 1
+      }
+      if (endLine < lineCount) {
+        newEndLine = endLine + 1
+      }
+
+      editor.setSelection(new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1))
+      editor.focus()
+    }
+
+    const shrinkSelection = (): void => {
+      const editor = editorRef.current
+      if (!editor) return
+      const model = editor.getModel()
+      if (!model) return
+      const selection = editor.getSelection()
+      if (!selection) return
+
+      const startLine = selection.startLineNumber
+      const endLine = selection.endLineNumber
+
+      if (startLine === endLine) return
+
+      let newStartLine = startLine
+      let newEndLine = endLine
+
+      const midLine = Math.floor((startLine + endLine) / 2)
+      const position = editor.getPosition()
+      if (position && position.lineNumber <= midLine) {
+        newEndLine = Math.max(startLine, endLine - 1)
+      } else {
+        newStartLine = Math.min(endLine, startLine + 1)
+      }
+
+      if (newStartLine === newEndLine) {
+        editor.setPosition(new monaco.Position(newStartLine, 1))
+      } else {
+        editor.setSelection(new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1))
+      }
+      editor.focus()
+    }
+
     const unregisterExpandSelection = commandService.registerCommand(
       Commands.EXPAND_SELECTION,
-      () => exec('editor.action.smartSelect.expand'),
+      expandSelection,
       groupId
     )
     const unregisterShrinkSelection = commandService.registerCommand(
       Commands.SHRINK_SELECTION,
-      () => exec('editor.action.smartSelect.shrink'),
+      shrinkSelection,
       groupId
     )
     const unregisterSelectParagraph = commandService.registerCommand(
       Commands.SELECT_PARAGRAPH,
-      () => exec('editor.action.selectAll'),
+      selectParagraph,
       groupId
     )
     const unregisterCursorUp = commandService.registerCommand(
