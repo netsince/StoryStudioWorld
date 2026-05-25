@@ -25,7 +25,7 @@ interface AppSettings {
   autoHideStatusBar: boolean
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   editorFontFamily: '"Noto Serif SC", serif',
   editorFontSize: 18,
   editorLineHeight: 2.0,
