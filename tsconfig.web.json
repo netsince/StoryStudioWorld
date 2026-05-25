@@ -35,6 +35,9 @@
       ],
       "vs/platform/*": [
         "./src/vse/platform/*"
+      ],
+      "vs/nls": [
+        "./src/vse/nls"
       ]
     }
   }
