@@ -49,6 +49,7 @@ import { IModelContentChangedEvent, IModelDecorationsChangedEvent, IModelLanguag
 import { VerticalRevealType } from '../../../common/viewEvents.js';
 import { IEditorWhitespace, IViewModel } from '../../../common/viewModel.js';
 import { MonospaceLineBreaksComputerFactory } from '../../../common/viewModel/monospaceLineBreaksComputer.js';
+import { ProportionalLineBreaksComputerFactory } from '../../../common/viewModel/proportionalLineBreaksComputer.js';
 import { ViewModel } from '../../../common/viewModel/viewModelImpl.js';
 import { OutgoingViewModelEventKind } from '../../../common/viewModelEventDispatcher.js';
 import * as nls from '../../../../nls.js';
@@ -1767,6 +1768,7 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 			model,
 			DOMLineBreaksComputerFactory.create(dom.getWindow(this._domElement)),
 			MonospaceLineBreaksComputerFactory.create(this._configuration.options),
+			ProportionalLineBreaksComputerFactory.create(this._configuration.options),
 			(callback) => dom.scheduleAtNextAnimationFrame(dom.getWindow(this._domElement), callback),
 			this.languageConfigurationService,
 			this._themeService,

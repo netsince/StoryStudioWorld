@@ -18,11 +18,14 @@ import { ConstantTimePrefixSumComputer } from '../model/prefixSumComputer.js';
 import { ViewLineData } from '../viewModel.js';
 import { ICoordinatesConverter, IdentityCoordinatesConverter } from '../coordinatesConverter.js';
 import { LineInjectedText } from '../textModelEvents.js';
+import { ProportionalLineBreaksComputerFactory } from './proportionalLineBreaksComputer.js';
+
+export type WrappingStrategy = 'simple' | 'advanced' | 'proportional';
 
 export interface IViewModelLines extends IDisposable {
 	createCoordinatesConverter(): ICoordinatesConverter;
 
-	setWrappingSettings(fontInfo: FontInfo, wrappingStrategy: 'simple' | 'advanced', wrappingColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll'): boolean;
+	setWrappingSettings(fontInfo: FontInfo, wrappingStrategy: WrappingStrategy, wrappingColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll'): boolean;
 	setTabSize(newTabSize: number): boolean;
 	getHiddenAreas(): Range[];
 	setHiddenAreas(_ranges: readonly Range[]): boolean;
@@ -64,20 +67,18 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 
 	private readonly _domLineBreaksComputerFactory: ILineBreaksComputerFactory;
 	private readonly _monospaceLineBreaksComputerFactory: ILineBreaksComputerFactory;
+	private readonly _proportionalLineBreaksComputerFactory: ILineBreaksComputerFactory;
 
 	private fontInfo: FontInfo;
 	private tabSize: number;
 	private wrappingColumn: number;
 	private wrappingIndent: WrappingIndent;
 	private wordBreak: 'normal' | 'keepAll';
-	private wrappingStrategy: 'simple' | 'advanced';
+	private wrappingStrategy: WrappingStrategy;
 	private wrapOnEscapedLineFeeds: boolean;
 
 	private modelLineProjections!: IModelLineProjection[];
 
-	/**
-	 * Reflects the sum of the line counts of all projected model lines.
-	*/
 	private projectedModelLineLineCounts!: ConstantTimePrefixSumComputer;
 
 	private hiddenAreasDecorationIds!: string[];
@@ -87,9 +88,10 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 		model: ITextModel,
 		domLineBreaksComputerFactory: ILineBreaksComputerFactory,
 		monospaceLineBreaksComputerFactory: ILineBreaksComputerFactory,
+		proportionalLineBreaksComputerFactory: ILineBreaksComputerFactory,
 		fontInfo: FontInfo,
 		tabSize: number,
-		wrappingStrategy: 'simple' | 'advanced',
+		wrappingStrategy: WrappingStrategy,
 		wrappingColumn: number,
 		wrappingIndent: WrappingIndent,
 		wordBreak: 'normal' | 'keepAll',
@@ -100,6 +102,7 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 		this._validModelVersionId = -1;
 		this._domLineBreaksComputerFactory = domLineBreaksComputerFactory;
 		this._monospaceLineBreaksComputerFactory = monospaceLineBreaksComputerFactory;
+		this._proportionalLineBreaksComputerFactory = proportionalLineBreaksComputerFactory;
 		this.fontInfo = fontInfo;
 		this.tabSize = tabSize;
 		this.wrappingStrategy = wrappingStrategy;
@@ -274,7 +277,7 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 		return true;
 	}
 
-	public setWrappingSettings(fontInfo: FontInfo, wrappingStrategy: 'simple' | 'advanced', wrappingColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll'): boolean {
+	public setWrappingSettings(fontInfo: FontInfo, wrappingStrategy: WrappingStrategy, wrappingColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll'): boolean {
 		const equalFontInfo = this.fontInfo.equals(fontInfo);
 		const equalWrappingStrategy = (this.wrappingStrategy === wrappingStrategy);
 		const equalWrappingColumn = (this.wrappingColumn === wrappingColumn);
@@ -309,7 +312,9 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 		const lineBreaksComputerFactory = (
 			this.wrappingStrategy === 'advanced'
 				? this._domLineBreaksComputerFactory
-				: this._monospaceLineBreaksComputerFactory
+				: this.wrappingStrategy === 'proportional'
+					? this._proportionalLineBreaksComputerFactory
+					: this._monospaceLineBreaksComputerFactory
 		);
 		const context: ILineBreaksComputerContext = _context ?? {
 			getLineContent: (lineNumber: number): string => {
@@ -1150,7 +1155,7 @@ export class ViewModelLinesFromModelAsIs implements IViewModelLines {
 		return false;
 	}
 
-	public setWrappingSettings(_fontInfo: FontInfo, _wrappingStrategy: 'simple' | 'advanced', _wrappingColumn: number, _wrappingIndent: WrappingIndent): boolean {
+	public setWrappingSettings(_fontInfo: FontInfo, _wrappingStrategy: WrappingStrategy, _wrappingColumn: number, _wrappingIndent: WrappingIndent): boolean {
 		return false;
 	}
 

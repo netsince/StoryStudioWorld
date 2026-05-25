@@ -6,7 +6,7 @@ function rewriteNlsImports() {
 	return {
 		name: 'rewrite-nls-imports',
 		enforce: 'pre' as const,
-		resolveId(source: string, importer: string | undefined) {
+		resolveId(source: string, _importer: string | undefined) {
 			if (source.endsWith('/nls.js') || source === 'nls.js') {
 				return resolve(__dirname, 'src/vse/nls.ts')
 			}

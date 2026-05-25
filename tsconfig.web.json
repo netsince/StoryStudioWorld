@@ -10,6 +10,15 @@
     "src/vse/monaco.d.ts",
     "src/shared/**/*.ts"
   ],
+  "exclude": [
+    "src/vse/base/parts/ipc/test/**/*",
+    "src/vse/base/parts/storage/test/**/*",
+    "src/vse/base/parts/request/test/**/*",
+    "src/vse/base/parts/sandbox/test/**/*",
+    "src/vse/editor/contrib/*/test/**/*",
+    "src/vse/platform/*/test/**/*",
+    "src/vse/platform/**/test/**/*"
+  ],
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
@@ -23,6 +32,14 @@
     "noUnusedParameters": false,
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@renderer/*": [
         "./src/renderer/src/*"

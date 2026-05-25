@@ -367,7 +367,7 @@ export interface IEditorOptions {
 	 * Controls the wrapping strategy to use.
 	 * Defaults to 'simple'.
 	 */
-	wrappingStrategy?: 'simple' | 'advanced';
+	wrappingStrategy?: 'simple' | 'advanced' | 'proportional';
 	/**
 	 * Create a softwrap on every quoted "\n" literal.
 	 * Defaults to false.
@@ -3020,7 +3020,7 @@ export class EditorLayoutInfoComputer extends ComputedEditorOption<EditorOption.
 //#endregion
 
 //#region WrappingStrategy
-class WrappingStrategy extends BaseEditorOption<EditorOption.wrappingStrategy, 'simple' | 'advanced', 'simple' | 'advanced'> {
+class WrappingStrategy extends BaseEditorOption<EditorOption.wrappingStrategy, 'simple' | 'advanced' | 'proportional', 'simple' | 'advanced' | 'proportional'> {
 
 	constructor() {
 		super(EditorOption.wrappingStrategy, 'wrappingStrategy', 'simple',
@@ -3028,10 +3028,11 @@ class WrappingStrategy extends BaseEditorOption<EditorOption.wrappingStrategy, '
 				'editor.wrappingStrategy': {
 					enumDescriptions: [
 						nls.localize('wrappingStrategy.simple', "Assumes that all characters are of the same width. This is a fast algorithm that works correctly for monospace fonts and certain scripts (like Latin characters) where glyphs are of equal width."),
-						nls.localize('wrappingStrategy.advanced', "Delegates wrapping points computation to the browser. This is a slow algorithm, that might cause freezes for large files, but it works correctly in all cases.")
+						nls.localize('wrappingStrategy.advanced', "Delegates wrapping points computation to the browser. This is a slow algorithm, that might cause freezes for large files, but it works correctly in all cases."),
+						nls.localize('wrappingStrategy.proportional', "Uses character width measurement with punctuation-based breaking rules. Optimized for proportional fonts with CJK support.")
 					],
 					type: 'string',
-					enum: ['simple', 'advanced'],
+					enum: ['simple', 'advanced', 'proportional'],
 					default: 'simple',
 					description: nls.localize('wrappingStrategy', "Controls the algorithm that computes wrapping points. Note that when in accessibility mode, advanced will be used for the best experience.")
 				}
@@ -3039,15 +3040,13 @@ class WrappingStrategy extends BaseEditorOption<EditorOption.wrappingStrategy, '
 		);
 	}
 
-	public validate(input: unknown): 'simple' | 'advanced' {
-		return stringSet<'simple' | 'advanced'>(input, 'simple', ['simple', 'advanced']);
+	public validate(input: unknown): 'simple' | 'advanced' | 'proportional' {
+		return stringSet<'simple' | 'advanced' | 'proportional'>(input, 'simple', ['simple', 'advanced', 'proportional']);
 	}
 
-	public override compute(env: IEnvironmentalOptions, options: IComputedEditorOptions, value: 'simple' | 'advanced'): 'simple' | 'advanced' {
+	public override compute(env: IEnvironmentalOptions, options: IComputedEditorOptions, value: 'simple' | 'advanced' | 'proportional'): 'simple' | 'advanced' | 'proportional' {
 		const accessibilitySupport = options.get(EditorOption.accessibilitySupport);
 		if (accessibilitySupport === AccessibilitySupport.Enabled) {
-			// if we know for a fact that a screen reader is attached, we switch our strategy to advanced to
-			// help that the editor's wrapping points match the textarea's wrapping points
 			return 'advanced';
 		}
 		return value;

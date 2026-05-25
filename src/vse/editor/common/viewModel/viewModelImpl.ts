@@ -39,6 +39,7 @@ import { ILineHeightChangeAccessor, IViewModel, IWhitespaceChangeAccessor, Minim
 import { ViewModelDecorations } from './viewModelDecorations.js';
 import { FocusChangedEvent, HiddenAreasChangedEvent, ModelContentChangedEvent, ModelDecorationsChangedEvent, ModelFontChangedEvent, ModelLanguageChangedEvent, ModelLanguageConfigurationChangedEvent, ModelLineHeightChangedEvent, ModelOptionsChangedEvent, ModelTokensChangedEvent, OutgoingViewModelEvent, ReadOnlyEditAttemptEvent, ScrollChangedEvent, ViewModelEventDispatcher, ViewModelEventsCollector, ViewZonesChangedEvent, WidgetFocusChangedEvent } from '../viewModelEventDispatcher.js';
 import { IViewModelLines, ViewModelLinesFromModelAsIs, ViewModelLinesFromProjectedModel } from './viewModelLines.js';
+import { ProportionalLineBreaksComputerFactory } from './proportionalLineBreaksComputer.js';
 import { IThemeService } from '../../../platform/theme/common/themeService.js';
 import { GlyphMarginLanesModel } from './glyphLanesModel.js';
 import { CustomLineHeightData } from '../viewLayout/lineHeights.js';
@@ -72,6 +73,7 @@ export class ViewModel extends Disposable implements IViewModel {
 		model: ITextModel,
 		domLineBreaksComputerFactory: ILineBreaksComputerFactory,
 		monospaceLineBreaksComputerFactory: ILineBreaksComputerFactory,
+		proportionalLineBreaksComputerFactory: ILineBreaksComputerFactory,
 		scheduleAtNextAnimationFrame: (callback: () => void) => IDisposable,
 		private readonly languageConfigurationService: ILanguageConfigurationService,
 		private readonly _themeService: IThemeService,
@@ -109,6 +111,7 @@ export class ViewModel extends Disposable implements IViewModel {
 				this.model,
 				domLineBreaksComputerFactory,
 				monospaceLineBreaksComputerFactory,
+				proportionalLineBreaksComputerFactory,
 				fontInfo,
 				this.model.getOptions().tabSize,
 				wrappingStrategy,
