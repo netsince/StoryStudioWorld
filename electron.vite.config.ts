@@ -28,6 +28,7 @@ export default defineConfig({
         'vs/nls': resolve('src/vse/nls')
       }
     },
-    plugins: [react(), rewriteNlsImports()]
+    plugins: [react(), rewriteNlsImports()],
+    assetsInclude: ['**/*.ttf']
   }
 })

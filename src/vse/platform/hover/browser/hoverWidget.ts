@@ -122,6 +122,8 @@ export class HoverWidget extends Widget implements IHoverWidget {
 					options.appearance ??= {};
 					options.appearance.compact ??= true;
 					options.appearance.showPointer ??= true;
+					options.position ??= {};
+					options.position.hoverPosition ??= HoverPosition.BELOW;
 					break;
 				}
 				case HoverStyle.Mouse: {

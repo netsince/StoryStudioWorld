@@ -10,6 +10,9 @@ import { createMonacoLanguagesAPI } from './standalone/browser/standaloneLanguag
 import { FormattingConflicts } from './contrib/format/browser/format.js';
 import { getMonacoEnvironment } from '../base/browser/browser.js';
 
+// Import all editor contributions (including FindController)
+import './editor.all.js';
+
 // Set defaults for standalone editor
 EditorOptions.wrappingIndent.defaultValue = WrappingIndent.None;
 EditorOptions.glyphMargin.defaultValue = false;
