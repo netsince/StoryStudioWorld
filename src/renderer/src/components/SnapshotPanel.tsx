@@ -4,6 +4,7 @@ import { useSnapshotStore } from '../stores/snapshotStore'
 import { useProjectStore } from '../stores/projectStore'
 import type { Snapshot, DiffResult, DiffNode } from '../../../main/snapshot'
 import ConfirmModal from './ConfirmModal'
+import { InputBox } from './ui/InputBox'
 
 const formatTime = (
   timestamp: string,
@@ -54,14 +55,12 @@ const CreateSnapshotModal: React.FC<{
         <form onSubmit={handleSubmit}>
           <div className="snapshot-form-body">
             <div className="snapshot-form-field">
-              <input
-                className="ssw-modal-input"
-                type="text"
+              <InputBox
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={setName}
                 onKeyDown={handleKeyDown}
                 placeholder={t('snapshot.namePlaceholder')}
-                autoFocus
+                className="ssw-modal-input"
               />
             </div>
             <div className="snapshot-form-field" style={{ marginTop: '12px' }}>

@@ -21,10 +21,10 @@ importers:
         version: 0.4.3(@types/node@25.9.1)(rollup@4.60.1)(typescript@6.0.3)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.100.0)(yaml@2.8.3))
       '@electron-toolkit/preload':
         specifier: ^3.0.2
-        version: 3.0.2(electron@42.2.0)
+        version: 3.0.2(electron@42.3.3)
       '@electron-toolkit/utils':
         specifier: ^4.0.0
-        version: 4.0.0(electron@42.2.0)
+        version: 4.0.0(electron@42.3.3)
       archiver:
         specifier: ^8.0.0
         version: 8.0.0
@@ -88,7 +88,7 @@ importers:
         version: 6.0.2(vite@8.0.14(@types/node@25.9.1)(esbuild@0.27.4)(jiti@2.6.1)(sass@1.100.0)(yaml@2.8.3))
       electron:
         specifier: ^42.2.0
-        version: 42.2.0
+        version: 42.3.3
       electron-builder:
         specifier: ^26.0.12
         version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
@@ -1989,8 +1989,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@42.2.0:
-    resolution: {integrity: sha512-b2Tc7sIKiZEl0tBVwFM5GJ+FT5KYhmy9QJHjx8BGVZPVW2SctXWEvrE959ElB56qw7H05dBkhlikDA1DmpaAMw==}
+  electron@42.3.3:
+    resolution: {integrity: sha512-0MwYp9wTb7TrtTalOYqeW+suqd9T/Znstr/nDLKqFGIjHdBZX339guo3mQqTPURRZ/UQmYM4uMpzKpI5wLptfQ==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -3737,17 +3737,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron-toolkit/preload@3.0.2(electron@42.2.0)':
+  '@electron-toolkit/preload@3.0.2(electron@42.3.3)':
     dependencies:
-      electron: 42.2.0
+      electron: 42.3.3
 
   '@electron-toolkit/tsconfig@2.0.0(@types/node@25.9.1)':
     dependencies:
       '@types/node': 25.9.1
 
-  '@electron-toolkit/utils@4.0.0(electron@42.2.0)':
+  '@electron-toolkit/utils@4.0.0(electron@42.3.3)':
     dependencies:
-      electron: 42.2.0
+      electron: 42.3.3
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -5387,7 +5387,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@42.2.0:
+  electron@42.3.3:
     dependencies:
       '@electron/get': 5.0.0
       '@types/node': 24.12.4
@@ -5846,7 +5846,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.7.4
+      semver: 7.8.1
       serialize-error: 7.0.1
     optional: true
 
