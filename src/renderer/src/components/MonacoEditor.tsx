@@ -305,7 +305,15 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       editor.dispose()
       editorRef.current = null
     }
-  }, [isActive, tabId, _placeholder, content, getTabScrollPosition, setTabScrollPosition, updateStats])
+  }, [
+    isActive,
+    tabId,
+    _placeholder,
+    content,
+    getTabScrollPosition,
+    setTabScrollPosition,
+    updateStats
+  ])
 
   useEffect(() => {
     const editor = editorRef.current

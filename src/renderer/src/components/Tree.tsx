@@ -77,7 +77,6 @@ const IndentGuide: React.FC<{ depth: number }> = ({ depth }) => {
   return (
     <>
       {Array.from({ length: depth }).map((_, i) => (
-        // eslint-disable-next-line @eslint-react/no-array-index-key
         <span
           key={`guide-${i}`}
           style={{
@@ -128,7 +127,9 @@ const Tree: React.FC<TreeProps> = ({
 }) => {
   const { t } = useTranslation()
   const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(() => new Set())
-  const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(() => new Set())
+  const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(
+    () => new Set()
+  )
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [dropPosition, setDropPosition] = useState<DropPosition>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(

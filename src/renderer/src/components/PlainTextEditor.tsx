@@ -692,7 +692,17 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavForward()
       unregisterZenMode()
     }
-  }, [onChange, onSave, saveHistory, goBack, goForward, groupId, restoreFocusAndSelection, t, updateLastSaved])
+  }, [
+    onChange,
+    onSave,
+    saveHistory,
+    goBack,
+    goForward,
+    groupId,
+    restoreFocusAndSelection,
+    t,
+    updateLastSaved
+  ])
 
   // Update status bar when text changes
   useEffect(() => {
