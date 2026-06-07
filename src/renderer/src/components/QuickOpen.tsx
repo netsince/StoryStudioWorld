@@ -91,20 +91,26 @@ const QuickOpen: React.FC = () => {
     [currentProject, fileNodes, storyNodes, t]
   )
 
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 执行搜索
   useEffect(() => {
     if (!isVisible || !searchText.trim()) {
-      setResults([])
-      setSelectedIndex(0)
+      requestAnimationFrame(() => {
+        setResults([])
+        setSelectedIndex(0)
+      })
       return
     }
 
-    const timer = setTimeout(async () => {
+    searchTimerRef.current = setTimeout(async () => {
       setIsSearching(true)
       try {
         const searchResults = await searchContent(searchText)
-        setResults(searchResults)
-        setSelectedIndex(0)
+        requestAnimationFrame(() => {
+          setResults(searchResults)
+          setSelectedIndex(0)
+        })
       } catch (error) {
         console.error('Search failed:', error)
       } finally {
@@ -112,7 +118,11 @@ const QuickOpen: React.FC = () => {
       }
     }, 150)
 
-    return () => clearTimeout(timer)
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+      }
+    }
   }, [searchText, isVisible, searchContent])
 
   // 监听 Ctrl+P
@@ -136,14 +146,39 @@ const QuickOpen: React.FC = () => {
     return () => unregister()
   }, [])
 
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 聚焦输入框
   useEffect(() => {
     if (isVisible) {
-      setTimeout(() => {
+      focusTimerRef.current = setTimeout(() => {
         inputRef.current?.focus()
       }, 10)
     }
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current)
+        focusTimerRef.current = null
+      }
+    }
   }, [isVisible])
+
+  // 选择结果
+  const handleSelect = useCallback(
+    (result: SearchResult): void => {
+      openTab({
+        id: result.node.id,
+        title: result.node.name,
+        type: 'file',
+        nodeId: result.node.id,
+        kind: result.node.kind
+      })
+      setIsVisible(false)
+      setSearchText('')
+      setResults([])
+    },
+    [openTab]
+  )
 
   // 键盘导航
   const handleKeyDown = useCallback(
@@ -168,24 +203,7 @@ const QuickOpen: React.FC = () => {
           break
       }
     },
-    [results, selectedIndex]
-  )
-
-  // 选择结果
-  const handleSelect = useCallback(
-    (result: SearchResult): void => {
-      openTab({
-        id: result.node.id,
-        title: result.node.name,
-        type: 'file',
-        nodeId: result.node.id,
-        kind: result.node.kind
-      })
-      setIsVisible(false)
-      setSearchText('')
-      setResults([])
-    },
-    [openTab]
+    [results, selectedIndex, handleSelect]
   )
 
   // 滚动选中项到视图
@@ -318,7 +336,7 @@ const QuickOpen: React.FC = () => {
             </div>
           )}
 
-          {results.map((result, index) => (
+          {results.map((result) => (
             <div
               key={`${result.node.id}-${result.matchType}`}
               onClick={() => handleSelect(result)}
@@ -377,7 +395,7 @@ const QuickOpen: React.FC = () => {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    {highlightMatch(result.node.name, searchText)}
+                    <HighlightMatch text={result.node.name} query={searchText} />
                   </span>
                   <span
                     style={{
@@ -429,7 +447,7 @@ const QuickOpen: React.FC = () => {
                       fontStyle: 'italic'
                     }}
                   >
-                    {highlightMatch(result.contentPreview, searchText)}
+                    <HighlightMatch text={result.contentPreview} query={searchText} />
                   </div>
                 )}
               </div>
@@ -469,15 +487,17 @@ const QuickOpen: React.FC = () => {
 }
 
 // 高亮匹配文本
-function highlightMatch(text: string, query: string): React.ReactNode {
+function HighlightMatch({ text, query }: { text: string; query: string }): React.ReactNode {
   if (!query.trim()) return text
 
   const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'))
-  return parts.map((part, index) => {
+  let hlCounter = 0
+  let txtCounter = 0
+  return parts.map((part) => {
     if (part.toLowerCase() === query.toLowerCase()) {
       return (
         <mark
-          key={index}
+          key={`hl-${hlCounter++}`}
           style={{
             backgroundColor: 'var(--highlight-bg, rgba(255, 215, 0, 0.3))',
             color: 'inherit',
@@ -489,7 +509,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
         </mark>
       )
     }
-    return part
+    return <span key={`txt-${txtCounter++}`}>{part}</span>
   })
 }
 

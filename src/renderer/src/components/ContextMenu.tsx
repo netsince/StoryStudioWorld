@@ -48,8 +48,10 @@ interface ILayoutResult {
 }
 
 function layout(viewportSize: number, viewSize: number, anchor: ILayoutAnchor): ILayoutResult {
-  const layoutAfterAnchorBoundary = anchor.mode === LayoutAnchorMode.Align ? anchor.offset : anchor.offset + anchor.size
-  const layoutBeforeAnchorBoundary = anchor.mode === LayoutAnchorMode.Align ? anchor.offset + anchor.size : anchor.offset
+  const layoutAfterAnchorBoundary =
+    anchor.mode === LayoutAnchorMode.Align ? anchor.offset : anchor.offset + anchor.size
+  const layoutBeforeAnchorBoundary =
+    anchor.mode === LayoutAnchorMode.Align ? anchor.offset + anchor.size : anchor.offset
 
   if (anchor.position === LayoutAnchorPosition.After) {
     if (viewSize <= viewportSize - layoutAfterAnchorBoundary) {
@@ -63,7 +65,10 @@ function layout(viewportSize: number, viewSize: number, anchor: ILayoutAnchor): 
     if (viewSize <= layoutBeforeAnchorBoundary) {
       return { position: layoutBeforeAnchorBoundary - viewSize, result: 'ok' }
     }
-    if (viewSize <= viewportSize - layoutAfterAnchorBoundary && layoutBeforeAnchorBoundary < viewSize / 2) {
+    if (
+      viewSize <= viewportSize - layoutAfterAnchorBoundary &&
+      layoutBeforeAnchorBoundary < viewSize / 2
+    ) {
       return { position: layoutAfterAnchorBoundary, result: 'flipped' }
     }
     return { position: 0, result: 'overlap' }
@@ -124,12 +129,18 @@ function layout2d(
     const verticalAnchor: ILayoutAnchor = {
       offset: anchor.top - viewport.top,
       size: anchor.height,
-      position: anchorPosition === AnchorPosition.Below ? LayoutAnchorPosition.After : LayoutAnchorPosition.Before
+      position:
+        anchorPosition === AnchorPosition.Below
+          ? LayoutAnchorPosition.After
+          : LayoutAnchorPosition.Before
     }
     const horizontalAnchor: ILayoutAnchor = {
       offset: anchor.left,
       size: anchor.width,
-      position: anchorAlignment === AnchorAlignment.Left ? LayoutAnchorPosition.Before : LayoutAnchorPosition.After,
+      position:
+        anchorAlignment === AnchorAlignment.Left
+          ? LayoutAnchorPosition.Before
+          : LayoutAnchorPosition.After,
       mode: LayoutAnchorMode.Align
     }
 
@@ -137,12 +148,12 @@ function layout2d(
     top = verticalLayoutResult.position + viewport.top
 
     if (verticalLayoutResult.result === 'flipped') {
-      anchorPosition = anchorPosition === AnchorPosition.Below ? AnchorPosition.Above : AnchorPosition.Below
+      anchorPosition =
+        anchorPosition === AnchorPosition.Below ? AnchorPosition.Above : AnchorPosition.Below
     }
 
     // 如果视图与锚点在垂直方向重叠，水平方向必须避开锚点
-    const verticalOverlap =
-      top < anchor.top + anchor.height && top + view.height > anchor.top
+    const verticalOverlap = top < anchor.top + anchor.height && top + view.height > anchor.top
     if (verticalOverlap) {
       horizontalAnchor.mode = LayoutAnchorMode.Avoid
     }
@@ -151,18 +162,25 @@ function layout2d(
     left = horizontalLayoutResult.position
 
     if (horizontalLayoutResult.result === 'flipped') {
-      anchorAlignment = anchorAlignment === AnchorAlignment.Left ? AnchorAlignment.Right : AnchorAlignment.Left
+      anchorAlignment =
+        anchorAlignment === AnchorAlignment.Left ? AnchorAlignment.Right : AnchorAlignment.Left
     }
   } else {
     const horizontalAnchor: ILayoutAnchor = {
       offset: anchor.left,
       size: anchor.width,
-      position: anchorAlignment === AnchorAlignment.Left ? LayoutAnchorPosition.Before : LayoutAnchorPosition.After
+      position:
+        anchorAlignment === AnchorAlignment.Left
+          ? LayoutAnchorPosition.Before
+          : LayoutAnchorPosition.After
     }
     const verticalAnchor: ILayoutAnchor = {
       offset: anchor.top,
       size: anchor.height,
-      position: anchorPosition === AnchorPosition.Below ? LayoutAnchorPosition.After : LayoutAnchorPosition.Before,
+      position:
+        anchorPosition === AnchorPosition.Below
+          ? LayoutAnchorPosition.After
+          : LayoutAnchorPosition.Before,
       mode: LayoutAnchorMode.Align
     }
 
@@ -170,12 +188,12 @@ function layout2d(
     left = horizontalLayoutResult.position
 
     if (horizontalLayoutResult.result === 'flipped') {
-      anchorAlignment = anchorAlignment === AnchorAlignment.Left ? AnchorAlignment.Right : AnchorAlignment.Left
+      anchorAlignment =
+        anchorAlignment === AnchorAlignment.Left ? AnchorAlignment.Right : AnchorAlignment.Left
     }
 
     // 如果视图与锚点在水平方向重叠，垂直方向必须避开锚点
-    const horizontalOverlap =
-      left < anchor.left + anchor.width && left + view.width > anchor.left
+    const horizontalOverlap = left < anchor.left + anchor.width && left + view.width > anchor.left
     if (horizontalOverlap) {
       verticalAnchor.mode = LayoutAnchorMode.Avoid
     }
@@ -184,7 +202,8 @@ function layout2d(
     top = verticalLayoutResult.position + viewport.top
 
     if (verticalLayoutResult.result === 'flipped') {
-      anchorPosition = anchorPosition === AnchorPosition.Below ? AnchorPosition.Above : AnchorPosition.Below
+      anchorPosition =
+        anchorPosition === AnchorPosition.Below ? AnchorPosition.Above : AnchorPosition.Below
     }
   }
 
@@ -230,7 +249,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }) => {
       anchorAxisAlignment: AnchorAxisAlignment.Vertical
     })
 
-    setPosition({ x: result.left, y: result.top })
+    // 使用 requestAnimationFrame 避免在 effect 中直接 setState
+    requestAnimationFrame(() => {
+      setPosition({ x: result.left, y: result.top })
+    })
   }, [x, y])
 
   // 点击外部关闭

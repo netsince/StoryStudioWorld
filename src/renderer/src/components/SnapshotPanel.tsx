@@ -42,12 +42,6 @@ const CreateSnapshotModal: React.FC<{
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      onClose()
-    }
-  }
-
   return (
     <div className="ssw-modal-overlay" onClick={onClose}>
       <div className="ssw-modal" onClick={(e) => e.stopPropagation()}>

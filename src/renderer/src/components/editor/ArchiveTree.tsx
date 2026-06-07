@@ -16,7 +16,7 @@ const ArchiveTree: React.FC<ArchiveTreeProps> = ({
   isBusy
 }) => {
   const { t } = useTranslation()
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
 
   const getChildren = useCallback(
     (parentId: string | null) => {

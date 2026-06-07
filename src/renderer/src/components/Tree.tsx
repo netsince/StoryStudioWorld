@@ -5,6 +5,96 @@ import RenameDialog from './RenameDialog'
 import ContextMenu from './ContextMenu'
 import { getNodeDisplayName, isDefaultSettingCategory } from '../utils/nodeUtils'
 
+const ROW_HEIGHT = 22
+const INDENT_SIZE = 8
+const TWISTIE_SIZE = 16
+
+const FileIcon: React.FC<{ isFolder: boolean; isExpanded: boolean }> = ({
+  isFolder,
+  isExpanded
+}) => {
+  if (isFolder) {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+        {isExpanded ? (
+          <path
+            d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
+            fill="#DCAD5A"
+          />
+        ) : (
+          <path
+            d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
+            fill="#DCAD5A"
+          />
+        )}
+      </svg>
+    )
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <path
+        d="M3.5 1h5.79l3.21 3.21V14.5a1.5 1.5 0 0 1-1.5 1.5h-7.5a1.5 1.5 0 0 1-1.5-1.5v-12A1.5 1.5 0 0 1 3.5 1z"
+        fill="#75BEFF"
+        fillOpacity="0.6"
+      />
+    </svg>
+  )
+}
+
+const Twistie: React.FC<{
+  expanded: boolean
+  onClick: (e: React.MouseEvent) => void
+}> = ({ expanded, onClick }) => (
+  <span
+    onClick={onClick}
+    style={{
+      width: `${TWISTIE_SIZE}px`,
+      height: `${ROW_HEIGHT}px`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      flexShrink: 0
+    }}
+  >
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      style={{
+        transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+        transition: 'transform 0.1s ease',
+        opacity: 0.7
+      }}
+    >
+      <path fill="currentColor" d="M6 4l4 4-4 4V4z" />
+    </svg>
+  </span>
+)
+
+const IndentGuide: React.FC<{ depth: number }> = ({ depth }) => {
+  if (depth === 0) return null
+  return (
+    <>
+      {Array.from({ length: depth }).map((_, i) => (
+        // eslint-disable-next-line @eslint-react/no-array-index-key
+        <span
+          key={`guide-${i}`}
+          style={{
+            position: 'absolute',
+            left: `${(i + 1) * INDENT_SIZE + TWISTIE_SIZE / 2}px`,
+            top: 0,
+            bottom: 0,
+            width: '1px',
+            backgroundColor: 'var(--tree-indent-guide-color, rgba(128,128,128,0.2))',
+            pointerEvents: 'none'
+          }}
+        />
+      ))}
+    </>
+  )
+}
+
 interface TreeProps {
   nodes: StoryNode[]
   kind?: 'story' | 'setting'
@@ -22,11 +112,6 @@ interface TreeProps {
 
 type DropPosition = { nodeId: string; position: 'before' | 'after' | 'inside' } | null
 
-// VS Code style constants
-const ROW_HEIGHT = 22
-const INDENT_SIZE = 8
-const TWISTIE_SIZE = 16
-
 const Tree: React.FC<TreeProps> = ({
   nodes,
   kind = 'story',
@@ -42,8 +127,8 @@ const Tree: React.FC<TreeProps> = ({
   getNodeDescendants
 }) => {
   const { t } = useTranslation()
-  const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(new Set())
-  const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(new Set())
+  const [internalExpandedNodes, setInternalExpandedNodes] = useState<Set<string>>(() => new Set())
+  const [internalSelectedNodeIds, setInternalSelectedNodeIds] = useState<Set<string>>(() => new Set())
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null)
   const [dropPosition, setDropPosition] = useState<DropPosition>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(
@@ -263,101 +348,13 @@ const Tree: React.FC<TreeProps> = ({
     setContextMenu({ x: e.clientX, y: e.clientY, nodeId })
   }, [])
 
-  // VS Code style file icon
-  const FileIcon = ({
-    isFolder,
-    isExpanded
+  const TreeNodeItem = React.memo(function TreeNodeItem({
+    node,
+    depth
   }: {
-    isFolder: boolean
-    isExpanded: boolean
-  }): React.ReactNode => {
-    if (isFolder) {
-      return (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-          {isExpanded ? (
-            <path
-              d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
-              fill="#DCAD5A"
-            />
-          ) : (
-            <path
-              d="M14.5 3H7.71L6.14 1.43A1.5 1.5 0 0 0 5.09 1H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"
-              fill="#DCAD5A"
-            />
-          )}
-        </svg>
-      )
-    }
-    return (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-        <path
-          d="M3.5 1h5.79l3.21 3.21V14.5a1.5 1.5 0 0 1-1.5 1.5h-7.5a1.5 1.5 0 0 1-1.5-1.5v-12A1.5 1.5 0 0 1 3.5 1z"
-          fill="#75BEFF"
-          fillOpacity="0.6"
-        />
-      </svg>
-    )
-  }
-
-  // VS Code style twistie (chevron)
-  const Twistie = ({
-    expanded,
-    onClick
-  }: {
-    expanded: boolean
-    onClick: (e: React.MouseEvent) => void
-  }): React.ReactNode => (
-    <span
-      onClick={onClick}
-      style={{
-        width: `${TWISTIE_SIZE}px`,
-        height: `${ROW_HEIGHT}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        flexShrink: 0
-      }}
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        style={{
-          transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-          transition: 'transform 0.1s ease',
-          opacity: 0.7
-        }}
-      >
-        <path fill="currentColor" d="M6 4l4 4-4 4V4z" />
-      </svg>
-    </span>
-  )
-
-  // Indent guide component
-  const IndentGuide = ({ depth }: { depth: number }): React.ReactNode => {
-    if (depth === 0) return null
-    return (
-      <>
-        {Array.from({ length: depth }).map((_, i) => (
-          <span
-            key={i}
-            style={{
-              position: 'absolute',
-              left: `${(i + 1) * INDENT_SIZE + TWISTIE_SIZE / 2}px`,
-              top: 0,
-              bottom: 0,
-              width: '1px',
-              backgroundColor: 'var(--tree-indent-guide-color, rgba(128,128,128,0.2))',
-              pointerEvents: 'none'
-            }}
-          />
-        ))}
-      </>
-    )
-  }
-
-  const renderNode = (node: StoryNode, depth: number): React.ReactNode => {
+    node: StoryNode
+    depth: number
+  }) {
     const isExpanded = expandedNodes.has(node.id)
     const isSelected = selectedNodeIds.has(node.id)
     const isDragging = draggingNodeId === node.id
@@ -402,7 +399,7 @@ const Tree: React.FC<TreeProps> = ({
     }
 
     return (
-      <div key={node.id} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
         {/* Drop indicator before */}
         {isDropBefore && (
           <div
@@ -502,7 +499,7 @@ const Tree: React.FC<TreeProps> = ({
         )}
       </div>
     )
-  }
+  })
 
   return (
     <div
@@ -519,7 +516,9 @@ const Tree: React.FC<TreeProps> = ({
       }}
       onDrop={handleDropOnRoot}
     >
-      {visibleNodes.map(({ node, depth }) => renderNode(node, depth))}
+      {visibleNodes.map(({ node, depth }, index) => (
+        <TreeNodeItem key={`${node.id}-${index}`} node={node} depth={depth} />
+      ))}
 
       {/* Context Menu */}
       {contextMenu && (
@@ -572,7 +571,10 @@ const Tree: React.FC<TreeProps> = ({
                         count: descendants.files
                       }) +
                         '\n\n' +
-                        t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) +
+                        t('tree.deleteFolderWarning.fileList', {
+                          files: fileList,
+                          more: moreText
+                        }) +
                         '\n\n' +
                         t('tree.deleteFolderWarning.confirm'),
                       t('tree.deleteFolderWarning.secondConfirm', {

@@ -3,16 +3,17 @@ import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 
 function rewriteNlsImports() {
-	return {
-		name: 'rewrite-nls-imports',
-		enforce: 'pre' as const,
-		resolveId(source: string, _importer: string | undefined) {
-			if (source.endsWith('/nls.js') || source === 'nls.js') {
-				return resolve(__dirname, 'src/vse/nls.ts')
-			}
-			return null
-		}
-	}
+  return {
+    name: 'rewrite-nls-imports',
+    enforce: 'pre' as const,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    resolveId(source: string, _importer?: string) {
+      if (source.endsWith('/nls.js') || source === 'nls.js') {
+        return resolve(__dirname, 'src/vse/nls.ts')
+      }
+      return null
+    }
+  }
 }
 
 export default defineConfig({

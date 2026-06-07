@@ -30,7 +30,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
   const [activeTab, setActiveTab] = useState<'content' | 'gallery'>('content')
   const [data, setData] = useState<SettingData>({ metadata: {}, content: '' })
   const [loading, setLoading] = useState(true)
-  const [appSettings, setAppSettings] = useState(getAppSettings())
+  const [appSettings, setAppSettings] = useState(() => getAppSettings())
   const [hasLoaded, setHasLoaded] = useState(false)
   const [themeImage, setThemeImage] = useState<GalleryImageItem | null>(null)
   const [refPanelItems, setRefPanelItems] = useState<WikiRefItem[]>([])
@@ -132,19 +132,20 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     loadContent()
   }, [nodeId, currentProject, draftsByNodeId, hasLoaded])
 
+  const draftForNode = draftsByNodeId[nodeId]
+
   useEffect(() => {
     if (!hasLoaded || !currentProject || !nodeId) return
 
-    const draft = draftsByNodeId[nodeId]
-    if (typeof draft === 'string') {
+    if (typeof draftForNode === 'string') {
       try {
-        const draftData = JSON.parse(draft)
-        setData(draftData)
+        const draftData = JSON.parse(draftForNode)
+        requestAnimationFrame(() => setData(draftData))
       } catch (e) {
         console.error('Failed to parse draft for real-time preview', e)
       }
     }
-  }, [draftsByNodeId[nodeId], hasLoaded, currentProject, nodeId])
+  }, [draftForNode, hasLoaded, currentProject, nodeId])
 
   const lastUpdatedAtRef = useRef<string | null>(null)
 
@@ -160,8 +161,7 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
     if (currentUpdatedAt === lastUpdatedAtRef.current) return
     lastUpdatedAtRef.current = currentUpdatedAt
 
-    const draft = draftsByNodeId[nodeId]
-    if (typeof draft === 'string') {
+    if (typeof draftForNode === 'string') {
       return
     }
 
@@ -194,11 +194,11 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
       }
     }
     reloadContent()
-  }, [node?.updatedAt, hasLoaded, currentProject, nodeId, draftsByNodeId])
+  }, [node?.updatedAt, hasLoaded, currentProject, nodeId, draftForNode])
 
   useEffect(() => {
     if (!isEditing) {
-      setAppSettings(getAppSettings())
+      requestAnimationFrame(() => setAppSettings(getAppSettings()))
     }
   }, [isEditing])
 

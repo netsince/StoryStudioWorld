@@ -14,6 +14,8 @@ const RightActivityBar: React.FC = () => {
 
   const renderIcon = (icon: React.ReactNode | string): React.ReactNode => {
     if (typeof icon === 'string') {
+      // 插件提供的图标是已知安全的 SVG 字符串，由插件系统内部生成
+      // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
       return <span dangerouslySetInnerHTML={{ __html: icon }} />
     }
     return icon

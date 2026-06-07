@@ -142,49 +142,38 @@ const DebugPanel: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const confirmFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 聚焦输入框
   useEffect(() => {
     if (isVisible) {
-      setTimeout(() => {
+      focusTimerRef.current = setTimeout(() => {
         inputRef.current?.focus()
       }, 10)
+    }
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current)
+        focusTimerRef.current = null
+      }
     }
   }, [isVisible])
 
   // 聚焦确认输入框
   useEffect(() => {
     if (confirmAction) {
-      setTimeout(() => {
+      confirmFocusTimerRef.current = setTimeout(() => {
         confirmInputRef.current?.focus()
       }, 10)
     }
-  }, [confirmAction])
-
-  // 键盘导航
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent): void => {
-      switch (e.key) {
-        case 'Escape':
-          setIsVisible(false)
-          setSearchText('')
-          break
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev + 1 < filteredActions.length ? prev + 1 : prev))
-          break
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
-          break
-        case 'Enter':
-          if (filteredActions[selectedIndex]) {
-            void handleExecute(filteredActions[selectedIndex])
-          }
-          break
+    return () => {
+      if (confirmFocusTimerRef.current) {
+        clearTimeout(confirmFocusTimerRef.current)
+        confirmFocusTimerRef.current = null
       }
-    },
-    [filteredActions, selectedIndex]
-  )
+    }
+  }, [confirmAction])
 
   // 执行动作
   const handleExecute = useCallback(async (action: DebugAction): Promise<void> => {
@@ -244,6 +233,7 @@ const DebugPanel: React.FC = () => {
 
   // 重置选中索引当过滤结果变化时
   useEffect(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setSelectedIndex(0)
   }, [searchText])
 

@@ -1,6 +1,6 @@
 import { initialize } from 'vs/base/common/worker/webWorkerBootstrap'
 import { EditorWorker } from 'vs/editor/common/services/editorWebWorker'
 
-initialize((workerServer) => {
-	return new EditorWorker({})
+initialize(() => {
+  return new EditorWorker({})
 })

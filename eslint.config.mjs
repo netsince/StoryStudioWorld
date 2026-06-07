@@ -12,7 +12,7 @@ export default defineConfig(
     '**/dist/**',
     '**/out/**',
     '**/build/**',
-    
+
     // 2. 根目录下不需要 lint 的独立文件夹
     '**/website/**',
     '**/docs/**',

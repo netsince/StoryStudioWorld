@@ -339,7 +339,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     const initialContent = content || ''
     historyRef.current = [initialContent]
     historyIndexRef.current = 0
-    setText(initialContent)
+    requestAnimationFrame(() => setText(initialContent))
   }, [content])
 
   // 注册命令
@@ -692,8 +692,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavForward()
       unregisterZenMode()
     }
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
-  }, [onChange, onSave, saveHistory, goBack, goForward, groupId])
+  }, [onChange, onSave, saveHistory, goBack, goForward, groupId, restoreFocusAndSelection, t, updateLastSaved])
 
   // Update status bar when text changes
   useEffect(() => {
@@ -1183,12 +1182,14 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     highlightMatches.forEach((match, index) => {
       // 添加匹配前的文本
       if (match.start > lastIndex) {
-        parts.push(<span key={`text-${index}`}>{text.substring(lastIndex, match.start)}</span>)
+        parts.push(
+          <span key={`text-${match.start}`}>{text.substring(lastIndex, match.start)}</span>
+        )
       }
       // 添加高亮的匹配文本
       parts.push(
         <span
-          key={`match-${index}`}
+          key={`match-${match.start}`}
           className={`highlight-match ${index === currentMatchIndex ? 'current' : ''}`}
         >
           {text.substring(match.start, match.end)}

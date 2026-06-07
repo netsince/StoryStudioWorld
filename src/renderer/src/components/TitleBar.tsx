@@ -34,13 +34,20 @@ const TitleBar: React.FC = () => {
 
   const [activeMenu, setActiveMenu] = useState<MenuId>(null)
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 })
+  const fileRef = useRef<HTMLSpanElement>(null)
+  const editRef = useRef<HTMLSpanElement>(null)
+  const selectRef = useRef<HTMLSpanElement>(null)
+  const viewRef = useRef<HTMLSpanElement>(null)
+  const gotoRef = useRef<HTMLSpanElement>(null)
+  const helpRef = useRef<HTMLSpanElement>(null)
+
   const menuRefs = {
-    file: useRef<HTMLSpanElement>(null),
-    edit: useRef<HTMLSpanElement>(null),
-    select: useRef<HTMLSpanElement>(null),
-    view: useRef<HTMLSpanElement>(null),
-    goto: useRef<HTMLSpanElement>(null),
-    help: useRef<HTMLSpanElement>(null)
+    file: fileRef,
+    edit: editRef,
+    select: selectRef,
+    view: viewRef,
+    goto: gotoRef,
+    help: helpRef
   }
 
   const executeCommand = (commandId: string): void => {

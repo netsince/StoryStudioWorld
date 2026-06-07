@@ -71,15 +71,20 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
     if (!isVisible) return
 
     const newMatches = findAllMatches(findText)
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setMatches(newMatches)
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setMatchCount(newMatches.length)
 
     if (newMatches.length > 0 && currentMatchIndex === -1) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setCurrentMatchIndex(0)
       highlightMatch(newMatches[0], false)
     } else if (newMatches.length === 0) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setCurrentMatchIndex(-1)
     } else if (currentMatchIndex >= newMatches.length) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setCurrentMatchIndex(newMatches.length - 1)
       highlightMatch(newMatches[newMatches.length - 1], false)
     }
@@ -122,7 +127,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
     }
 
     // 更新后重新查找
-    setTimeout(() => {
+    const replaceTimer = setTimeout(() => {
       const newMatches = findAllMatches(findText)
       setMatches(newMatches)
       setMatchCount(newMatches.length)
@@ -133,6 +138,8 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
         highlightMatch(newMatches[newIndex], true)
       }
     }, 0)
+
+    return () => clearTimeout(replaceTimer)
   }, [
     matches,
     currentMatchIndex,
@@ -196,16 +203,24 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isVisible, onClose, handlePrevMatch, handleNextMatch])
 
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 显示时聚焦到输入框
   useEffect(() => {
     if (isVisible) {
-      setTimeout(() => {
+      focusTimerRef.current = setTimeout(() => {
         if (activeTab === 'find') {
           findInputRef.current?.focus()
         } else {
           replaceInputRef.current?.focus()
         }
       }, 10)
+    }
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current)
+        focusTimerRef.current = null
+      }
     }
   }, [isVisible, activeTab])
 

@@ -1,5 +1,11 @@
-import React, { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
-import { InputBox, IInputOptions, MessageType, IInputBoxStyles, IMessage } from '../../../vse/base/browser/ui/inputbox/inputBox'
+import React, { useEffect, useRef, useImperativeHandle } from 'react'
+import {
+  InputBox,
+  IInputOptions,
+  MessageType,
+  IInputBoxStyles,
+  IMessage
+} from '../../../vse/base/browser/ui/inputbox/inputBox'
 import { defaultInputBoxStyles } from '../../../vse/platform/theme/browser/defaultStyles'
 
 export interface InputBoxProps {
@@ -30,24 +36,22 @@ export interface InputBoxRef {
   validate: () => MessageType | undefined
 }
 
-const VseInputBox = forwardRef<InputBoxRef, InputBoxProps>((props, ref) => {
-  const {
-    value = '',
-    onChange,
-    placeholder,
-    ariaLabel,
-    disabled = false,
-    type = 'text',
-    flexibleHeight = false,
-    flexibleMaxHeight,
-    message,
-    validation,
-    autoFocus = false,
-    className,
-    style,
-    inputBoxStyles = defaultInputBoxStyles
-  } = props
-
+const VseInputBox: React.FC<InputBoxProps & { ref?: React.Ref<InputBoxRef> }> = ({
+  value = '',
+  onChange,
+  placeholder,
+  ariaLabel,
+  disabled = false,
+  type = 'text',
+  flexibleHeight = false,
+  flexibleMaxHeight,
+  message,
+  validation,
+  autoFocus = false,
+  style,
+  inputBoxStyles = defaultInputBoxStyles,
+  ref
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputBoxRef = useRef<InputBox | null>(null)
 
@@ -92,7 +96,8 @@ const VseInputBox = forwardRef<InputBoxRef, InputBoxProps>((props, ref) => {
       inputBoxRef.current = null
       container.innerHTML = ''
     }
-  }, []) // 只在挂载时创建
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+  }, [])
 
   // 更新值
   useEffect(() => {
@@ -126,29 +131,26 @@ const VseInputBox = forwardRef<InputBoxRef, InputBoxProps>((props, ref) => {
   }, [message])
 
   // 暴露方法给 ref
-  useImperativeHandle(ref, () => ({
-    focus: () => inputBoxRef.current?.focus(),
-    blur: () => inputBoxRef.current?.blur(),
-    select: () => inputBoxRef.current?.select(),
-    getValue: () => inputBoxRef.current?.value || '',
-    setValue: (newValue: string) => {
-      if (inputBoxRef.current) {
-        inputBoxRef.current.value = newValue
-      }
-    },
-    showMessage: (msg: IMessage) => inputBoxRef.current?.showMessage(msg),
-    hideMessage: () => inputBoxRef.current?.hideMessage(),
-    validate: () => inputBoxRef.current?.validate()
-  }), [])
-
-  return (
-    <div
-      ref={containerRef}
-      style={style}
-    />
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => inputBoxRef.current?.focus(),
+      blur: () => inputBoxRef.current?.blur(),
+      select: () => inputBoxRef.current?.select(),
+      getValue: () => inputBoxRef.current?.value || '',
+      setValue: (newValue: string) => {
+        if (inputBoxRef.current) {
+          inputBoxRef.current.value = newValue
+        }
+      },
+      showMessage: (msg: IMessage) => inputBoxRef.current?.showMessage(msg),
+      hideMessage: () => inputBoxRef.current?.hideMessage(),
+      validate: () => inputBoxRef.current?.validate()
+    }),
+    []
   )
-})
 
-VseInputBox.displayName = 'VseInputBox'
+  return <div ref={containerRef} style={style} />
+}
 
 export default VseInputBox

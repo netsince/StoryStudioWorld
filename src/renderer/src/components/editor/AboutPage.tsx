@@ -128,16 +128,24 @@ const AboutPage: React.FC = () => {
         ))}
       </div>
 
-      <div
-        style={{
-          marginTop: '48px',
-          fontSize: '12px',
-          color: 'var(--text-muted, #858585)',
-          textAlign: 'center'
-        }}
-      >
-        {t('about.copyright', { year: new Date().getFullYear() })}
-      </div>
+      <CopyrightYear />
+    </div>
+  )
+}
+
+const CopyrightYear: React.FC = () => {
+  const { t } = useTranslation()
+  const [year] = useState(() => new Date().getFullYear())
+  return (
+    <div
+      style={{
+        marginTop: '48px',
+        fontSize: '12px',
+        color: 'var(--text-muted, #858585)',
+        textAlign: 'center'
+      }}
+    >
+      {t('about.copyright', { year })}
     </div>
   )
 }

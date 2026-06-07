@@ -70,14 +70,14 @@ const saveSettings = (settings: AppSettings): void => {
 
 const PreferencesPage: React.FC = () => {
   const { t } = useTranslation()
-  const [settings, setSettings] = useState<AppSettings>(loadSettings)
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
   const [systemFonts, setSystemFonts] = useState<{ name: string; value: string }[]>([])
   const [activeSection, setActiveSection] = useState<string>('editor')
   const [availableLanguages, setAvailableLanguages] = useState<LanguageMetadata[]>([])
-  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(getCurrentLanguage())
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>(() => getCurrentLanguage())
 
   useEffect(() => {
-    setAvailableLanguages(getAvailableLanguages())
+    requestAnimationFrame(() => setAvailableLanguages(getAvailableLanguages()))
   }, [])
 
   useEffect(() => {
@@ -105,21 +105,19 @@ const PreferencesPage: React.FC = () => {
       'Microsoft JhengHei',
       'Apple Symbols'
     ]
-    const availableFonts: string[] = []
+    const detectedFonts: string[] = []
     testFonts.forEach((font) => {
       ctx.font = `72px ${font}, sans-serif`
       const width = ctx.measureText('M').width
-      if (width !== baseWidth && !availableFonts.includes(font)) {
-        availableFonts.push(font)
+      if (width !== baseWidth && !detectedFonts.includes(font)) {
+        detectedFonts.push(font)
       }
     })
-    // eslint-disable-next-line @eslint-react/set-state-in-effect
-    setSystemFonts(
-      availableFonts.map((name) => ({
-        name,
-        value: `"${name}", sans-serif`
-      }))
-    )
+    const fonts = detectedFonts.map((name) => ({
+      name,
+      value: `"${name}", sans-serif`
+    }))
+    requestAnimationFrame(() => setSystemFonts(fonts))
   }, [])
 
   const applySettings = (newSettings: Partial<AppSettings>): void => {
@@ -227,9 +225,9 @@ const PreferencesPage: React.FC = () => {
                   borderRadius: '6px'
                 }}
               >
-                {allFonts.map((font, idx) => (
+                {allFonts.map((font) => (
                   <div
-                    key={idx}
+                    key={font.value}
                     onClick={() => applySettings({ editorFontFamily: font.value })}
                     style={{
                       padding: '10px 12px',

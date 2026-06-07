@@ -60,16 +60,6 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
     setImages((prev) => prev.map((img) => ({ ...img, isTheme: false })))
   }
 
-  const handleCaptionSave = async (itemId: string): Promise<void> => {
-    if (!currentProject) return
-    await window.api.gallery.updateCaption(currentProject.projectSettingsPath, itemId, captionDraft)
-    setImages((prev) =>
-      prev.map((img) => (img.id === itemId ? { ...img, caption: captionDraft } : img))
-    )
-    setEditingCaptionId(null)
-    setCaptionDraft('')
-  }
-
   const handleDragStart = (itemId: string): void => {
     setDragItemId(itemId)
   }

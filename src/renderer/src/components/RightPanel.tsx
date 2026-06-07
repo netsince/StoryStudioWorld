@@ -31,6 +31,7 @@ const PluginPanelWrapper: React.FC<{
 
     if (typeof panel !== 'function') {
       const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setReactElement(element)
       return
     }
@@ -43,16 +44,21 @@ const PluginPanelWrapper: React.FC<{
       if (result instanceof HTMLElement) {
         container.innerHTML = ''
         container.appendChild(result)
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setReactElement(null)
       } else if (isReactElement(result)) {
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setReactElement(result)
       } else if (result === null || result === undefined) {
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setReactElement(null)
       } else {
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setReactElement(result as unknown as React.ReactElement)
       }
     } catch {
       const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setReactElement(element)
     }
 

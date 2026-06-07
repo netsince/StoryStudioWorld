@@ -3,7 +3,7 @@
 
 export type LayoutSize = 'tiny' | 'narrow' | 'compact' | 'default'
 
-export interface UseResponsiveLayoutValue {
+export interface ResponsiveLayoutValue {
   layoutSize: LayoutSize
   explorerWidth: number
   rightPanelWidth: number
@@ -13,7 +13,10 @@ export interface UseResponsiveLayoutValue {
   handleRightPanelResize: (deltaX: number) => void
 }
 
-// @deprecated 此 Hook 已废弃，请使用 useLayoutStore 替代
-export const useResponsiveLayout = (): UseResponsiveLayoutValue => {
+// @deprecated 此函数已废弃，请使用 useLayoutStore 替代
+export function getResponsiveLayoutFallback(): ResponsiveLayoutValue {
   throw new Error('useResponsiveLayout is deprecated. Please use useLayoutStore instead.')
 }
+
+// 保留旧名称导出以避免破坏现有导入
+export const useResponsiveLayout = getResponsiveLayoutFallback

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
+import React, { createContext, use, useState, useCallback, useRef } from 'react'
 
 export const enum StatusbarAlignment {
   LEFT,
@@ -37,7 +37,7 @@ interface StatusbarContextType {
 const StatusbarContext = createContext<StatusbarContextType | undefined>(undefined)
 
 export const StatusbarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [entries, setEntries] = useState<Map<string, StoredEntry>>(new Map())
+  const [entries, setEntries] = useState<Map<string, StoredEntry>>(() => new Map())
   const entriesRef = useRef(entries)
 
   const updateEntriesRef = useCallback((newEntries: Map<string, StoredEntry>) => {
@@ -91,13 +91,11 @@ export const StatusbarProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [updateEntriesRef]
   )
 
-  return (
-    <StatusbarContext.Provider value={{ entries, addEntry }}>{children}</StatusbarContext.Provider>
-  )
+  return <StatusbarContext value={{ entries, addEntry }}>{children}</StatusbarContext>
 }
 
 export const useStatusbar = (): StatusbarContextType => {
-  const context = useContext(StatusbarContext)
+  const context = use(StatusbarContext)
   if (!context) {
     throw new Error('useStatusbar must be used within a StatusbarProvider')
   }

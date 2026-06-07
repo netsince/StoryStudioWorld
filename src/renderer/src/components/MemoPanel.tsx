@@ -56,14 +56,6 @@ const MemoItem: React.FC<{
     onStopEdit()
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      handleSave()
-    } else if (e.key === 'Escape') {
-      handleCancel()
-    }
-  }
-
   if (isEditing) {
     return (
       <div className="memo-item editing">

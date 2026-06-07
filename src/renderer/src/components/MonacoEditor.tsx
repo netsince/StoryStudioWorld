@@ -17,8 +17,7 @@ import { getPageLifecycleManager } from '../utils/pageLifecycle'
 import { editorRegistry } from '../services/editorRegistry'
 
 import editorWorkerUrl from '../workers/editor.worker?worker&url'
-
-;(globalThis as any).MonacoEnvironment = {
+;(globalThis as Record<string, unknown>).MonacoEnvironment = {
   getWorkerUrl() {
     return editorWorkerUrl
   }
@@ -145,7 +144,12 @@ function buildMonacoOptions(
     },
     snippetSuggestions: 'none',
     acceptSuggestionOnCommitCharacter: false,
-    lightbulb: { enabled: 'off' as unknown as Exclude<monaco.editor.IEditorLightbulbOptions['enabled'], undefined> },
+    lightbulb: {
+      enabled: 'off' as unknown as Exclude<
+        monaco.editor.IEditorLightbulbOptions['enabled'],
+        undefined
+      >
+    },
     autoIndent: autoIndentSettings.enabled ? 'advanced' : 'none',
     tabSize,
     insertSpaces,
@@ -301,8 +305,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       editor.dispose()
       editorRef.current = null
     }
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
-  }, [isActive, tabId])
+  }, [isActive, tabId, _placeholder, content, getTabScrollPosition, setTabScrollPosition, updateStats])
 
   useEffect(() => {
     const editor = editorRef.current
@@ -346,11 +349,11 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     return () => window.removeEventListener('app-settings-changed', handler)
   }, [])
 
-  const editorValue = (): string => {
+  const editorValue = useCallback((): string => {
     const editor = editorRef.current
     if (editor) return editor.getValue()
     return content || ''
-  }
+  }, [content])
 
   const executeAutoSave = useCallback(() => {
     if (onSaveRef.current) {
@@ -364,7 +367,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       }
     }
     pendingAutoSaveRef.current = false
-  }, [updateLastSaved])
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+  }, [])
 
   const scheduleAutoSave = useCallback(() => {
     const autoSaveSettings = getAutoSaveSettings()
@@ -557,7 +561,10 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         endLine++
       }
 
-      const startColumn = model.getLineContent(startLine).trim().length > 0 ? 1 : model.getLineContent(startLine).length + 1
+      const startColumn =
+        model.getLineContent(startLine).trim().length > 0
+          ? 1
+          : model.getLineContent(startLine).length + 1
       const endColumn = model.getLineContent(endLine).length + 1
 
       editor.setSelection(new monaco.Range(startLine, startColumn, endLine, endColumn))
@@ -586,7 +593,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         newEndLine = endLine + 1
       }
 
-      editor.setSelection(new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1))
+      editor.setSelection(
+        new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1)
+      )
       editor.focus()
     }
 
@@ -617,7 +626,9 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       if (newStartLine === newEndLine) {
         editor.setPosition(new monaco.Position(newStartLine, 1))
       } else {
-        editor.setSelection(new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1))
+        editor.setSelection(
+          new monaco.Range(newStartLine, 1, newEndLine, model.getLineContent(newEndLine).length + 1)
+        )
       }
       editor.focus()
     }
@@ -695,7 +706,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       unregisterNavForward()
       unregisterZenMode()
     }
-  }, [goBack, goForward, groupId])
+  }, [goBack, goForward, groupId, updateLastSaved, editorValue])
 
   const insertNewlineWithIndent = useCallback((fallbackIndent: string) => {
     const editor = editorRef.current
@@ -747,8 +758,13 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         if (editor) {
           editor.focus()
           const findController = editor.getContribution('editor.contrib.findController')
-          if (findController && typeof (findController as any).getState === 'function') {
-            const findState = (findController as any).getState()
+          if (
+            findController &&
+            typeof (findController as Record<string, unknown>).getState === 'function'
+          ) {
+            const findState = (findController as Record<string, unknown>).getState() as {
+              isRevealed?: boolean
+            } | null
             if (!findState || !findState.isRevealed) {
               editor.trigger('keyboard', 'actions.find', null)
             } else if (e.shiftKey) {
@@ -787,7 +803,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
         }
       }
     },
-    [insertNewlineWithIndent, updateLastSaved]
+    [insertNewlineWithIndent, updateLastSaved, editorValue]
   )
 
   // Fix 4 & 5: right-click → only context menu, never both
@@ -813,7 +829,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
     mousePositionRef.current = { x: e.clientX, y: e.clientY }
   }
 
-  const handleMouseUp = (_e: React.MouseEvent<HTMLDivElement>): void => {
+  const handleMouseUp = (): void => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current)
       longPressTimerRef.current = null

@@ -93,15 +93,15 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
   return (
     <>
       <div ref={barRef} className="chinese-punctuation-bar" style={barStyle}>
-        {PUNCTUATIONS.map((pair, index) => (
-          <div key={index} className="punctuation-pair">
-            {pair.map((symbol, i) => (
+        {PUNCTUATIONS.map((pair) => (
+          <div key={`pair-${pair[0]}-${pair[1]}`} className="punctuation-pair">
+            {pair.map((symbol, symbolIndex) => (
               <button
-                key={i}
+                key={`sym-${pair[0]}-${pair[1]}-${symbol}`}
                 className="punctuation-btn"
                 onClick={(e) => handleClick(symbol, e)}
                 onMouseDown={(e) => handleLongPress(symbol, e)}
-                title={i === 0 ? `左: ${symbol}` : `右: ${symbol}`}
+                title={symbolIndex === 0 ? `左: ${symbol}` : `右: ${symbol}`}
               >
                 {symbol}
               </button>

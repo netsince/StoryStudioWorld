@@ -49,7 +49,7 @@ const ExportWikiPanel: React.FC = () => {
   const currentProject = useProjectStore((s) => s.currentProject)
 
   const availableLanguages = getAvailableLanguages()
-  const [exportLang, setExportLang] = useState<SupportedLanguage>(getCurrentLanguage())
+  const [exportLang, setExportLang] = useState<SupportedLanguage>(() => getCurrentLanguage())
   const [exportPath, setExportPath] = useState('')
   const [includeChapters, setIncludeChapters] = useState(false)
   const [isExporting, setIsExporting] = useState(false)

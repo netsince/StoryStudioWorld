@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { StoryNode } from '../models'
 import { useEditorStore } from '../stores/editorStore'
@@ -37,12 +37,14 @@ const Explorer: React.FC = () => {
   const openTab = useEditorStore((s) => s.openTab)
 
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
-  const [createMenuPosition, setCreateMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const [createMenuPosition, setCreateMenuPosition] = useState<{ x: number; y: number } | null>(
+    null
+  )
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>([])
 
   useEffect(() => {
-    setSelectedNodeIds([])
+    requestAnimationFrame(() => setSelectedNodeIds([]))
   }, [activeActivity])
 
   const activityTitle = useMemo(() => {
@@ -60,12 +62,14 @@ const Explorer: React.FC = () => {
 
   useEffect(() => {
     if (expandNodePath.length > 0) {
-      setExpandedNodeIds((prev) => {
-        const newSet = new Set(prev)
-        expandNodePath.forEach((id) => newSet.add(id))
-        return Array.from(newSet)
+      requestAnimationFrame(() => {
+        setExpandedNodeIds((prev) => {
+          const newSet = new Set(prev)
+          expandNodePath.forEach((id) => newSet.add(id))
+          return Array.from(newSet)
+        })
+        setExpandNodePath([])
       })
-      setExpandNodePath([])
     }
   }, [expandNodePath, setExpandNodePath])
 
