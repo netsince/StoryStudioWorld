@@ -76,20 +76,23 @@ const IndentGuide: React.FC<{ depth: number }> = ({ depth }) => {
   if (depth === 0) return null
   return (
     <>
-      {Array.from({ length: depth }).map((_, i) => (
-        <span
-          key={`guide-${i}`}
-          style={{
-            position: 'absolute',
-            left: `${(i + 1) * INDENT_SIZE + TWISTIE_SIZE / 2}px`,
-            top: 0,
-            bottom: 0,
-            width: '1px',
-            backgroundColor: 'var(--tree-indent-guide-color, rgba(128,128,128,0.2))',
-            pointerEvents: 'none'
-          }}
-        />
-      ))}
+      {Array.from({ length: depth }).map((_, i) => {
+        const left = (i + 1) * INDENT_SIZE + TWISTIE_SIZE / 2
+        return (
+          <span
+            key={`indent-${left}`}
+            style={{
+              position: 'absolute',
+              left: `${left}px`,
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              backgroundColor: 'var(--tree-indent-guide-color, rgba(128,128,128,0.2))',
+              pointerEvents: 'none'
+            }}
+          />
+        )
+      })}
     </>
   )
 }
@@ -110,6 +113,31 @@ interface TreeProps {
 }
 
 type DropPosition = { nodeId: string; position: 'before' | 'after' | 'inside' } | null
+
+interface TreeNodeItemProps {
+  node: StoryNode
+  depth: number
+  expandedNodes: Set<string>
+  selectedNodeIds: Set<string>
+  draggingNodeId: string | null
+  hoveredNodeId: string | null
+  dropPosition: DropPosition
+  getChildren: (parentId: string | null) => StoryNode[]
+  getDisplayNodeName: (node: StoryNode) => string
+  toggleExpanded: (nodeId: string) => void
+  setHoveredNodeId: (id: string | null) => void
+  setSelectedNodes: (nodes: Set<string>) => void
+  setDraggingNodeId: (id: string | null) => void
+  setDropPosition: (pos: DropPosition) => void
+  lastClickedNodeIdRef: React.MutableRefObject<string | null>
+  getAllVisibleNodeIds: () => string[]
+  handleDragStart: (e: React.DragEvent, nodeId: string) => void
+  handleDragOver: (e: React.DragEvent, nodeId: string) => void
+  handleDragLeave: () => void
+  handleDrop: (e: React.DragEvent, targetNodeId: string) => void
+  handleContextMenu: (e: React.MouseEvent, nodeId: string) => void
+  onOpenChapter: (node: StoryNode) => void
+}
 
 const Tree: React.FC<TreeProps> = ({
   nodes,
@@ -349,159 +377,6 @@ const Tree: React.FC<TreeProps> = ({
     setContextMenu({ x: e.clientX, y: e.clientY, nodeId })
   }, [])
 
-  const TreeNodeItem = React.memo(function TreeNodeItem({
-    node,
-    depth
-  }: {
-    node: StoryNode
-    depth: number
-  }) {
-    const isExpanded = expandedNodes.has(node.id)
-    const isSelected = selectedNodeIds.has(node.id)
-    const isDragging = draggingNodeId === node.id
-    const isHovered = hoveredNodeId === node.id
-    const isFolder = node.type === 'folder'
-    const hasChildren = isFolder && getChildren(node.id).length > 0
-
-    const isDropTarget = dropPosition?.nodeId === node.id
-    const isDropInside = isDropTarget && dropPosition?.position === 'inside'
-    const isDropBefore = isDropTarget && dropPosition?.position === 'before'
-    const isDropAfter = isDropTarget && dropPosition?.position === 'after'
-
-    const handleClick = (e: React.MouseEvent): void => {
-      if (e.ctrlKey || e.metaKey) {
-        const newSelection = new Set(selectedNodeIds)
-        if (newSelection.has(node.id)) {
-          newSelection.delete(node.id)
-        } else {
-          newSelection.add(node.id)
-        }
-        setSelectedNodes(newSelection)
-      } else if (e.shiftKey && lastClickedNodeIdRef.current) {
-        const allVisibleIds = getAllVisibleNodeIds()
-        const lastIndex = allVisibleIds.indexOf(lastClickedNodeIdRef.current)
-        const currentIndex = allVisibleIds.indexOf(node.id)
-        if (lastIndex !== -1 && currentIndex !== -1) {
-          const start = Math.min(lastIndex, currentIndex)
-          const end = Math.max(lastIndex, currentIndex)
-          const rangeIds = allVisibleIds.slice(start, end + 1)
-          setSelectedNodes(new Set(rangeIds))
-        }
-      } else {
-        setSelectedNodes(new Set([node.id]))
-      }
-      lastClickedNodeIdRef.current = node.id
-
-      if (isFolder) {
-        toggleExpanded(node.id)
-      } else {
-        onOpenChapter(node)
-      }
-    }
-
-    return (
-      <div style={{ position: 'relative' }}>
-        {/* Drop indicator before */}
-        {isDropBefore && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: `${depth * INDENT_SIZE}px`,
-              right: 0,
-              height: '2px',
-              backgroundColor: 'var(--list-active-selection-bg, #007acc)',
-              zIndex: 10
-            }}
-          />
-        )}
-
-        <div
-          style={{
-            height: `${ROW_HEIGHT}px`,
-            display: 'flex',
-            alignItems: 'center',
-            position: 'relative',
-            paddingLeft: `${depth * INDENT_SIZE}px`,
-            backgroundColor: isSelected
-              ? 'var(--list-active-selection-bg, #04395e)'
-              : isHovered
-                ? 'var(--list-hover-background, #2a2d2e)'
-                : 'transparent',
-            color: isSelected ? 'var(--list-active-selection-fg, #fff)' : 'var(--foreground, #ccc)',
-            cursor: 'pointer',
-            opacity: isDragging ? 0.5 : 1,
-            outline: isDropInside ? '1px solid var(--accent-color, #007acc)' : 'none',
-            outlineOffset: '-1px',
-            userSelect: 'none'
-          }}
-          draggable
-          onClick={handleClick}
-          onMouseEnter={() => setHoveredNodeId(node.id)}
-          onMouseLeave={() => setHoveredNodeId(null)}
-          onDragStart={(e) => handleDragStart(e, node.id)}
-          onDragOver={(e) => handleDragOver(e, node.id)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, node.id)}
-          onDragEnd={() => {
-            setDraggingNodeId(null)
-            setDropPosition(null)
-          }}
-          onContextMenu={(e) => handleContextMenu(e, node.id)}
-        >
-          <IndentGuide depth={depth} />
-
-          {/* Twistie for folders */}
-          {isFolder && hasChildren ? (
-            <Twistie
-              expanded={isExpanded}
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleExpanded(node.id)
-              }}
-            />
-          ) : (
-            <span style={{ width: `${TWISTIE_SIZE}px`, flexShrink: 0 }} />
-          )}
-
-          {/* File/Folder icon */}
-          <span style={{ marginRight: '4px', display: 'flex', alignItems: 'center' }}>
-            <FileIcon isFolder={isFolder} isExpanded={isExpanded} />
-          </span>
-
-          {/* Node name */}
-          <span
-            style={{
-              flex: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontSize: '13px',
-              lineHeight: `${ROW_HEIGHT}px`
-            }}
-          >
-            {getDisplayNodeName(node)}
-          </span>
-        </div>
-
-        {/* Drop indicator after */}
-        {isDropAfter && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: `${depth * INDENT_SIZE}px`,
-              right: 0,
-              height: '2px',
-              backgroundColor: 'var(--list-active-selection-bg, #007acc)',
-              zIndex: 10
-            }}
-          />
-        )}
-      </div>
-    )
-  })
-
   return (
     <div
       ref={treeRef}
@@ -517,8 +392,32 @@ const Tree: React.FC<TreeProps> = ({
       }}
       onDrop={handleDropOnRoot}
     >
-      {visibleNodes.map(({ node, depth }, index) => (
-        <TreeNodeItem key={`${node.id}-${index}`} node={node} depth={depth} />
+      {visibleNodes.map(({ node, depth }) => (
+        <TreeNodeItem
+          key={node.id}
+          node={node}
+          depth={depth}
+          expandedNodes={expandedNodes}
+          selectedNodeIds={selectedNodeIds}
+          draggingNodeId={draggingNodeId}
+          hoveredNodeId={hoveredNodeId}
+          dropPosition={dropPosition}
+          getChildren={getChildren}
+          getDisplayNodeName={getDisplayNodeName}
+          toggleExpanded={toggleExpanded}
+          setHoveredNodeId={setHoveredNodeId}
+          setSelectedNodes={setSelectedNodes}
+          setDraggingNodeId={setDraggingNodeId}
+          setDropPosition={setDropPosition}
+          lastClickedNodeIdRef={lastClickedNodeIdRef}
+          getAllVisibleNodeIds={getAllVisibleNodeIds}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDragLeave={handleDragLeave}
+          handleDrop={handleDrop}
+          handleContextMenu={handleContextMenu}
+          onOpenChapter={onOpenChapter}
+        />
       ))}
 
       {/* Context Menu */}
@@ -634,5 +533,175 @@ const Tree: React.FC<TreeProps> = ({
     </div>
   )
 }
+
+const TreeNodeItem = React.memo(function TreeNodeItem({
+  node,
+  depth,
+  expandedNodes,
+  selectedNodeIds,
+  draggingNodeId,
+  hoveredNodeId,
+  dropPosition,
+  getChildren,
+  getDisplayNodeName,
+  toggleExpanded,
+  setHoveredNodeId,
+  setSelectedNodes,
+  setDraggingNodeId,
+  setDropPosition,
+  lastClickedNodeIdRef,
+  getAllVisibleNodeIds,
+  handleDragStart,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  handleContextMenu,
+  onOpenChapter
+}: TreeNodeItemProps) {
+  const isExpanded = expandedNodes.has(node.id)
+  const isSelected = selectedNodeIds.has(node.id)
+  const isDragging = draggingNodeId === node.id
+  const isHovered = hoveredNodeId === node.id
+  const isFolder = node.type === 'folder'
+  const hasChildren = isFolder && getChildren(node.id).length > 0
+
+  const isDropTarget = dropPosition?.nodeId === node.id
+  const isDropInside = isDropTarget && dropPosition?.position === 'inside'
+  const isDropBefore = isDropTarget && dropPosition?.position === 'before'
+  const isDropAfter = isDropTarget && dropPosition?.position === 'after'
+
+  const handleClick = (e: React.MouseEvent): void => {
+    if (e.ctrlKey || e.metaKey) {
+      const newSelection = new Set(selectedNodeIds)
+      if (newSelection.has(node.id)) {
+        newSelection.delete(node.id)
+      } else {
+        newSelection.add(node.id)
+      }
+      setSelectedNodes(newSelection)
+    } else if (e.shiftKey && lastClickedNodeIdRef.current) {
+      const allVisibleIds = getAllVisibleNodeIds()
+      const lastIndex = allVisibleIds.indexOf(lastClickedNodeIdRef.current)
+      const currentIndex = allVisibleIds.indexOf(node.id)
+      if (lastIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(lastIndex, currentIndex)
+        const end = Math.max(lastIndex, currentIndex)
+        const rangeIds = allVisibleIds.slice(start, end + 1)
+        setSelectedNodes(new Set(rangeIds))
+      }
+    } else {
+      setSelectedNodes(new Set([node.id]))
+    }
+    lastClickedNodeIdRef.current = node.id
+
+    if (isFolder) {
+      toggleExpanded(node.id)
+    } else {
+      onOpenChapter(node)
+    }
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Drop indicator before */}
+      {isDropBefore && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: `${depth * INDENT_SIZE}px`,
+            right: 0,
+            height: '2px',
+            backgroundColor: 'var(--list-active-selection-bg, #007acc)',
+            zIndex: 10
+          }}
+        />
+      )}
+
+      <div
+        style={{
+          height: `${ROW_HEIGHT}px`,
+          display: 'flex',
+          alignItems: 'center',
+          position: 'relative',
+          paddingLeft: `${depth * INDENT_SIZE}px`,
+          backgroundColor: isSelected
+            ? 'var(--list-active-selection-bg, #04395e)'
+            : isHovered
+              ? 'var(--list-hover-background, #2a2d2e)'
+              : 'transparent',
+          color: isSelected ? 'var(--list-active-selection-fg, #fff)' : 'var(--foreground, #ccc)',
+          cursor: 'pointer',
+          opacity: isDragging ? 0.5 : 1,
+          outline: isDropInside ? '1px solid var(--accent-color, #007acc)' : 'none',
+          outlineOffset: '-1px',
+          userSelect: 'none'
+        }}
+        draggable
+        onClick={handleClick}
+        onMouseEnter={() => setHoveredNodeId(node.id)}
+        onMouseLeave={() => setHoveredNodeId(null)}
+        onDragStart={(e) => handleDragStart(e, node.id)}
+        onDragOver={(e) => handleDragOver(e, node.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, node.id)}
+        onDragEnd={() => {
+          setDraggingNodeId(null)
+          setDropPosition(null)
+        }}
+        onContextMenu={(e) => handleContextMenu(e, node.id)}
+      >
+        <IndentGuide depth={depth} />
+
+        {/* Twistie for folders */}
+        {isFolder && hasChildren ? (
+          <Twistie
+            expanded={isExpanded}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleExpanded(node.id)
+            }}
+          />
+        ) : (
+          <span style={{ width: `${TWISTIE_SIZE}px`, flexShrink: 0 }} />
+        )}
+
+        {/* File/Folder icon */}
+        <span style={{ marginRight: '4px', display: 'flex', alignItems: 'center' }}>
+          <FileIcon isFolder={isFolder} isExpanded={isExpanded} />
+        </span>
+
+        {/* Node name */}
+        <span
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '13px',
+            lineHeight: `${ROW_HEIGHT}px`
+          }}
+        >
+          {getDisplayNodeName(node)}
+        </span>
+      </div>
+
+      {/* Drop indicator after */}
+      {isDropAfter && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: `${depth * INDENT_SIZE}px`,
+            right: 0,
+            height: '2px',
+            backgroundColor: 'var(--list-active-selection-bg, #007acc)',
+            zIndex: 10
+          }}
+        />
+      )}
+    </div>
+  )
+})
 
 export default Tree
