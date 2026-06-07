@@ -6,6 +6,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useEditorStore } from '../stores/editorStore'
 import { buildNodeDisplayPath } from '../utils/nodeUtils'
 import { commandService, Commands } from '../services/commandService'
+import VseInputBox, { InputBoxRef } from './VseInputBox'
 
 interface SearchResult {
   node: StoryNode
@@ -22,7 +23,7 @@ const QuickOpen: React.FC = () => {
   const [results, setResults] = useState<SearchResult[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<InputBoxRef>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -235,6 +236,7 @@ const QuickOpen: React.FC = () => {
       >
         {/* 搜索输入框 */}
         <div
+          onKeyDown={handleKeyDown}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -255,22 +257,15 @@ const QuickOpen: React.FC = () => {
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
           </svg>
-          <input
+          <VseInputBox
             ref={inputRef}
-            type="text"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={(value) => setSearchText(value)}
             placeholder={t('quickOpen.placeholder', '搜索文件、设定或内容... (Ctrl+P)')}
+            autoFocus
             style={{
               flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--foreground, #ccc)',
-              fontSize: '13px',
-              fontFamily: 'inherit',
-              padding: '4px 0'
+              minWidth: 0
             }}
           />
           {isSearching && (

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import VseInputBox, { InputBoxRef } from './VseInputBox'
 
 interface RenameDialogProps {
   title: string
@@ -17,7 +18,7 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
 }) => {
   const { t } = useTranslation()
   const [value, setValue] = useState(initialValue)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<InputBoxRef>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -45,11 +46,12 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
     <div className="ssw-modal-overlay" onMouseDown={onCancel}>
       <div className="ssw-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="ssw-modal-title">{title}</div>
-        <input
+        <VseInputBox
           ref={inputRef}
           className="ssw-modal-input"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(newValue) => setValue(newValue)}
+          autoFocus
         />
         <div className="ssw-modal-actions">
           <button className="action-button secondary inline-button" onMouseDown={onCancel}>

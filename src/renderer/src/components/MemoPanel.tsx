@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMemoStore } from '../stores/memoStore'
 import type { Memo } from '../../../main/memo'
+import VseInputBox, { InputBoxRef } from './VseInputBox'
 
 const formatDate = (
   timestamp: number,
@@ -36,7 +37,7 @@ const MemoItem: React.FC<{
   onDelete: () => void
 }> = ({ memo, isEditing, onStartEdit, onStopEdit, onUpdate, onDelete }) => {
   const { t } = useTranslation()
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = useRef<InputBoxRef>(null)
   const [editContent, setEditContent] = useState(memo.content)
 
   useEffect(() => {
@@ -66,13 +67,13 @@ const MemoItem: React.FC<{
   if (isEditing) {
     return (
       <div className="memo-item editing">
-        <textarea
+        <VseInputBox
           ref={textareaRef}
           className="memo-edit-textarea"
           value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={3}
+          onChange={(value) => setEditContent(value)}
+          flexibleHeight
+          flexibleMaxHeight={100}
         />
         <div className="memo-edit-actions">
           <button

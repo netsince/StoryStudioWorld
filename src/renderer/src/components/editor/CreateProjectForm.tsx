@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import VseInputBox from '../VseInputBox'
 
 export interface CreateProjectInput {
   projectName: string
@@ -39,31 +40,30 @@ const CreateProjectForm: React.FC<{
       <form className="create-project-form" onSubmit={(event) => void handleSubmit(event)}>
         <label className="form-field">
           <span>{t('createProject.projectName')}</span>
-          <input
+          <VseInputBox
             value={form.projectName}
-            onChange={(event) => setForm((prev) => ({ ...prev, projectName: event.target.value }))}
+            onChange={(value) => setForm((prev) => ({ ...prev, projectName: value }))}
             placeholder={t('createProject.projectNamePlaceholder')}
           />
         </label>
 
         <label className="form-field">
           <span>{t('createProject.projectDescription')}</span>
-          <textarea
+          <VseInputBox
             value={form.description}
-            onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+            onChange={(value) => setForm((prev) => ({ ...prev, description: value }))}
             placeholder={t('createProject.projectDescriptionPlaceholder')}
-            rows={5}
+            flexibleHeight
+            flexibleMaxHeight={120}
           />
         </label>
 
         <label className="form-field">
           <span>{t('createProject.path')}</span>
           <div className="path-picker-row">
-            <input
+            <VseInputBox
               value={form.projectPath}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, projectPath: event.target.value }))
-              }
+              onChange={(value) => setForm((prev) => ({ ...prev, projectPath: value }))}
               placeholder={t('createProject.pathPlaceholder')}
             />
             <button

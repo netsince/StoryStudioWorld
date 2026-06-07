@@ -7,6 +7,7 @@ import { buildNodeDisplayPath, getNodeDisplayName } from '../../utils/nodeUtils'
 import { parseSettingSections, type SettingSection } from '../../../../shared/settingParser'
 import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
 import SettingGallery from './SettingGallery'
+import VseInputBox from '../VseInputBox'
 import type { StoryNode } from '../../models'
 import type { GalleryImageItem } from '../../../../preload/index'
 
@@ -670,18 +671,10 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       </th>
                       <td style={{ padding: '6px 4px' }}>
                         {isEditing ? (
-                          <input
-                            type="text"
+                          <VseInputBox
                             value={data.metadata[key] || ''}
-                            onChange={(e) => handleMetadataChange(key, e.target.value)}
-                            style={{
-                              width: '100%',
-                              backgroundColor: '#1e1e1e',
-                              border: '1px solid #54595d',
-                              color: '#fff',
-                              padding: '2px 4px',
-                              fontSize: '13px'
-                            }}
+                            onChange={(value) => handleMetadataChange(key, value)}
+                            style={{ width: '100%' }}
                           />
                         ) : (
                           <span>
@@ -705,24 +698,11 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     {t('setting.addMetadata')}
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <input
-                      type="text"
+                    <VseInputBox
                       value={newMetadataKey}
-                      onChange={(e) => setNewMetadataKey(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleAddMetadata()
-                        }
-                      }}
+                      onChange={(value) => setNewMetadataKey(value)}
                       placeholder={t('setting.metadataKey')}
-                      style={{
-                        flex: 1,
-                        backgroundColor: '#1e1e1e',
-                        border: '1px solid #54595d',
-                        color: '#fff',
-                        padding: '2px 4px',
-                        fontSize: '12px'
-                      }}
+                      style={{ flex: 1 }}
                     />
                     <button
                       onClick={handleAddMetadata}

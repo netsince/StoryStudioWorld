@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useProjectStore } from '../stores/projectStore'
 import { APP_NAME } from '../constants/config'
 import { DEFAULT_SETTINGS, applyAppSettings } from './editor/PreferencesPage'
+import VseInputBox, { InputBoxRef } from './VseInputBox'
 
 interface DebugAction {
   id: string
@@ -22,8 +23,8 @@ const DebugPanel: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [confirmAction, setConfirmAction] = useState<DebugAction | null>(null)
   const [confirmInput, setConfirmInput] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const confirmInputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<InputBoxRef>(null)
+  const confirmInputRef = useRef<InputBoxRef>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -306,22 +307,15 @@ const DebugPanel: React.FC = () => {
             <path d="M12 20h9"></path>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
-          <input
+          <VseInputBox
             ref={inputRef}
-            type="text"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={(value) => setSearchText(value)}
             placeholder={t('debugPanel.placeholder', '输入命令... (Ctrl+Shift+P)')}
+            autoFocus
             style={{
               flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--foreground, #ccc)',
-              fontSize: '13px',
-              fontFamily: 'inherit',
-              padding: '4px 0'
+              minWidth: 0
             }}
           />
         </div>
@@ -458,28 +452,12 @@ const DebugPanel: React.FC = () => {
                   text: confirmAction.confirmText
                 })}
               </div>
-              <input
+              <VseInputBox
                 ref={confirmInputRef}
-                type="text"
                 value={confirmInput}
-                onChange={(e) => setConfirmInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleConfirm()
-                  } else if (e.key === 'Escape') {
-                    handleCancelConfirm()
-                  }
-                }}
+                onChange={(value) => setConfirmInput(value)}
                 placeholder={confirmAction.confirmText}
-                style={{
-                  background: 'var(--input-bg, #3c3c3c)',
-                  border: '1px solid var(--border-color, #454545)',
-                  borderRadius: '3px',
-                  padding: '6px 10px',
-                  color: 'var(--foreground, #ccc)',
-                  fontSize: '13px',
-                  outline: 'none'
-                }}
+                autoFocus
               />
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button

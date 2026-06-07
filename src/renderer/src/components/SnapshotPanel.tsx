@@ -4,6 +4,7 @@ import { useSnapshotStore } from '../stores/snapshotStore'
 import { useProjectStore } from '../stores/projectStore'
 import type { Snapshot, DiffResult, DiffNode } from '../../../main/snapshot'
 import ConfirmModal from './ConfirmModal'
+import VseInputBox from './VseInputBox'
 
 const formatTime = (
   timestamp: string,
@@ -54,23 +55,22 @@ const CreateSnapshotModal: React.FC<{
         <form onSubmit={handleSubmit}>
           <div className="snapshot-form-body">
             <div className="snapshot-form-field">
-              <input
+              <VseInputBox
                 className="ssw-modal-input"
-                type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onChange={(value) => setName(value)}
                 placeholder={t('snapshot.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div className="snapshot-form-field" style={{ marginTop: '12px' }}>
-              <textarea
+              <VseInputBox
                 className="ssw-modal-input"
-                style={{ resize: 'none', height: '80px' }}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(value) => setDescription(value)}
                 placeholder={t('snapshot.descriptionPlaceholder')}
+                flexibleHeight
+                flexibleMaxHeight={80}
               />
             </div>
           </div>

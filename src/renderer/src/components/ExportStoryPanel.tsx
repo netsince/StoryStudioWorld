@@ -4,6 +4,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useReadingOrderStore } from '../stores/readingOrderStore'
 import { useEditorStore } from '../stores/editorStore'
 import type { StoryNode } from '../models'
+import VseInputBox from './VseInputBox'
 
 type ExportFormat = 'txt' | 'md' | 'pdf' | 'epub' | 'docx'
 type ExportMode = 'single' | 'readingOrder'
@@ -338,11 +339,10 @@ const ExportStoryPanel: React.FC = () => {
         <div className="export-section">
           <label className="export-label">{t('exportStory.fileName')}</label>
           <div className="export-input-wrapper">
-            <input
-              type="text"
+            <VseInputBox
               className="export-input"
               value={config.fileName}
-              onChange={(e) => setConfig((prev) => ({ ...prev, fileName: e.target.value }))}
+              onChange={(value) => setConfig((prev) => ({ ...prev, fileName: value }))}
               placeholder={t('exportStory.fileNamePlaceholder')}
             />
             <span className="export-file-ext">.{config.format}</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
+import VseInputBox from '../VseInputBox'
 import type { GalleryImageItem } from '../../../../preload/index'
 
 interface SettingGalleryProps {
@@ -134,15 +135,9 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
               </div>
               {editingCaptionId === img.id ? (
                 <div className="setting-gallery-caption-edit">
-                  <input
-                    type="text"
+                  <VseInputBox
                     value={captionDraft}
-                    onChange={(e) => setCaptionDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCaptionSave(img.id)
-                      if (e.key === 'Escape') setEditingCaptionId(null)
-                    }}
-                    onBlur={() => handleCaptionSave(img.id)}
+                    onChange={(value) => setCaptionDraft(value)}
                     autoFocus
                     placeholder={t('gallery.captionPlaceholder')}
                   />
