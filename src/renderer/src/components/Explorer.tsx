@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { StoryNode } from '../models'
 import { useEditorStore } from '../stores/editorStore'
@@ -9,105 +8,7 @@ import { useUiStore } from '../stores/uiStore'
 import Tree from './Tree'
 import Sidebar from './Sidebar'
 import PluginManagerPanel from './editor/PluginManagerPanel'
-
-interface CreateMenuPortalProps {
-  onClose: () => void
-  onCreateFolder: () => void
-  onCreateFile: () => void
-}
-
-const CreateMenuPortal: React.FC<CreateMenuPortalProps & { kind?: 'story' | 'setting' }> = ({
-  onClose,
-  onCreateFolder,
-  onCreateFile,
-  kind = 'story'
-}) => {
-  const { t } = useTranslation()
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const button = document.querySelector('.story-action-button') as HTMLElement
-    if (button) {
-      const rect = button.getBoundingClientRect()
-      // eslint-disable-next-line @eslint-react/set-state-in-effect
-      setPosition({ top: rect.bottom + 4, left: rect.left })
-    }
-
-    const handleClickOutside = (e: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose()
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose])
-
-  if (!position) return null
-
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={{
-        position: 'fixed',
-        top: position.top,
-        left: position.left,
-        zIndex: 999999,
-        background: 'var(--panel-bg, #252526)',
-        border: '1px solid var(--border-color, #454545)',
-        borderRadius: '4px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-        minWidth: '120px'
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div
-        style={{
-          padding: '8px 16px',
-          cursor: 'pointer',
-          fontSize: '13px',
-          color: 'var(--foreground, #ccc)',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent'
-        }}
-        onClick={() => {
-          onCreateFolder()
-          onClose()
-        }}
-      >
-        📁 {t('explorer.folder')}
-      </div>
-      <div
-        style={{
-          padding: '8px 16px',
-          cursor: 'pointer',
-          fontSize: '13px',
-          color: 'var(--foreground, #ccc)',
-          whiteSpace: 'nowrap'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--list-hover-background, #2a2d2e)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent'
-        }}
-        onClick={() => {
-          onCreateFile()
-          onClose()
-        }}
-      >
-        📄 {kind === 'setting' ? t('explorer.setting') : t('explorer.chapter')}
-      </div>
-    </div>,
-    document.body
-  )
-}
+import ContextMenu from './ContextMenu'
 
 const RESERVED_CATEGORY_IDS = ['character', 'location', 'worldview', 'item', 'other']
 
@@ -136,6 +37,7 @@ const Explorer: React.FC = () => {
   const openTab = useEditorStore((s) => s.openTab)
 
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
+  const [createMenuPosition, setCreateMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>([])
 
@@ -347,6 +249,8 @@ const Explorer: React.FC = () => {
                 disabled={isBusy}
                 onClick={(event) => {
                   event.stopPropagation()
+                  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+                  setCreateMenuPosition({ x: rect.left, y: rect.bottom + 4 })
                   setIsCreateMenuOpen((prev) => !prev)
                 }}
               >
@@ -362,12 +266,29 @@ const Explorer: React.FC = () => {
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </button>
-              {isCreateMenuOpen && (
-                <CreateMenuPortal
+              {isCreateMenuOpen && createMenuPosition && (
+                <ContextMenu
+                  x={createMenuPosition.x}
+                  y={createMenuPosition.y}
+                  items={[
+                    {
+                      key: 'folder',
+                      label: `📁 ${t('explorer.folder')}`,
+                      onSelect: () => {
+                        void handleCreateNode('folder')
+                        setIsCreateMenuOpen(false)
+                      }
+                    },
+                    {
+                      key: 'file',
+                      label: `📄 ${kind === 'setting' ? t('explorer.setting') : t('explorer.chapter')}`,
+                      onSelect: () => {
+                        void handleCreateNode('file')
+                        setIsCreateMenuOpen(false)
+                      }
+                    }
+                  ]}
                   onClose={() => setIsCreateMenuOpen(false)}
-                  onCreateFolder={() => void handleCreateNode('folder')}
-                  onCreateFile={() => void handleCreateNode('file')}
-                  kind={kind}
                 />
               )}
               <button

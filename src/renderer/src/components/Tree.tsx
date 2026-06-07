@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StoryNode } from '../models'
 import RenameDialog from './RenameDialog'
+import ContextMenu from './ContextMenu'
 import { getNodeDisplayName, isDefaultSettingCategory } from '../utils/nodeUtils'
 
 interface TreeProps {
@@ -522,151 +523,95 @@ const Tree: React.FC<TreeProps> = ({
 
       {/* Context Menu */}
       {contextMenu && (
-        <div
-          style={{
-            position: 'fixed',
-            left: contextMenu.x,
-            top: contextMenu.y,
-            background: 'var(--menu-bg, #252526)',
-            border: '1px solid var(--menu-border, #454545)',
-            borderRadius: '4px',
-            padding: '4px 0',
-            zIndex: 1000,
-            minWidth: '120px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-          }}
-        >
-          <div
-            style={{
-              padding: '6px 16px',
-              cursor: selectedNodeIds.size > 1 ? 'not-allowed' : 'pointer',
-              fontSize: '13px',
-              color: 'var(--menu-fg, #ccc)',
-              opacity: selectedNodeIds.size > 1 ? 0.5 : 1
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-            onClick={() => {
-              const isMultiSelected = selectedNodeIds.size > 1
-              if (isMultiSelected) {
-                return
-              }
-              const node = getNodeById(contextMenu.nodeId)
-              if (node) {
-                setRenameDialog({ nodeId: node.id, initialValue: node.name })
-              }
-              setContextMenu(null)
-            }}
-          >
-            {t('tree.rename')}
-          </div>
-          <div
-            style={{
-              padding: '6px 16px',
-              cursor: ((): string => {
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[
+            {
+              key: 'rename',
+              label: t('tree.rename'),
+              onSelect: () => {
+                const isMultiSelected = selectedNodeIds.size > 1
+                if (isMultiSelected) return
                 const node = getNodeById(contextMenu.nodeId)
-                return node && isDefaultSettingNode(node) ? 'not-allowed' : 'pointer'
-              })(),
-              fontSize: '13px',
-              color: '#f85149',
-              opacity: ((): number => {
-                const node = getNodeById(contextMenu.nodeId)
-                return node && isDefaultSettingNode(node) ? 0.5 : 1
-              })()
-            }}
-            onMouseEnter={(e) => {
-              const node = getNodeById(contextMenu.nodeId)
-              if (node && isDefaultSettingNode(node)) return
-              e.currentTarget.style.backgroundColor = 'var(--menu-hover-bg, #094771)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-            onClick={() => {
-              const nodeToDelete = getNodeById(contextMenu.nodeId)
-              if (!nodeToDelete || isDefaultSettingNode(nodeToDelete)) {
+                if (node) {
+                  setRenameDialog({ nodeId: node.id, initialValue: node.name })
+                }
                 setContextMenu(null)
-                return
               }
+            },
+            {
+              key: 'delete',
+              label: t('tree.delete'),
+              onSelect: () => {
+                const nodeToDelete = getNodeById(contextMenu.nodeId)
+                if (!nodeToDelete || isDefaultSettingNode(nodeToDelete)) {
+                  setContextMenu(null)
+                  return
+                }
 
-              if (nodeToDelete.type === 'folder' && getNodeDescendants) {
-                const descendants = getNodeDescendants(contextMenu.nodeId)
+                if (nodeToDelete.type === 'folder' && getNodeDescendants) {
+                  const descendants = getNodeDescendants(contextMenu.nodeId)
 
-                if (descendants.files > 0) {
-                  const sortedByLength = [...descendants.fileNames].sort(
-                    (a, b) => b.length - a.length
-                  )
-                  const top5ByLength = sortedByLength.slice(0, 5)
-                  const fileList = top5ByLength.join(', ')
-                  const moreText =
-                    descendants.fileNames.length > 5
-                      ? t('tree.deleteFolderWarning.moreFiles', {
-                          count: descendants.fileNames.length
-                        })
-                      : ''
+                  if (descendants.files > 0) {
+                    const sortedByLength = [...descendants.fileNames].sort(
+                      (a, b) => b.length - a.length
+                    )
+                    const top5ByLength = sortedByLength.slice(0, 5)
+                    const fileList = top5ByLength.join(', ')
+                    const moreText =
+                      descendants.fileNames.length > 5
+                        ? t('tree.deleteFolderWarning.moreFiles', {
+                            count: descendants.fileNames.length
+                          })
+                        : ''
 
-                  const confirmMessages = [
-                    t('tree.deleteFolderWarning.title', {
-                      name: nodeToDelete.name,
-                      count: descendants.files
-                    }) +
-                      '\n\n' +
-                      t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) +
-                      '\n\n' +
-                      t('tree.deleteFolderWarning.confirm'),
-                    t('tree.deleteFolderWarning.secondConfirm', {
-                      name: nodeToDelete.name,
-                      count: descendants.files,
-                      files: fileList,
-                      more: moreText
-                    }),
-                    t('tree.deleteFolderWarning.finalConfirm', {
-                      name: nodeToDelete.name,
-                      files: descendants.files,
-                      folders: descendants.folders
-                    })
-                  ]
+                    const confirmMessages = [
+                      t('tree.deleteFolderWarning.title', {
+                        name: nodeToDelete.name,
+                        count: descendants.files
+                      }) +
+                        '\n\n' +
+                        t('tree.deleteFolderWarning.fileList', { files: fileList, more: moreText }) +
+                        '\n\n' +
+                        t('tree.deleteFolderWarning.confirm'),
+                      t('tree.deleteFolderWarning.secondConfirm', {
+                        name: nodeToDelete.name,
+                        count: descendants.files,
+                        files: fileList,
+                        more: moreText
+                      }),
+                      t('tree.deleteFolderWarning.finalConfirm', {
+                        name: nodeToDelete.name,
+                        files: descendants.files,
+                        folders: descendants.folders
+                      })
+                    ]
 
-                  let confirmed = false
-                  for (let i = 0; i < confirmMessages.length; i++) {
-                    confirmed = confirm(confirmMessages[i])
-                    if (!confirmed) break
-                  }
+                    let confirmed = false
+                    for (let i = 0; i < confirmMessages.length; i++) {
+                      confirmed = confirm(confirmMessages[i])
+                      if (!confirmed) break
+                    }
 
-                  if (confirmed) {
-                    onDeleteNode(contextMenu.nodeId)
+                    if (confirmed) {
+                      onDeleteNode(contextMenu.nodeId)
+                    }
+                  } else {
+                    if (confirm(t('tree.confirmArchive', { name: nodeToDelete.name }))) {
+                      onDeleteNode(contextMenu.nodeId)
+                    }
                   }
                 } else {
-                  if (confirm(t('tree.confirmArchive', { name: nodeToDelete.name }))) {
+                  if (confirm(t('tree.confirmArchive', { name: nodeToDelete?.name || '' }))) {
                     onDeleteNode(contextMenu.nodeId)
                   }
                 }
-              } else {
-                if (confirm(t('tree.confirmArchive', { name: nodeToDelete?.name || '' }))) {
-                  onDeleteNode(contextMenu.nodeId)
-                }
+                setContextMenu(null)
               }
-              setContextMenu(null)
-            }}
-          >
-            {t('tree.delete')}
-          </div>
-        </div>
-      )}
-
-      {/* Click outside to close context menu */}
-      {contextMenu && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 999
-          }}
-          onClick={() => setContextMenu(null)}
+            }
+          ]}
+          onClose={() => setContextMenu(null)}
         />
       )}
 
