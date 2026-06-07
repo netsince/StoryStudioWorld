@@ -4,7 +4,6 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
-    "src/preload/*.d.ts",
     "src/vse/**/*",
     "src/vse/typings/*.d.ts",
     "src/vse/monaco.d.ts",
@@ -39,7 +38,6 @@
     "strictBindCallApply": false,
     "strictPropertyInitialization": false,
     "noImplicitThis": false,
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@renderer/*": [
         "./src/renderer/src/*"
