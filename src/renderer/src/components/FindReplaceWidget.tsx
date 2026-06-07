@@ -114,10 +114,10 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
 
   // 替换当前匹配
   const handleReplace = useCallback(() => {
-    if (matches.length === 0 || currentMatchIndex === -1) return
+    if (matches.length === 0 || currentMatchIndex === -1) return undefined
 
     const textarea = textareaRef.current
-    if (!textarea) return
+    if (!textarea) return undefined
 
     const match = matches[currentMatchIndex]
     const newText = text.substring(0, match.start) + replaceText + text.substring(match.end)
@@ -181,7 +181,7 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
 
   // 键盘快捷键
   useEffect(() => {
-    if (!isVisible) return
+    if (!isVisible) return undefined
 
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.isComposing) return

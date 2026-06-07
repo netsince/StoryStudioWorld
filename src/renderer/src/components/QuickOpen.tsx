@@ -100,7 +100,7 @@ const QuickOpen: React.FC = () => {
         setResults([])
         setSelectedIndex(0)
       })
-      return
+      return undefined
     }
 
     searchTimerRef.current = setTimeout(async () => {
@@ -336,7 +336,7 @@ const QuickOpen: React.FC = () => {
             </div>
           )}
 
-          {results.map((result) => (
+          {results.map((result, index) => (
             <div
               key={`${result.node.id}-${result.matchType}`}
               onClick={() => handleSelect(result)}
