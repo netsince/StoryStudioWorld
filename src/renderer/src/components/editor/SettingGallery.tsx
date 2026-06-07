@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../../stores/projectStore'
 import type { GalleryImageItem } from '../../../../preload/index'
-import { InputBox } from '../ui/InputBox'
 
 interface SettingGalleryProps {
   nodeId: string
@@ -135,14 +134,16 @@ const SettingGallery: React.FC<SettingGalleryProps> = ({ nodeId }) => {
               </div>
               {editingCaptionId === img.id ? (
                 <div className="setting-gallery-caption-edit">
-                  <InputBox
+                  <input
+                    type="text"
                     value={captionDraft}
-                    onChange={setCaptionDraft}
+                    onChange={(e) => setCaptionDraft(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleCaptionSave(img.id)
                       if (e.key === 'Escape') setEditingCaptionId(null)
                     }}
                     onBlur={() => handleCaptionSave(img.id)}
+                    autoFocus
                     placeholder={t('gallery.captionPlaceholder')}
                   />
                 </div>

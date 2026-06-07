@@ -9,7 +9,6 @@ import WikiRefPanel, { type WikiRefItem } from '../WikiRefPanel'
 import SettingGallery from './SettingGallery'
 import type { StoryNode } from '../../models'
 import type { GalleryImageItem } from '../../../../preload/index'
-import { InputBox } from '../ui/InputBox'
 
 interface SettingEditorProps {
   nodeId: string
@@ -671,10 +670,18 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                       </th>
                       <td style={{ padding: '6px 4px' }}>
                         {isEditing ? (
-                          <InputBox
+                          <input
+                            type="text"
                             value={data.metadata[key] || ''}
-                            onChange={(value) => handleMetadataChange(key, value)}
-                            className="setting-editor-metadata-input"
+                            onChange={(e) => handleMetadataChange(key, e.target.value)}
+                            style={{
+                              width: '100%',
+                              backgroundColor: '#1e1e1e',
+                              border: '1px solid #54595d',
+                              color: '#fff',
+                              padding: '2px 4px',
+                              fontSize: '13px'
+                            }}
                           />
                         ) : (
                           <span>
@@ -698,16 +705,24 @@ const SettingEditor: React.FC<SettingEditorProps> = ({ nodeId, groupId, tabId })
                     {t('setting.addMetadata')}
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <InputBox
+                    <input
+                      type="text"
                       value={newMetadataKey}
-                      onChange={setNewMetadataKey}
+                      onChange={(e) => setNewMetadataKey(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleAddMetadata()
                         }
                       }}
                       placeholder={t('setting.metadataKey')}
-                      className="setting-editor-metadata-key-input"
+                      style={{
+                        flex: 1,
+                        backgroundColor: '#1e1e1e',
+                        border: '1px solid #54595d',
+                        color: '#fff',
+                        padding: '2px 4px',
+                        fontSize: '12px'
+                      }}
                     />
                     <button
                       onClick={handleAddMetadata}

@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectStore } from '../stores/projectStore'
 import { getAvailableLanguages, getCurrentLanguage, type SupportedLanguage } from '../i18n'
-import { InputBox } from './ui/InputBox'
 
 const WikiIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
@@ -175,11 +174,12 @@ const ExportWikiPanel: React.FC = () => {
         <div className="export-section">
           <label className="export-label">{t('exportWiki.exportPath')}</label>
           <div className="export-wiki-path-row">
-            <InputBox
-              value={exportPath}
-              onChange={setExportPath}
-              placeholder={t('exportWiki.pathPlaceholder')}
+            <input
+              type="text"
               className="export-input"
+              value={exportPath}
+              onChange={(e) => setExportPath(e.target.value)}
+              placeholder={t('exportWiki.pathPlaceholder')}
             />
             <button className="export-wiki-path-btn" onClick={handlePickFolder}>
               <FolderIcon className="export-wiki-path-btn-icon" />

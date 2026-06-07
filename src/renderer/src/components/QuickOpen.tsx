@@ -6,7 +6,6 @@ import { useProjectStore } from '../stores/projectStore'
 import { useEditorStore } from '../stores/editorStore'
 import { buildNodeDisplayPath } from '../utils/nodeUtils'
 import { commandService, Commands } from '../services/commandService'
-import { InputBox, InputBoxRef } from './ui/InputBox'
 
 interface SearchResult {
   node: StoryNode
@@ -23,7 +22,7 @@ const QuickOpen: React.FC = () => {
   const [results, setResults] = useState<SearchResult[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
-  const inputRef = useRef<InputBoxRef>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   const currentProject = useProjectStore((s) => s.currentProject)
@@ -256,14 +255,22 @@ const QuickOpen: React.FC = () => {
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
           </svg>
-          <InputBox
+          <input
             ref={inputRef}
+            type="text"
             value={searchText}
-            onChange={setSearchText}
+            onChange={(e) => setSearchText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t('quickOpen.placeholder', '搜索文件、设定或内容... (Ctrl+P)')}
             style={{
               flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--foreground, #ccc)',
+              fontSize: '13px',
+              fontFamily: 'inherit',
+              padding: '4px 0'
             }}
           />
           {isSearching && (

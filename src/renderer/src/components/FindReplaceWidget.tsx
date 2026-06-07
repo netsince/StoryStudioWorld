@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { InputBox, InputBoxRef } from './ui/InputBox'
 
 export interface MatchRange {
   start: number
@@ -34,8 +33,8 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1)
   const [matchCount, setMatchCount] = useState(0)
 
-  const findInputRef = useRef<InputBoxRef>(null)
-  const replaceInputRef = useRef<InputBoxRef>(null)
+  const findInputRef = useRef<HTMLInputElement>(null)
+  const replaceInputRef = useRef<HTMLInputElement>(null)
 
   // 高亮匹配（shouldFocus 控制是否夺取焦点）- 必须在使用它的 useEffect 之前声明
   const highlightMatch = useCallback(
@@ -230,12 +229,13 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
 
       <div className="find-replace-content">
         <div className="find-replace-row">
-          <InputBox
+          <input
             ref={findInputRef}
-            value={findText}
-            onChange={setFindText}
-            placeholder={t('findReplace.findPlaceholder')}
+            type="text"
             className="find-replace-input"
+            placeholder={t('findReplace.findPlaceholder')}
+            value={findText}
+            onChange={(e) => setFindText(e.target.value)}
           />
           {matchCount > 0 && (
             <span className="find-replace-count">
@@ -246,12 +246,13 @@ const FindReplaceWidget: React.FC<FindReplaceWidgetProps> = ({
 
         {activeTab === 'replace' && (
           <div className="find-replace-row">
-            <InputBox
+            <input
               ref={replaceInputRef}
-              value={replaceText}
-              onChange={setReplaceText}
-              placeholder={t('findReplace.replacePlaceholder')}
+              type="text"
               className="find-replace-input"
+              placeholder={t('findReplace.replacePlaceholder')}
+              value={replaceText}
+              onChange={(e) => setReplaceText(e.target.value)}
             />
           </div>
         )}
