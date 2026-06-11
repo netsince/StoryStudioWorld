@@ -31,7 +31,7 @@ const resources: Record<string, { translation: Record<string, unknown> }> = {}
 const availableLanguages: LanguageMetadata[] = []
 
 for (const [path, module] of Object.entries(languageModules)) {
-  const data = module.default || module
+  const data = module.default
   if (data && data.languageMetadata) {
     const langCode = data.languageMetadata.code
     resources[langCode] = { translation: data }

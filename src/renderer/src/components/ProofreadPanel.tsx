@@ -76,7 +76,7 @@ export const ProofreadPanel: React.FC<ProofreadPanelProps> = () => {
   }, [getCurrentText, checkText])
 
   useEffect(() => {
-    if (!autoCheck) return
+    if (!autoCheck) return undefined
 
     let checkTimeout: ReturnType<typeof setTimeout> | null = null
 

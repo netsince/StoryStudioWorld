@@ -35,7 +35,7 @@ const ChinesePunctuationBar: React.FC<PunctuationBarProps> = ({
     if (!isVisible) {
       // eslint-disable-next-line @eslint-react/set-state-in-effect
       setShowChoice(null)
-      return
+      return undefined
     }
 
     const handleClickOutside = (e: MouseEvent): void => {

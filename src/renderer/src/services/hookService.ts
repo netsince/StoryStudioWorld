@@ -135,7 +135,7 @@ class HookSystem {
       try {
         const newResult = await (cb as (input: T) => T | Promise<T> | void)(result)
         if (newResult !== undefined) {
-          result = newResult
+          result = newResult as T
         }
       } catch (e) {
         console.error(`Hook ${event} error:`, e)

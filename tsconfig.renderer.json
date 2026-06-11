@@ -5,7 +5,8 @@
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/shared/**/*.ts",
-    "src/vse/typings/*.d.ts"
+    "src/vse/typings/*.d.ts",
+    "src/preload/index.d.ts"
   ],
   "exclude": ["src/vse/**/*"],
   "compilerOptions": {

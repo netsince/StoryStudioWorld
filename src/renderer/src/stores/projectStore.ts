@@ -1,15 +1,10 @@
 import { create } from 'zustand'
 import type { ProjectData, RecentProject, StoryNode } from '../models'
+import type { CreateProjectInput } from '../../../preload/index'
 import { LAST_PROJECT_SETTINGS_PATH_KEY } from '../constants/storage'
 import { useEditorStore } from './editorStore'
 import { useReadingOrderStore } from './readingOrderStore'
 import i18n from '../i18n'
-
-export interface CreateProjectInput {
-  projectName: string
-  description: string
-  projectPath: string
-}
 
 interface ProjectState {
   currentProject: ProjectData | null

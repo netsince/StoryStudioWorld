@@ -345,7 +345,7 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
   // 注册命令
   useEffect(() => {
     const textarea = textareaRef.current
-    if (!textarea) return
+    if (!textarea) return undefined
 
     // 编辑命令
     const unregisterUndo = commandService.registerCommand(

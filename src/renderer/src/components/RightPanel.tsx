@@ -27,13 +27,13 @@ const PluginPanelWrapper: React.FC<{
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) return undefined
 
     if (typeof panel !== 'function') {
       const element = React.createElement(panel as React.ComponentType<{ api: PluginAPI }>, { api })
       // eslint-disable-next-line @eslint-react/set-state-in-effect
       setReactElement(element)
-      return
+      return undefined
     }
 
     try {
