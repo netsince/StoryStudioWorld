@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type monaco from 'vs/editor/editor.api'
 
 const editors = new Map<string, monaco.editor.IStandaloneCodeEditor>()

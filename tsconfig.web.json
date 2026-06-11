@@ -4,9 +4,20 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
+    "src/vse/**/*",
+    "src/vse/typings/*.d.ts",
+    "src/vse/monaco.d.ts",
     "src/shared/**/*.ts"
   ],
-  "exclude": ["src/vse/**/*"],
+  "exclude": [
+    "src/vse/base/parts/ipc/test/**/*",
+    "src/vse/base/parts/storage/test/**/*",
+    "src/vse/base/parts/request/test/**/*",
+    "src/vse/base/parts/sandbox/test/**/*",
+    "src/vse/editor/contrib/*/test/**/*",
+    "src/vse/platform/*/test/**/*",
+    "src/vse/platform/**/test/**/*"
+  ],
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",

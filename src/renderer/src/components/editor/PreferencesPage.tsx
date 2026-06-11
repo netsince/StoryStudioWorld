@@ -225,7 +225,7 @@ const PreferencesPage: React.FC = () => {
                   borderRadius: '6px'
                 }}
               >
-                {allFonts.map((font, idx) => (
+                {allFonts.map((font) => (
                   <div
                     key={font.value}
                     onClick={() => applySettings({ editorFontFamily: font.value })}

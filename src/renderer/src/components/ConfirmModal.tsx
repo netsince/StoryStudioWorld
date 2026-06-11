@@ -28,7 +28,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const _cancelText = cancelText || t('common.cancel')
 
   useEffect(() => {
-    if (!isOpen) return undefined
+    if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.isComposing) return
