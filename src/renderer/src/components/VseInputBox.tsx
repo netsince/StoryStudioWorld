@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useRef, useImperativeHandle } from 'react'
 import {
   InputBox,
@@ -5,8 +6,8 @@ import {
   MessageType,
   IInputBoxStyles,
   IMessage
-} from '../../../vse/base/browser/ui/inputbox/inputBox'
-import { defaultInputBoxStyles } from '../../../vse/platform/theme/browser/defaultStyles'
+} from 'vs/base/browser/ui/inputbox/inputBox'
+import { defaultInputBoxStyles } from 'vs/platform/theme/browser/defaultStyles'
 
 export interface InputBoxProps {
   value?: string

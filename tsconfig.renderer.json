@@ -4,11 +4,12 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
-    "src/shared/**/*.ts"
+    "src/shared/**/*.ts",
+    "src/vse/typings/*.d.ts"
   ],
   "exclude": ["src/vse/**/*"],
   "compilerOptions": {
-    "composite": true,
+    "composite": false,
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "module": "ESNext",
@@ -31,17 +32,23 @@
       "@renderer/*": [
         "./src/renderer/src/*"
       ],
-      "vs/base/*": [
-        "./src/vse/base/*"
+      "vs/editor/editor.api": [
+        "./src/vse/typings/vs-editor-api.d.ts"
       ],
-      "vs/editor/*": [
-        "./src/vse/editor/*"
+      "vs/base/common/worker/webWorkerBootstrap": [
+        "./src/vse/typings/vs-worker.d.ts"
       ],
-      "vs/platform/*": [
-        "./src/vse/platform/*"
+      "vs/editor/common/services/editorWebWorker": [
+        "./src/vse/typings/vs-editor-worker.d.ts"
       ],
-      "vs/nls": [
-        "./src/vse/nls"
+      "vs/base/browser/ui/inputbox/inputBox": [
+        "./src/vse/typings/vse-modules.d.ts"
+      ],
+      "vs/platform/theme/browser/defaultStyles": [
+        "./src/vse/typings/vse-modules.d.ts"
+      ],
+      "vs/*": [
+        "./src/vse/typings/vse-modules.d.ts"
       ]
     }
   }
