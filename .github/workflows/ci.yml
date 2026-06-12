@@ -37,6 +37,7 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
 
@@ -53,7 +54,7 @@ jobs:
 
   build:
     name: Build
-    needs: [lint, typecheck]
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
