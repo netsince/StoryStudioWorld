@@ -306,10 +306,8 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       editorRef.current = null
     }
   }, [
-    isActive,
     tabId,
     _placeholder,
-    content,
     getTabScrollPosition,
     setTabScrollPosition,
     updateStats
