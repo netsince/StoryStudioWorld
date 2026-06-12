@@ -111,6 +111,11 @@ function createWindow(): void {
     mainWindow.close()
   })
 
+  ipcMain.on('window-focus-fix', () => {
+    mainWindow.blur()
+    mainWindow.focus()
+  })
+
   ipcMain.on('window-set-fullscreen', (_, fullScreen: boolean) => {
     mainWindow.setFullScreen(fullScreen)
   })

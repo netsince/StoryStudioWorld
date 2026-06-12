@@ -22,6 +22,20 @@ window.addEventListener('ssw:reload-plugins', () => {
   void usePluginService.getState().reloadPlugins()
 })
 
+// 解决 Electron/Chromium 在 Windows 下 alert/confirm 等原生弹窗关闭后导致窗口失去焦点、输入框无法输入及光标丢失的 Bug
+const originalAlert = window.alert
+window.alert = function (message?: any) {
+  originalAlert(message)
+  window.api.focusWindow?.()
+}
+
+const originalConfirm = window.confirm
+window.confirm = function (message?: string): boolean {
+  const result = originalConfirm(message)
+  window.api.focusWindow?.()
+  return result
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

@@ -55,6 +55,7 @@ declare global {
       }>
       toggleDevTools: () => void
       openNewWindow: () => void
+      focusWindow: () => void
       setFullScreen: (fullScreen: boolean) => void
       isFullScreen: () => Promise<boolean>
       proofreadText: (text: string) => Promise<ProofreadResult>

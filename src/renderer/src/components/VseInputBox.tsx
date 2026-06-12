@@ -55,6 +55,13 @@ const VseInputBox: React.FC<InputBoxProps & { ref?: React.Ref<InputBoxRef> }> = 
   const containerRef = useRef<HTMLDivElement>(null)
   const inputBoxRef = useRef<InputBox | null>(null)
 
+  const onChangeRef = useRef(onChange)
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
+
+  const isComposingRef = useRef(false)
+
   // 创建 InputBox 实例
   useEffect(() => {
     const container = containerRef.current
@@ -82,8 +89,23 @@ const VseInputBox: React.FC<InputBoxProps & { ref?: React.Ref<InputBoxRef> }> = 
 
     // 监听值变化
     const disposable = inputBoxRef.current.onDidChange((newValue) => {
-      onChange?.(newValue)
+      onChangeRef.current?.(newValue)
     })
+
+    // 监听输入法合成事件，避免输入法在输入过程中被打断
+    const inputElement = inputBoxRef.current.inputElement
+    const handleCompositionStart = () => {
+      isComposingRef.current = true
+    }
+    const handleCompositionEnd = () => {
+      isComposingRef.current = false
+      if (inputBoxRef.current) {
+        onChangeRef.current?.(inputBoxRef.current.value)
+      }
+    }
+
+    inputElement.addEventListener('compositionstart', handleCompositionStart)
+    inputElement.addEventListener('compositionend', handleCompositionEnd)
 
     // 自动聚焦
     if (autoFocus) {
@@ -91,6 +113,8 @@ const VseInputBox: React.FC<InputBoxProps & { ref?: React.Ref<InputBoxRef> }> = 
     }
 
     return () => {
+      inputElement.removeEventListener('compositionstart', handleCompositionStart)
+      inputElement.removeEventListener('compositionend', handleCompositionEnd)
       disposable.dispose()
       inputBoxRef.current?.dispose()
       inputBoxRef.current = null
@@ -101,7 +125,7 @@ const VseInputBox: React.FC<InputBoxProps & { ref?: React.Ref<InputBoxRef> }> = 
 
   // 更新值
   useEffect(() => {
-    if (inputBoxRef.current && inputBoxRef.current.value !== value) {
+    if (inputBoxRef.current && !isComposingRef.current && inputBoxRef.current.value !== value) {
       inputBoxRef.current.value = value
     }
   }, [value])
