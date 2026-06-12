@@ -670,8 +670,17 @@ export async function getGalleryImageBuffer(
   }
 }
 
+const lastBackupTimes = new Map<string, number>()
+
 export async function backupProjectDatabase(projectSettingsPath: string): Promise<void> {
   try {
+    const now = Date.now()
+    const lastTime = lastBackupTimes.get(projectSettingsPath) || 0
+    if (now - lastTime < 2000) {
+      return
+    }
+    lastBackupTimes.set(projectSettingsPath, now)
+
     const project = await loadProject(projectSettingsPath)
     const dbPath = project.storyDbPath
     if (existsSync(dbPath)) {

@@ -54,6 +54,8 @@ interface ProjectState {
   clearLastProjectMarker: () => void
 }
 
+let isRestoring = false
+
 export const useProjectStore = create<ProjectState>((set, get) => {
   const loadStoryNodes = async (projectSettingsPath: string): Promise<void> => {
     try {
@@ -105,6 +107,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     clearLastProjectMarker: () => window.localStorage.removeItem(LAST_PROJECT_SETTINGS_PATH_KEY),
 
     restoreLastProjectOrWelcome: async () => {
+      if (isRestoring) return
+      isRestoring = true
       const lastProjectSettingsPath = get().lastProjectMarker()
       if (lastProjectSettingsPath) {
         const loaded = await get().loadProject(lastProjectSettingsPath, false)
