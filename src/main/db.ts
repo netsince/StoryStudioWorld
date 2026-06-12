@@ -1,7 +1,48 @@
 import initSqlJs, { Database } from 'sql.js'
 import { randomUUID } from 'crypto'
 import { mkdir, writeFile } from 'fs/promises'
-import { dirname } from 'path'
+import { dirname, normalize } from 'path'
+
+class DatabaseLockManager {
+  private locks = new Map<string, Promise<void>>()
+
+  async acquire(dbPath: string): Promise<() => void> {
+    const key = normalize(dbPath)
+    const existingLock = this.locks.get(key) || Promise.resolve()
+
+    let resolveLock: () => void
+    const newLock = new Promise<void>((resolve) => {
+      resolveLock = resolve
+    })
+
+    this.locks.set(key, existingLock.then(() => newLock))
+    await existingLock
+
+    let released = false
+    const release = () => {
+      if (released) return
+      released = true
+      resolveLock()
+      if (this.locks.get(key) === newLock) {
+        this.locks.delete(key)
+      }
+    }
+
+    // 10-second safety timeout to prevent permanent deadlocks if db.close() isn't called
+    const timeout = setTimeout(() => {
+      console.warn(`Database lock timeout (10s) for path: ${dbPath}. Auto-releasing lock.`)
+      release()
+    }, 10000)
+
+    return () => {
+      clearTimeout(timeout)
+      release()
+    }
+  }
+}
+
+const dbLock = new DatabaseLockManager()
+
 
 export const STORY_DB_FILE = 'story.db'
 
@@ -37,8 +78,13 @@ export async function initDatabase(dbPath: string): Promise<Database> {
   try {
     const buffer = await (await import('fs/promises')).readFile(dbPath)
     db = new SqlJs.Database(buffer)
-  } catch {
-    db = new SqlJs.Database()
+  } catch (err: any) {
+    if (err && err.code === 'ENOENT') {
+      db = new SqlJs.Database()
+    } else {
+      console.error(`Failed to read database at ${dbPath}:`, err)
+      throw err
+    }
   }
 
   db.run(`
@@ -133,7 +179,19 @@ export async function saveDatabase(db: Database, dbPath: string): Promise<void> 
 }
 
 export async function loadDatabase(dbPath: string): Promise<Database> {
-  return initDatabase(dbPath)
+  const release = await dbLock.acquire(dbPath)
+  try {
+    const db = await initDatabase(dbPath)
+    const originalClose = db.close.bind(db)
+    db.close = () => {
+      originalClose()
+      release()
+    }
+    return db
+  } catch (err) {
+    release()
+    throw err
+  }
 }
 
 export function getNodes(db: Database): StoryNode[] {

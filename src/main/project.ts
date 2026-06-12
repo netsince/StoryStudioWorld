@@ -4,7 +4,6 @@ import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'fs'
 import { APP_NAME } from './config'
 import {
   STORY_DB_FILE,
-  initDatabase,
   saveDatabase,
   loadDatabase,
   getNodes,
@@ -216,7 +215,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectD
   await ensureDirectoryEmpty(projectPath)
 
   const storyDbPath = getStoryDbPath(projectPath)
-  const db = await initDatabase(storyDbPath)
+  const db = await loadDatabase(storyDbPath)
 
   createNode(db, null, input.defaultStoryName || 'Story', 'file')
 
