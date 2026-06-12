@@ -669,3 +669,20 @@ export async function getGalleryImageBuffer(
     return null
   }
 }
+
+export async function backupProjectDatabase(projectSettingsPath: string): Promise<void> {
+  try {
+    const project = await loadProject(projectSettingsPath)
+    const dbPath = project.storyDbPath
+    if (existsSync(dbPath)) {
+      const bupDir = join(project.projectPath, 'bup')
+      await mkdir(bupDir, { recursive: true })
+      const timestamp = Date.now()
+      const bupPath = join(bupDir, `story-${timestamp}.db`)
+      copyFileSync(dbPath, bupPath)
+      console.log(`Database backup created at ${bupPath}`)
+    }
+  } catch (err) {
+    console.error('Failed to create database backup:', err)
+  }
+}

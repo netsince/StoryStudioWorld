@@ -12,6 +12,7 @@ import {
   createStoryNode,
   initSettingNodes,
   loadProject,
+  backupProjectDatabase,
   getProjectNodes,
   renameStoryNode,
   deleteStoryNode,
@@ -146,7 +147,9 @@ function createWindow(): void {
   })
 
   ipcMain.handle('load-project', async (_, projectSettingsPath: string) => {
-    return loadProject(projectSettingsPath)
+    const project = await loadProject(projectSettingsPath)
+    void backupProjectDatabase(projectSettingsPath)
+    return project
   })
 
   ipcMain.handle(
