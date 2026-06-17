@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join, normalize } from 'path'
-import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'fs'
+import { existsSync, copyFileSync, unlinkSync, mkdirSync, readdirSync } from 'fs'
 import { APP_NAME } from './config'
 import {
   STORY_DB_FILE,
@@ -694,4 +694,57 @@ export async function backupProjectDatabase(projectSettingsPath: string): Promis
   } catch (err) {
     console.error('Failed to create database backup:', err)
   }
+}
+
+// 通用备份函数，支持指定文件夹和最大数量
+export async function backupDatabaseToFolder(
+  projectSettingsPath: string,
+  folderName: string,
+  maxCount: number
+): Promise<void> {
+  try {
+    const project = await loadProject(projectSettingsPath)
+    const dbPath = project.storyDbPath
+    if (!existsSync(dbPath)) return
+
+    const bupDir = join(project.projectPath, folderName)
+    await mkdir(bupDir, { recursive: true })
+
+    // 创建新备份
+    const timestamp = Date.now()
+    const bupPath = join(bupDir, `story-${timestamp}.db`)
+    copyFileSync(dbPath, bupPath)
+    console.log(`Database backup created at ${bupPath}`)
+
+    // 清理旧备份，保持最大数量
+    const files = readdirSync(bupDir)
+      .filter((f) => f.startsWith('story-') && f.endsWith('.db'))
+      .sort() // 按时间戳排序，最旧的在前
+
+    if (files.length > maxCount) {
+      const toDelete = files.slice(0, files.length - maxCount)
+      for (const f of toDelete) {
+        const filePath = join(bupDir, f)
+        unlinkSync(filePath)
+        console.log(`Deleted old backup: ${filePath}`)
+      }
+    }
+  } catch (err) {
+    console.error(`Failed to create database backup in ${folderName}:`, err)
+  }
+}
+
+// 获取所有已打开项目的路径，用于定时备份
+const openedProjects = new Set<string>()
+
+export function registerOpenedProject(projectSettingsPath: string): void {
+  openedProjects.add(projectSettingsPath)
+}
+
+export function unregisterOpenedProject(projectSettingsPath: string): void {
+  openedProjects.delete(projectSettingsPath)
+}
+
+export function getOpenedProjects(): string[] {
+  return Array.from(openedProjects)
 }

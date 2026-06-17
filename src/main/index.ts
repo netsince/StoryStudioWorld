@@ -13,6 +13,9 @@ import {
   initSettingNodes,
   loadProject,
   backupProjectDatabase,
+  backupDatabaseToFolder,
+  registerOpenedProject,
+  getOpenedProjects,
   getProjectNodes,
   renameStoryNode,
   deleteStoryNode,
@@ -148,6 +151,7 @@ function createWindow(): void {
 
   ipcMain.handle('load-project', async (_, projectSettingsPath: string) => {
     const project = await loadProject(projectSettingsPath)
+    registerOpenedProject(projectSettingsPath)
     void backupProjectDatabase(projectSettingsPath)
     return project
   })
@@ -974,6 +978,25 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // 30分钟定时备份
+  const BUP30MIN_INTERVAL = 30 * 60 * 1000 // 30分钟
+  const bup30minTimer = setInterval(async () => {
+    const projects = getOpenedProjects()
+    for (const projectPath of projects) {
+      await backupDatabaseToFolder(projectPath, 'bup30min', 150)
+    }
+  }, BUP30MIN_INTERVAL)
+  // 防止定时器阻止进程退出
+  bup30minTimer.unref()
+})
+
+// 软件关闭时备份
+app.on('will-quit', async () => {
+  const projects = getOpenedProjects()
+  for (const projectPath of projects) {
+    await backupDatabaseToFolder(projectPath, 'bupend', 50)
+  }
 })
 
 app.on('window-all-closed', () => {
