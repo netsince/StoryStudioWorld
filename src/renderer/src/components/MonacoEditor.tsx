@@ -88,12 +88,9 @@ function countTextStats(text: string): {
 function buildMonacoOptions(
   overrides?: Partial<monaco.editor.IStandaloneEditorConstructionOptions>
 ): monaco.editor.IStandaloneEditorConstructionOptions {
-  const root = document.documentElement
-  const fs = getComputedStyle(root).getPropertyValue('--editor-font-size').trim()
-  const lh = getComputedStyle(root).getPropertyValue('--editor-line-height').trim()
-  const ff = getComputedStyle(root).getPropertyValue('--editor-font-family').trim()
-  const fontSize = fs ? parseInt(fs) : 18
-  const lineHeight = lh ? Math.round(parseFloat(lh) * fontSize) : 36
+  const settings = getAppSettings()
+  const fontSize = settings.editorFontSize
+  const lineHeight = Math.round(settings.editorLineHeight * fontSize)
 
   const tabBehavior = getTabBehavior()
   const insertSpaces = tabBehavior !== 'tab'
@@ -103,7 +100,7 @@ function buildMonacoOptions(
 
   return {
     theme: 'vs-dark',
-    fontFamily: ff || "'Noto Serif SC', serif",
+    fontFamily: settings.editorFontFamily,
     fontSize,
     lineHeight,
     language: 'markdown',
@@ -327,17 +324,6 @@ const PlainTextEditor: React.FC<PlainTextEditorProps> = ({
       isExternalUpdateRef.current = false
     }
   }, [content])
-
-  useEffect(() => {
-    const editor = editorRef.current
-    if (!editor) return
-    const settings = getAppSettings()
-    editor.updateOptions({
-      fontFamily: settings.editorFontFamily,
-      fontSize: settings.editorFontSize,
-      lineHeight: Math.round(settings.editorLineHeight * settings.editorFontSize)
-    })
-  }, [])
 
   useEffect(() => {
     const handler = (): void => {
